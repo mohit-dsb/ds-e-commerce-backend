@@ -15,6 +15,13 @@
       "when": 1756193355077,
       "tag": "0001_acoustic_pet_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1756200095599,
+      "tag": "0002_flaky_rockslide",
+      "breakpoints": true
     }
   ]
 }

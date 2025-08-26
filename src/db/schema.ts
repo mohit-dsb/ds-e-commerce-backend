@@ -1,5 +1,3 @@
-import { z } from "zod";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { pgTable, text, timestamp, uuid, varchar, boolean, pgEnum } from "drizzle-orm/pg-core";
 
 // Define the role enum first
@@ -13,6 +11,20 @@ export const users = pgTable("users", {
   lastName: varchar("last_name", { length: 100 }).notNull(),
   isVerified: boolean("is_verified").default(false).notNull(),
   role: roleEnum("role").default("customer").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const categories = pgTable("categories", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
+  isActive: boolean("is_active").default(true).notNull(),
+  parentId: uuid("parent_id").references(() => categories.id, { onDelete: "set null" }),
+  createdBy: uuid("created_by")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -37,35 +49,3 @@ export const passwordResets = pgTable("password_resets", {
   used: boolean("used").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
-
-// Zod schemas for validation
-export const insertUserSchema = createInsertSchema(users, {
-  email: (schema) => schema.email(),
-  password: (schema) => schema.min(8),
-  firstName: (schema) => schema.min(1),
-  lastName: (schema) => schema.min(1),
-});
-
-export const selectUserSchema = createSelectSchema(users);
-
-export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
-
-export const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-});
-
-export const resetPasswordSchema = z.object({
-  token: z.string(),
-  password: z.string().min(8),
-});
-
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-export type Session = typeof sessions.$inferSelect;
-export type PasswordReset = typeof passwordResets.$inferSelect;

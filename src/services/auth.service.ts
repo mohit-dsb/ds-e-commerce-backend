@@ -5,11 +5,12 @@ import { nanoid } from "nanoid";
 import { env } from "../config/env";
 import { logger } from "../utils/logger";
 import { eq, and, gt } from "drizzle-orm";
+import type { User } from "../db/validators";
 import { createNotFoundError } from "../utils/errors";
 import type { ErrorContext } from "../types/error.types";
 import { dbErrorHandlers } from "../utils/database-errors";
+import { users, sessions, passwordResets } from "../db/schema";
 import { BCRYPT_ROUNDS, JWT_EXPIRES_IN } from "../utils/constants";
-import { users, sessions, passwordResets, type User } from "../db/schema";
 
 export class AuthService {
   static async hashPassword(password: string, context: ErrorContext = {}): Promise<string> {

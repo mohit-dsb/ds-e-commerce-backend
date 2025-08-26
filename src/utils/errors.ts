@@ -116,6 +116,10 @@ export const createAuthError = (message?: string, context?: ErrorContext) => {
   return new AuthenticationError(message, context);
 };
 
+export const createForbiddenError = (message?: string, context?: ErrorContext) => {
+  return new AuthorizationError(message, context);
+};
+
 export const createNotFoundError = (resource?: string, context?: ErrorContext) => {
   return new NotFoundError(resource, context);
 };

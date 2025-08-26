@@ -1,11 +1,12 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { env } from "./config/env";
+import { logger } from "./utils/logger";
+import { authRoutes } from "./routes/auth.routes";
 import { logger as honoLogger } from "hono/logger";
-import authRoutes from "./routes/auth.routes";
+import { categoryRoutes } from "./routes/category.routes";
 import { requestContextMiddleware, type RequestContext } from "./middleware/request-context.middleware";
 import { errorHandlerMiddleware, requestLoggingMiddleware } from "./middleware/error-handler.middleware";
-import { logger } from "./utils/logger";
 
 interface AppVariables {
   requestContext: RequestContext;
@@ -45,6 +46,7 @@ app.get("/", (c) => {
 
 // Routes
 app.route("/api/auth", authRoutes);
+app.route("/api/categories", categoryRoutes);
 
 // Global error handler
 app.onError(errorHandlerMiddleware);
@@ -56,16 +58,19 @@ app.notFound((c) => {
     endpoint: c.req.path,
     method: c.req.method,
   });
-  
-  return c.json({ 
-    success: false,
-    error: {
-      code: "NOT_FOUND",
-      message: "Route not found",
-      timestamp: new Date().toISOString(),
-      path: c.req.path,
-    }
-  }, 404);
+
+  return c.json(
+    {
+      success: false,
+      error: {
+        code: "NOT_FOUND",
+        message: "Route not found",
+        timestamp: new Date().toISOString(),
+        path: c.req.path,
+      },
+    },
+    404
+  );
 });
 
 export default {

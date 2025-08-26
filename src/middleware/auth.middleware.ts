@@ -1,6 +1,6 @@
 import type { Context, Next } from "hono";
 import { AuthService } from "../services/auth.service";
-import { createAuthError } from "../utils/errors";
+import { createAuthError, createForbiddenError } from "../utils/errors";
 import { createErrorContext } from "./request-context.middleware";
 import { logger } from "../utils/logger";
 
@@ -40,6 +40,24 @@ export const authMiddleware = async (c: Context, next: Next) => {
     role: user.role,
     isVerified: user.isVerified,
   });
+
+  await next();
+};
+
+export const adminMiddleware = async (c: Context, next: Next) => {
+  // First ensure user is authenticated
+  await authMiddleware(c, () => Promise.resolve());
+  
+  const user = c.get("user");
+  const context = createErrorContext(c, user?.id);
+
+  if (!user || user.role !== "admin") {
+    logger.warn("Admin access denied", {
+      ...context,
+      metadata: { userId: user?.id, role: user?.role },
+    });
+    throw createForbiddenError("Admin access required");
+  }
 
   await next();
 };

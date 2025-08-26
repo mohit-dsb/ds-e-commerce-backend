@@ -1,10 +1,10 @@
-import type { Context, Next } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { ZodSchema, ZodError } from "zod";
-import { createValidationError } from "../utils/errors";
-import { formatValidationError, createSingleValidationMessage, VALIDATION_CONFIG } from "../utils/validation-errors";
-import { createErrorContext } from "../middleware/request-context.middleware";
 import { logger } from "../utils/logger";
+import type { Context, Next } from "hono";
+import { ZodSchema, ZodError } from "zod";
+import { zValidator } from "@hono/zod-validator";
+import { createValidationError } from "../utils/errors";
+import { createErrorContext } from "../middleware/request-context.middleware";
+import { formatValidationError, createSingleValidationMessage, VALIDATION_CONFIG } from "../utils/validation-errors";
 
 /**
  * Enhanced validation middleware with user-friendly error messages
@@ -128,7 +128,7 @@ export function getValidatedData<T>(c: Context, target: "json" | "query" | "para
 /**
  * Legacy compatibility - wrapper around hono's zValidator with enhanced error handling
  */
-export function compatibleZValidator<T>(target: "json" | "query" | "param", schema: ZodSchema<T>) {
+export function compatibleZValidator<T>(target: "json" | "query" | "param", schema: ZodSchema<T> | any) {
   return zValidator(target, schema, (result, c) => {
     if (!result.success) {
       const errorContext = createErrorContext(c);

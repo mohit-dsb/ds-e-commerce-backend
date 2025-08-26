@@ -63,7 +63,7 @@ class Logger {
   }
 
   private output(logEntry: LogEntry): void {
-    const logString = JSON.stringify(logEntry, null, env.NODE_ENV === "development" ? 2 : 0);
+    const logString = JSON.stringify(logEntry, null, env.NODE_ENV === "development" ? 2 : 1);
 
     switch (logEntry.level) {
       case LogLevel.ERROR:
