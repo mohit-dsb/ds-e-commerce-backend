@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { pgTable, text, timestamp, uuid, varchar, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, varchar, boolean, pgEnum } from "drizzle-orm/pg-core";
+
+// Define the role enum first
+export const roleEnum = pgEnum("role", ["customer", "admin"]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -9,7 +12,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),
   isVerified: boolean("is_verified").default(false).notNull(),
-  role: varchar("role", { length: 20 }).default("customer").notNull(),
+  role: roleEnum("role").default("customer").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

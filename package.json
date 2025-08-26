@@ -15,8 +15,6 @@
   "dependencies": {
     "@hono/zod-validator": "^0.2.2",
     "@neondatabase/serverless": "^0.9.4",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/jsonwebtoken": "^9.0.6",
     "bcryptjs": "^2.4.3",
     "drizzle-orm": "^0.44.5",
     "drizzle-zod": "^0.8.3",
@@ -26,7 +24,9 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "@types/bun": "latest",
+    "@types/jsonwebtoken": "^9.0.10",
     "drizzle-kit": "^0.31.4"
   }
 }
