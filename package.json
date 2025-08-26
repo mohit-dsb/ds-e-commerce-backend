@@ -10,8 +10,7 @@
     "start": "bun run dist/index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "bun run src/db/migrate.ts",
-    "db:studio": "drizzle-kit studio",
-    "test:api": "bun run test-api.ts"
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.2.2",

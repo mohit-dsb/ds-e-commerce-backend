@@ -1,6 +1,8 @@
 import type { Context, Next } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { AuthService } from "../services/auth.service";
+import { createAuthError } from "../utils/errors";
+import { createErrorContext } from "./request-context.middleware";
+import { logger } from "../utils/logger";
 
 export interface AuthContext {
   user: {
@@ -15,16 +17,19 @@ export interface AuthContext {
 
 export const authMiddleware = async (c: Context, next: Next) => {
   const authHeader = c.req.header("Authorization");
+  const context = createErrorContext(c);
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw new HTTPException(401, { message: "Authorization token required" });
+    logger.warn("Missing or invalid authorization header", context);
+    throw createAuthError("Authorization token required");
   }
 
   const token = authHeader.substring(7);
-  const user = await AuthService.validateSession(token);
+  const user = await AuthService.validateSession(token, context);
 
   if (!user) {
-    throw new HTTPException(401, { message: "Invalid or expired token" });
+    logger.warn("Invalid or expired session token", context);
+    throw createAuthError("Invalid or expired token");
   }
 
   c.set("user", {
@@ -41,10 +46,11 @@ export const authMiddleware = async (c: Context, next: Next) => {
 
 export const optionalAuthMiddleware = async (c: Context, next: Next) => {
   const authHeader = c.req.header("Authorization");
+  const context = createErrorContext(c);
 
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
-    const user = await AuthService.validateSession(token);
+    const user = await AuthService.validateSession(token, context);
 
     if (user) {
       c.set("user", {
@@ -55,6 +61,13 @@ export const optionalAuthMiddleware = async (c: Context, next: Next) => {
         role: user.role,
         isVerified: user.isVerified,
       });
+
+      logger.debug("Optional auth successful", {
+        ...context,
+        metadata: { userId: user.id },
+      });
+    } else {
+      logger.debug("Optional auth failed - invalid token", context);
     }
   }
 

@@ -3,119 +3,287 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { nanoid } from "nanoid";
 import { env } from "../config/env";
+import { logger } from "../utils/logger";
 import { eq, and, gt } from "drizzle-orm";
+import { createNotFoundError } from "../utils/errors";
+import type { ErrorContext } from "../types/error.types";
+import { dbErrorHandlers } from "../utils/database-errors";
 import { BCRYPT_ROUNDS, JWT_EXPIRES_IN } from "../utils/constants";
 import { users, sessions, passwordResets, type User } from "../db/schema";
 
 export class AuthService {
-  static async hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, BCRYPT_ROUNDS);
-  }
-
-  static async verifyPassword(password: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(password, hash);
-  }
-
-  static generateToken(userId: string): string {
-    return jwt.sign({ userId }, env.JWT_SECRET as string, { expiresIn: JWT_EXPIRES_IN });
-  }
-
-  static verifyToken(token: string): { userId: string } | null {
+  static async hashPassword(password: string, context: ErrorContext = {}): Promise<string> {
     try {
+      return await bcrypt.hash(password, BCRYPT_ROUNDS);
+    } catch (error) {
+      logger.error("Password hashing failed", error as Error, context);
+      throw new Error("Failed to process password");
+    }
+  }
+
+  static async verifyPassword(password: string, hash: string, context: ErrorContext = {}): Promise<boolean> {
+    try {
+      return await bcrypt.compare(password, hash);
+    } catch (error) {
+      logger.error("Password verification failed", error as Error, context);
+      return false;
+    }
+  }
+
+  static generateToken(userId: string, context: ErrorContext = {}): string {
+    try {
+      if (!env.JWT_SECRET) {
+        logger.error("JWT secret not configured", undefined, context);
+        throw new Error("Authentication configuration error");
+      }
+      return jwt.sign({ userId }, env.JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    } catch (error) {
+      logger.error("Token generation failed", error as Error, context);
+      throw new Error("Failed to generate authentication token");
+    }
+  }
+
+  static verifyToken(token: string, context: ErrorContext = {}): { userId: string } | null {
+    try {
+      if (!env.JWT_SECRET) {
+        logger.error("JWT secret not configured", undefined, context);
+        return null;
+      }
       return jwt.verify(token, env.JWT_SECRET) as { userId: string };
-    } catch {
+    } catch (error) {
+      if (error instanceof jwt.JsonWebTokenError) {
+        logger.warn("Invalid JWT token provided", { ...context, metadata: { reason: error.message } });
+      } else {
+        logger.error("Token verification failed", error as Error, context);
+      }
       return null;
     }
   }
 
-  static async createUser(data: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-  }): Promise<User> {
-    const hashedPassword = await this.hashPassword(data.password);
+  static async createUser(
+    data: {
+      email: string;
+      password: string;
+      firstName: string;
+      lastName: string;
+    },
+    context: ErrorContext = {}
+  ): Promise<User> {
+    return dbErrorHandlers.create(
+      async () => {
+        const hashedPassword = await this.hashPassword(data.password, context);
 
-    const [user] = await db
-      .insert(users)
-      .values({
-        email: data.email,
-        password: hashedPassword,
-        firstName: data.firstName,
-        lastName: data.lastName,
-      })
-      .returning();
+        const [user] = await db
+          .insert(users)
+          .values({
+            email: data.email,
+            password: hashedPassword,
+            firstName: data.firstName,
+            lastName: data.lastName,
+          })
+          .returning();
 
-    return user;
+        if (!user) {
+          logger.error("Failed to create user - no user returned", undefined, context);
+          throw new Error("Failed to create user account");
+        }
+
+        logger.info("User created successfully", {
+          ...context,
+          metadata: { userId: user.id, email: data.email },
+        });
+
+        return user;
+      },
+      "user",
+      context
+    );
   }
 
-  static async getUserByEmail(email: string): Promise<User | null> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || null;
+  static async getUserByEmail(email: string, context: ErrorContext = {}): Promise<User | null> {
+    return dbErrorHandlers.read(
+      async () => {
+        const [user] = await db.select().from(users).where(eq(users.email, email));
+        return user || null;
+      },
+      "user",
+      context
+    );
   }
 
-  static async getUserById(id: string): Promise<User | null> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || null;
+  static async getUserById(id: string, context: ErrorContext = {}): Promise<User | null> {
+    return dbErrorHandlers.read(
+      async () => {
+        const [user] = await db.select().from(users).where(eq(users.id, id));
+        return user || null;
+      },
+      "user",
+      context
+    );
   }
 
-  static async createSession(userId: string): Promise<string> {
-    const token = nanoid(32);
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  static async createSession(userId: string, context: ErrorContext = {}): Promise<string> {
+    return dbErrorHandlers.create(
+      async () => {
+        const token = nanoid(32);
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    await db.insert(sessions).values({
-      userId,
-      token,
-      expiresAt,
-    });
+        await db.insert(sessions).values({
+          userId,
+          token,
+          expiresAt,
+        });
 
-    return token;
+        logger.info("Session created", {
+          ...context,
+          metadata: { userId, expiresAt: expiresAt.toISOString() },
+        });
+
+        return token;
+      },
+      "session",
+      context
+    );
   }
 
-  static async validateSession(token: string): Promise<User | null> {
-    const [session] = await db
-      .select({ user: users })
-      .from(sessions)
-      .innerJoin(users, eq(sessions.userId, users.id))
-      .where(and(eq(sessions.token, token), gt(sessions.expiresAt, new Date())));
+  static async validateSession(token: string, context: ErrorContext = {}): Promise<User | null> {
+    return dbErrorHandlers.read(
+      async () => {
+        const [session] = await db
+          .select({ user: users })
+          .from(sessions)
+          .innerJoin(users, eq(sessions.userId, users.id))
+          .where(and(eq(sessions.token, token), gt(sessions.expiresAt, new Date())));
 
-    return session?.user || null;
+        if (!session) {
+          logger.warn("Invalid or expired session token", {
+            ...context,
+            metadata: { hasToken: !!token },
+          });
+          return null;
+        }
+
+        return session.user;
+      },
+      "session",
+      context
+    );
   }
 
-  static async revokeSession(token: string): Promise<void> {
-    await db.delete(sessions).where(eq(sessions.token, token));
+  static async revokeSession(token: string, context: ErrorContext = {}): Promise<void> {
+    await dbErrorHandlers.delete(
+      async () => {
+        await db.delete(sessions).where(eq(sessions.token, token));
+
+        logger.info("Session revoked", {
+          ...context,
+          metadata: { tokenProvided: !!token },
+        });
+      },
+      "session",
+      context
+    );
   }
 
-  static async createPasswordResetToken(userId: string): Promise<string> {
-    const token = nanoid(32);
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  static async createPasswordResetToken(userId: string, context: ErrorContext = {}): Promise<string> {
+    return dbErrorHandlers.create(
+      async () => {
+        // Check if user exists
+        const user = await this.getUserById(userId, context);
+        if (!user) {
+          throw createNotFoundError("User", context);
+        }
 
-    await db.insert(passwordResets).values({
-      userId,
-      token,
-      expiresAt,
-    });
+        const token = nanoid(32);
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    return token;
+        await db.insert(passwordResets).values({
+          userId,
+          token,
+          expiresAt,
+        });
+
+        logger.info("Password reset token created", {
+          ...context,
+          metadata: { userId, expiresAt: expiresAt.toISOString() },
+        });
+
+        return token;
+      },
+      "passwordReset",
+      context
+    );
   }
 
-  static async validatePasswordResetToken(token: string): Promise<string | null> {
-    const [reset] = await db
-      .select()
-      .from(passwordResets)
-      .where(
-        and(eq(passwordResets.token, token), eq(passwordResets.used, false), gt(passwordResets.expiresAt, new Date()))
-      );
+  static async validatePasswordResetToken(token: string, context: ErrorContext = {}): Promise<string | null> {
+    return dbErrorHandlers.read(
+      async () => {
+        const [reset] = await db
+          .select()
+          .from(passwordResets)
+          .where(
+            and(
+              eq(passwordResets.token, token),
+              eq(passwordResets.used, false),
+              gt(passwordResets.expiresAt, new Date())
+            )
+          );
 
-    return reset?.userId || null;
+        if (!reset) {
+          logger.warn("Invalid or expired password reset token", {
+            ...context,
+            metadata: { hasToken: !!token },
+          });
+          return null;
+        }
+
+        return reset.userId;
+      },
+      "passwordReset",
+      context
+    );
   }
 
-  static async usePasswordResetToken(token: string): Promise<void> {
-    await db.update(passwordResets).set({ used: true }).where(eq(passwordResets.token, token));
+  static async usePasswordResetToken(token: string, context: ErrorContext = {}): Promise<void> {
+    await dbErrorHandlers.update(
+      async () => {
+        await db.update(passwordResets).set({ used: true }).where(eq(passwordResets.token, token));
+
+        logger.info("Password reset token used", {
+          ...context,
+          metadata: { tokenProvided: !!token },
+        });
+      },
+      "passwordReset",
+      context
+    );
   }
 
-  static async updatePassword(userId: string, newPassword: string): Promise<void> {
-    const hashedPassword = await this.hashPassword(newPassword);
-    await db.update(users).set({ password: hashedPassword, updatedAt: new Date() }).where(eq(users.id, userId));
+  static async updatePassword(userId: string, newPassword: string, context: ErrorContext = {}): Promise<void> {
+    await dbErrorHandlers.update(
+      async () => {
+        // Verify user exists
+        const user = await this.getUserById(userId, context);
+        if (!user) {
+          throw createNotFoundError("User", context);
+        }
+
+        const hashedPassword = await this.hashPassword(newPassword, context);
+        await db
+          .update(users)
+          .set({
+            password: hashedPassword,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userId));
+
+        logger.info("User password updated", {
+          ...context,
+          metadata: { userId },
+        });
+      },
+      "user",
+      context
+    );
   }
 }

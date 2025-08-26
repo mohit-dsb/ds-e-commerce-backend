@@ -1,14 +1,26 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { env } from "./config/env";
-import { logger } from "hono/logger";
+import { logger as honoLogger } from "hono/logger";
 import authRoutes from "./routes/auth.routes";
-import { HTTPException } from "hono/http-exception";
+import { requestContextMiddleware, type RequestContext } from "./middleware/request-context.middleware";
+import { errorHandlerMiddleware, requestLoggingMiddleware } from "./middleware/error-handler.middleware";
+import { logger } from "./utils/logger";
 
-const app = new Hono();
+interface AppVariables {
+  requestContext: RequestContext;
+}
+
+const app = new Hono<{ Variables: AppVariables }>();
+
+// Request context middleware (must be first)
+app.use("*", requestContextMiddleware);
+
+// Request logging
+app.use("*", requestLoggingMiddleware);
 
 // Global middleware
-app.use("*", logger());
+app.use("*", honoLogger());
 app.use(
   "*",
   cors({
@@ -21,9 +33,13 @@ app.use(
 // Health check
 app.get("/", (c) => {
   return c.json({
+    success: true,
     message: "E-commerce Backend API",
-    version: "1.0.0",
-    status: "healthy",
+    data: {
+      version: "1.0.0",
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+    },
   });
 });
 
@@ -31,18 +47,25 @@ app.get("/", (c) => {
 app.route("/api/auth", authRoutes);
 
 // Global error handler
-app.onError((err, c) => {
-  if (err instanceof HTTPException) {
-    return c.json({ error: err.message }, err.status);
-  }
-
-  console.error("Unhandled error:", err);
-  return c.json({ error: "Internal server error" }, 500);
-});
+app.onError(errorHandlerMiddleware);
 
 // 404 handler
 app.notFound((c) => {
-  return c.json({ error: "Route not found" }, 404);
+  logger.warn("Route not found", {
+    requestId: c.get("requestContext")?.requestId,
+    endpoint: c.req.path,
+    method: c.req.method,
+  });
+  
+  return c.json({ 
+    success: false,
+    error: {
+      code: "NOT_FOUND",
+      message: "Route not found",
+      timestamp: new Date().toISOString(),
+      path: c.req.path,
+    }
+  }, 404);
 });
 
 export default {
