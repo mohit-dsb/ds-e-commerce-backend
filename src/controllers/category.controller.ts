@@ -3,6 +3,7 @@ import { logger } from "../utils/logger";
 import { createNotFoundError } from "../utils/errors";
 import { createSuccessResponse } from "../utils/response";
 import { CategoryService } from "../services/category.service";
+import { getValidatedData } from "../middleware/validation.middleware";
 import { createErrorContext } from "../middleware/request-context.middleware";
 
 export class CategoryController {
@@ -11,10 +12,9 @@ export class CategoryController {
    * POST /api/categories
    */
   static async createCategory(c: Context) {
-    const validatedData = c.get("validatedData");
+    const validatedData = getValidatedData<any>(c, "json");
     const user = c.get("user");
-
-    const context = createErrorContext(c);
+    const context = createErrorContext(c, user?.id);
 
     logger.info("Creating new category", {
       ...context,
@@ -44,12 +44,14 @@ export class CategoryController {
     const isActive = c.req.query("isActive");
     const parentId = c.req.query("parentId");
     const hierarchy = c.req.query("hierarchy");
-
     const context = createErrorContext(c);
 
     // If hierarchy is requested, return hierarchical structure
     if (hierarchy === "true") {
-      logger.info("Retrieving category hierarchy", context);
+      logger.info("Retrieving category hierarchy", {
+        ...context,
+        metadata: { requestType: "hierarchy" },
+      });
 
       const categoryHierarchy = await CategoryService.getCategoryHierarchy(context);
 
@@ -95,7 +97,6 @@ export class CategoryController {
    */
   static async getCategoryById(c: Context) {
     const categoryId = c.req.param("id");
-
     const context = createErrorContext(c);
 
     logger.info("Retrieving category by ID", {
@@ -118,7 +119,6 @@ export class CategoryController {
    */
   static async getCategoryBySlug(c: Context) {
     const slug = c.req.param("slug");
-
     const context = createErrorContext(c);
 
     logger.info("Retrieving category by slug", {
@@ -141,10 +141,9 @@ export class CategoryController {
    */
   static async updateCategory(c: Context) {
     const categoryId = c.req.param("id");
-    const validatedData = c.get("validatedData");
+    const validatedData = getValidatedData<any>(c, "json");
     const user = c.get("user");
-
-    const context = createErrorContext(c);
+    const context = createErrorContext(c, user?.id);
 
     logger.info("Updating category", {
       ...context,
@@ -167,8 +166,7 @@ export class CategoryController {
   static async deleteCategory(c: Context) {
     const categoryId = c.req.param("id");
     const user = c.get("user");
-
-    const context = createErrorContext(c);
+    const context = createErrorContext(c, user?.id);
 
     logger.info("Deleting category", {
       ...context,
@@ -189,7 +187,6 @@ export class CategoryController {
    */
   static async getChildCategories(c: Context) {
     const parentId = c.req.param("id");
-
     const context = createErrorContext(c);
 
     logger.info("Retrieving child categories", {

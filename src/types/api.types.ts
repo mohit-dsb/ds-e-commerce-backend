@@ -1,3 +1,10 @@
+// Re-export error types to maintain compatibility
+export type {
+  ApiErrorResponse,
+  ValidationErrorResponse,
+  ErrorContext
+} from "./error.types";
+
 export interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
@@ -18,18 +25,6 @@ export interface ApiSuccessResponse<T = any> {
   data?: T;
 }
 
-export interface ApiErrorResponse {
-  success: false;
-  error: {
-    code: string;
-    message: string;
-    details?: any;
-    timestamp: string;
-    requestId?: string;
-    path?: string;
-  };
-}
-
 export interface AuthResponse {
   user: {
     id: string;
@@ -42,7 +37,29 @@ export interface AuthResponse {
   token: string;
 }
 
-// Legacy - kept for backward compatibility
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
+
+export interface PaginatedResponse<T> {
+  success: true;
+  message?: string;
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+// Legacy - kept for backward compatibility but deprecated
+/** @deprecated Use ApiErrorResponse from error.types instead */
 export interface ErrorResponse {
   error: string;
   details?: any;

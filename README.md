@@ -1,4 +1,29 @@
-# E-commerce Backend
+# DS E-Commerce Backend
+
+A production-ready, enterprise-grade e-commerce backend API built with modern technologies and industry best practices.
+
+## 🚀 Features
+
+### ✨ Core Features
+- **Authentication & Authorization**: JWT-based auth with role-based access control
+- **Category Management**: Hierarchical product categories with admin-only access
+- **User Management**: Registration, login, password reset, profile management
+- **Session Management**: Secure session handling with automatic cleanup
+
+### 🛡️ Security Features
+- **Password Security**: Bcrypt hashing with configurable rounds
+- **JWT Tokens**: Secure token generation and validation
+- **Role-Based Access**: Customer and admin role separation
+- **Input Validation**: Comprehensive Zod schema validation
+- **Error Handling**: Structured error responses without sensitive data exposure
+
+### 🏗️ Production-Ready Architecture
+- **Type Safety**: Full TypeScript implementation with strict type checking
+- **Error Handling**: Comprehensive error classes and centralized error handling
+- **Logging**: Structured JSON logging with different levels and contexts
+- **Validation**: Request validation middleware with user-friendly error messages
+- **Database**: Type-safe database operations with Drizzle ORM
+- **Health Checks**: Built-in health monitoring endpoints
 
 A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon PostgreSQL.
 

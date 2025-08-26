@@ -1,31 +1,18 @@
 import type { Context } from "hono";
 import { logger } from "../utils/logger";
 import { AuthService } from "../services/auth.service";
+import { createSuccessResponse } from "../utils/response";
 import type { AuthContext } from "../middleware/auth.middleware";
+import { getValidatedData } from "../middleware/validation.middleware";
 import { createErrorContext } from "../middleware/request-context.middleware";
+import type { registerSchema, loginSchema, resetPasswordSchema } from "../db/validators";
 import { createConflictError, createAuthError, BusinessRuleError } from "../utils/errors";
 
-// Type definitions for request data (validated by middleware)
-export interface RegisterData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}
-
-export interface LoginData {
-  email: string;
-  password: string;
-}
-
-export interface ForgotPasswordData {
-  email: string;
-}
-
-export interface ResetPasswordData {
-  token: string;
-  password: string;
-}
+// Type definitions for validated request data
+type RegisterData = typeof registerSchema._type;
+type LoginData = typeof loginSchema._type;
+type ResetPasswordData = typeof resetPasswordSchema._type;
+type ForgotPasswordData = Pick<LoginData, "email">;
 
 export class AuthController {
   /**
@@ -34,8 +21,7 @@ export class AuthController {
    * @access Public
    */
   static async register(c: Context<{ Variables: AuthContext }>) {
-    // Data is already validated by compatibleZValidator middleware
-    const { email, password, firstName, lastName } = (await c.req.json()) as RegisterData;
+    const { email, password, firstName, lastName } = getValidatedData<RegisterData>(c, "json");
     const context = createErrorContext(c);
 
     // Check if user already exists
@@ -68,21 +54,17 @@ export class AuthController {
     });
 
     return c.json(
-      {
-        success: true,
-        message: "User registered successfully",
-        data: {
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-            isVerified: user.isVerified,
-          },
-          token,
+      createSuccessResponse("User registered successfully", {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          isVerified: user.isVerified,
         },
-      },
+        token,
+      }),
       201
     );
   }
@@ -93,8 +75,7 @@ export class AuthController {
    * @access Public
    */
   static async login(c: Context<{ Variables: AuthContext }>) {
-    // Data is already validated by compatibleZValidator middleware
-    const { email, password } = (await c.req.json()) as LoginData;
+    const { email, password } = getValidatedData<LoginData>(c, "json");
     const context = createErrorContext(c);
 
     // Find user by email
@@ -125,10 +106,8 @@ export class AuthController {
       metadata: { userId: user.id, email },
     });
 
-    return c.json({
-      success: true,
-      message: "Login successful",
-      data: {
+    return c.json(
+      createSuccessResponse("Login successful", {
         user: {
           id: user.id,
           email: user.email,
@@ -138,8 +117,8 @@ export class AuthController {
           isVerified: user.isVerified,
         },
         token,
-      },
-    });
+      })
+    );
   }
 
   /**
@@ -148,7 +127,6 @@ export class AuthController {
    * @access Private (requires authentication)
    */
   static async getProfile(c: Context<{ Variables: AuthContext }>) {
-    // User is already validated by authMiddleware
     const user = c.get("user");
     const context = createErrorContext(c, user?.id);
 
@@ -157,10 +135,7 @@ export class AuthController {
       metadata: { userId: user?.id },
     });
 
-    return c.json({
-      success: true,
-      data: { user },
-    });
+    return c.json(createSuccessResponse("Profile retrieved successfully", { user }));
   }
 
   /**
@@ -182,10 +157,7 @@ export class AuthController {
       metadata: { userId: user?.id },
     });
 
-    return c.json({
-      success: true,
-      message: "Logout successful",
-    });
+    return c.json(createSuccessResponse("Logout successful"));
   }
 
   /**
@@ -194,8 +166,7 @@ export class AuthController {
    * @access Public
    */
   static async forgotPassword(c: Context<{ Variables: AuthContext }>) {
-    // Data is already validated by compatibleZValidator middleware
-    const { email } = (await c.req.json()) as ForgotPasswordData;
+    const { email } = getValidatedData<ForgotPasswordData>(c, "json");
     const context = createErrorContext(c);
 
     const user = await AuthService.getUserByEmail(email, context);
@@ -205,26 +176,33 @@ export class AuthController {
         ...context,
         metadata: { email },
       });
-      return c.json({
-        success: true,
-        message: "If the email exists, a reset link has been sent",
-      });
+      return c.json(createSuccessResponse("If the email exists, a reset link has been sent"));
     }
 
     const resetToken = await AuthService.createPasswordResetToken(user.id, context);
 
-    // TODO: In production, send email with reset link instead of console.log
-    console.log(`Password reset token for ${email}: ${resetToken}`);
+    // TODO: In production, send email with reset link instead of logging
+    logger.info("Password reset token generated - Email would be sent in production", {
+      ...context,
+      metadata: {
+        userId: user.id,
+        email: user.email,
+        // Don't log the actual token in production for security
+        tokenGenerated: true,
+      },
+    });
+
+    // For development only - remove in production
+    if (process.env.NODE_ENV === "development") {
+      console.log(`Password reset token for ${email}: ${resetToken}`);
+    }
 
     logger.info("Password reset token generated", {
       ...context,
       metadata: { userId: user.id, email },
     });
 
-    return c.json({
-      success: true,
-      message: "If the email exists, a reset link has been sent",
-    });
+    return c.json(createSuccessResponse("If the email exists, a reset link has been sent"));
   }
 
   /**
@@ -233,8 +211,7 @@ export class AuthController {
    * @access Public
    */
   static async resetPassword(c: Context<{ Variables: AuthContext }>) {
-    // Data is already validated by compatibleZValidator middleware
-    const { token, password } = (await c.req.json()) as ResetPasswordData;
+    const { token, password } = getValidatedData<ResetPasswordData>(c, "json");
     const context = createErrorContext(c);
 
     // Validate reset token
@@ -256,9 +233,6 @@ export class AuthController {
       metadata: { userId },
     });
 
-    return c.json({
-      success: true,
-      message: "Password reset successful",
-    });
+    return c.json(createSuccessResponse("Password reset successful"));
   }
 }

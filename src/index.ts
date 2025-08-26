@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { env } from "./config/env";
 import { logger } from "./utils/logger";
-import { authRoutes } from "./routes/auth.routes";
 import { logger as honoLogger } from "hono/logger";
+import { authRoutes } from "./routes/auth.routes";
 import { categoryRoutes } from "./routes/category.routes";
 import { requestContextMiddleware, type RequestContext } from "./middleware/request-context.middleware";
 import { errorHandlerMiddleware, requestLoggingMiddleware } from "./middleware/error-handler.middleware";
@@ -31,7 +31,7 @@ app.use(
   })
 );
 
-// Health check
+// Health check endpoints
 app.get("/", (c) => {
   return c.json({
     success: true,
@@ -40,6 +40,22 @@ app.get("/", (c) => {
       version: "1.0.0",
       status: "healthy",
       timestamp: new Date().toISOString(),
+      environment: env.NODE_ENV,
+    },
+  });
+});
+
+app.get("/health", (c) => {
+  return c.json({
+    success: true,
+    message: "Service is healthy",
+    data: {
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      environment: env.NODE_ENV,
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      version: "1.0.0",
     },
   });
 });

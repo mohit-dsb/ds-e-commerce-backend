@@ -22,9 +22,9 @@ export class AuthService {
     }
   }
 
-  static async verifyPassword(password: string, hash: string, context: ErrorContext = {}): Promise<boolean> {
+  static async verifyPassword(password: string, hashedPassword: string, context: ErrorContext = {}): Promise<boolean> {
     try {
-      return await bcrypt.compare(password, hash);
+      return await bcrypt.compare(password, hashedPassword);
     } catch (error) {
       logger.error("Password verification failed", error as Error, context);
       return false;
@@ -37,7 +37,7 @@ export class AuthService {
         logger.error("JWT secret not configured", undefined, context);
         throw new Error("Authentication configuration error");
       }
-      return jwt.sign({ userId }, env.JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+      return jwt.sign({ userId }, env.JWT_SECRET, { expiresIn: JWT_EXPIRES_IN } as any);
     } catch (error) {
       logger.error("Token generation failed", error as Error, context);
       throw new Error("Failed to generate authentication token");
