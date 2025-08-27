@@ -12,8 +12,8 @@ export function generateSlug(text: string): string {
     .toLowerCase() // Convert to lowercase
     .trim() // Remove leading/trailing whitespace
     .replace(/[\s_]+/g, "-") // Replace spaces and underscores with hyphens
-    .replace(/[^\w\-]+/g, "") // Remove all non-word chars except hyphens
-    .replace(/\-\-+/g, "-") // Replace multiple hyphens with single hyphen
+    .replace(/[^\w-]+/g, "") // Remove all non-word chars except hyphens
+    .replace(/--+/g, "-") // Replace multiple hyphens with single hyphen
     .replace(/^-+/, "") // Remove leading hyphens
     .replace(/-+$/, ""); // Remove trailing hyphens
 }

@@ -11,8 +11,8 @@ export interface PostgresError extends Error {
   routine?: string;
 }
 
-export function isDatabaseError(error: any): error is PostgresError {
-  return error && typeof error === "object" && "code" in error;
+export function isDatabaseError(error: unknown): error is PostgresError {
+  return Boolean(error && typeof error === "object" && error !== null && "code" in error);
 }
 
 export function handleDatabaseError(error: Error | PostgresError, context: ErrorContext = {}): DatabaseError {

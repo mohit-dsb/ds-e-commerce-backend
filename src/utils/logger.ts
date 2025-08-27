@@ -17,7 +17,7 @@ export interface LogContext {
   duration?: number;
   statusCode?: number;
   errorCode?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface LogEntry {
@@ -73,10 +73,12 @@ class Logger {
         console.warn(logString);
         break;
       case LogLevel.INFO:
+        // eslint-disable-next-line no-console
         console.info(logString);
         break;
       case LogLevel.DEBUG:
         if (env.NODE_ENV === "development") {
+          // eslint-disable-next-line no-console
           console.debug(logString);
         }
         break;

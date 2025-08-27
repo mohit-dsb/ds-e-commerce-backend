@@ -1,9 +1,33 @@
 import type { Context } from "hono";
+import type { NewCategory } from "@/db/schema";
 import { createNotFoundError } from "@/utils/errors";
 import { createSuccessResponse } from "@/utils/response";
-import { CategoryService } from "@/services/category.service";
 import { sanitizeCategoryData } from "@/utils/sanitization";
+import { CategoryService } from "@/services/category.service";
+import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
+
+// Types for validation
+interface CreateCategoryRequest {
+  name: string;
+  slug?: string;
+  description?: string;
+  parentId?: string | null;
+  isActive?: boolean;
+}
+
+interface UpdateCategoryRequest {
+  name?: string;
+  slug?: string;
+  description?: string;
+  parentId?: string | null;
+  isActive?: boolean;
+}
+
+interface CategoryFilters {
+  isActive?: boolean;
+  parentId?: string | null;
+}
 
 export class CategoryController {
   /**
@@ -11,18 +35,19 @@ export class CategoryController {
    * POST /api/categories
    */
   static async createCategory(c: Context) {
-    const validatedData = getValidatedData<any>(c, "json");
-    const user = c.get("user");
+    const validatedData = getValidatedData<CreateCategoryRequest>(c, "json");
+    const user = c.get("user") as AuthContext["user"];
 
     // Additional sanitization for extra safety
     const sanitizedData = sanitizeCategoryData(validatedData);
 
     // Merge validated and sanitized data, prioritizing sanitized values
-    const categoryData = {
-      ...validatedData,
+    const categoryData: Omit<NewCategory, "id" | "createdAt" | "updatedAt"> = {
       name: sanitizedData.name ?? validatedData.name,
-      slug: sanitizedData.slug ?? validatedData.slug,
+      slug: sanitizedData.slug ?? validatedData.slug ?? "",
       description: sanitizedData.description !== undefined ? sanitizedData.description : validatedData.description,
+      isActive: validatedData.isActive,
+      parentId: validatedData.parentId,
       createdBy: user.id,
     };
 
@@ -41,7 +66,7 @@ export class CategoryController {
    * GET /api/categories
    */
   static async getCategories(c: Context) {
-    const isActive = c.req.query("isActive") || "true";
+    const isActive = c.req.query("isActive") ?? "true";
     const parentId = c.req.query("parentId");
     const hierarchy = c.req.query("hierarchy");
 
@@ -58,7 +83,7 @@ export class CategoryController {
     }
 
     // Regular category listing with filters
-    const filters: any = {};
+    const filters: CategoryFilters = {};
 
     if (isActive !== undefined) {
       filters.isActive = isActive === "true";
@@ -127,27 +152,28 @@ export class CategoryController {
    */
   static async updateCategory(c: Context) {
     const categoryId = c.req.param("id");
-    const validatedData = getValidatedData<any>(c, "json");
+    const validatedData = getValidatedData<UpdateCategoryRequest>(c, "json");
 
     // Additional sanitization for extra safety
     const sanitizedData = sanitizeCategoryData(validatedData);
 
     // Merge validated and sanitized data, prioritizing sanitized values
-    const updateData = {
+    const updateData: Record<string, unknown> = {
       ...validatedData,
       ...(sanitizedData.name !== undefined && { name: sanitizedData.name }),
       ...(sanitizedData.slug !== undefined && { slug: sanitizedData.slug }),
       ...(sanitizedData.description !== undefined && { description: sanitizedData.description }),
     };
 
-    // Remove any undefined/null values to avoid updating with empty values
+    // Remove any undefined/null/empty values to avoid updating with empty values
     Object.keys(updateData).forEach((key) => {
-      if (updateData[key] === null || updateData[key] === undefined || updateData[key] === "") {
+      const value = updateData[key];
+      if (value === null || value === undefined || value === "") {
         delete updateData[key];
       }
     });
 
-    const category = await CategoryService.updateCategory(categoryId, updateData);
+    const category = await CategoryService.updateCategory(categoryId, updateData as Partial<UpdateCategoryRequest>);
 
     return c.json(createSuccessResponse("Category updated successfully", { category }));
   }

@@ -8,14 +8,14 @@ import { formatValidationError, createSingleValidationMessage, VALIDATION_CONFIG
  * Helper to get validated data from context
  */
 export function getValidatedData<T>(c: Context, target: "json" | "query" | "param"): T {
-  const {req} = c;
-  return req.valid(target) as T;
+  const { req } = c;
+  return req.valid(target as keyof typeof req.valid) as T;
 }
 
 /**
  * Legacy compatibility - wrapper around hono's zValidator with enhanced error handling
  */
-export function compatibleZValidator<T>(target: "json" | "query" | "param", schema: ZodSchema<T> | any) {
+export function compatibleZValidator<T>(target: "json" | "query" | "param", schema: ZodSchema<T>) {
   return zValidator(target, schema, (result) => {
     if (!result.success) {
       const validationDetails = formatValidationError(result.error, VALIDATION_CONFIG);

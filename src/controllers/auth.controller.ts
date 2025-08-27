@@ -26,9 +26,9 @@ export class AuthController {
     // Additional sanitization for extra safety
     const sanitizedData = sanitizeUserData(validatedData);
     
-    const email = sanitizedData.email || validatedData.email;
-    const firstName = sanitizedData.firstName || validatedData.firstName;
-    const lastName = sanitizedData.lastName || validatedData.lastName;
+    const email = sanitizedData.email ?? validatedData.email;
+    const firstName = sanitizedData.firstName ?? validatedData.firstName;
+    const lastName = sanitizedData.lastName ?? validatedData.lastName;
     const { password } = validatedData;
 
     // Validate that required fields are not empty after sanitization
@@ -81,7 +81,7 @@ export class AuthController {
     const validatedData = getValidatedData<LoginData>(c, "json");
     
     // Additional sanitization for email
-    const email = sanitizeEmail(validatedData.email) || validatedData.email;
+    const email = sanitizeEmail(validatedData.email) ?? validatedData.email;
     const { password } = validatedData;
 
     // Find user by email
@@ -125,7 +125,7 @@ export class AuthController {
    * @desc Retrieve current user's profile information
    * @access Private (requires authentication)
    */
-  static async getProfile(c: Context<{ Variables: AuthContext }>) {
+  static getProfile(c: Context<{ Variables: AuthContext }>) {
     const user = c.get("user");
 
     return c.json(createSuccessResponse("Profile retrieved successfully", { user }));
@@ -155,7 +155,7 @@ export class AuthController {
     const validatedData = getValidatedData<ForgotPasswordData>(c, "json");
     
     // Additional sanitization for email
-    const email = sanitizeEmail(validatedData.email) || validatedData.email;
+    const email = sanitizeEmail(validatedData.email) ?? validatedData.email;
 
     const user = await AuthService.getUserByEmail(email);
     if (!user) {
@@ -177,7 +177,7 @@ export class AuthController {
 
     // For development only - remove in production
     if (process.env.NODE_ENV === "development") {
-      console.log(`Password reset token for ${email}: ${resetToken}`);
+      logger.info(`Password reset token for ${email}: ${resetToken}`);
     }
 
     return c.json(createSuccessResponse("If the email exists, a reset link has been sent"));

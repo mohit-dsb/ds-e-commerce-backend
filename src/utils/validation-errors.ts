@@ -102,9 +102,10 @@ function generateUserFriendlyMessage(issue: ZodIssue): string {
       }
       return `${fieldName} format is invalid`;
 
-    case "invalid_enum_value":
+    case "invalid_enum_value": {
       const options = issue.options?.join(", ");
       return `${fieldName} must be one of: ${options}`;
+    }
 
     case "invalid_date":
       return `${fieldName} must be a valid date`;
@@ -152,7 +153,7 @@ export function formatValidationError(
     return {
       field: includeFieldPath ? field : getFieldDisplayName(field),
       message: userFriendlyMessage,
-      value: issue.code === "invalid_type" ? undefined : (issue as any).received,
+      value: issue.code === "invalid_type" ? undefined : "received" in issue ? issue.received : undefined,
     };
   });
 }

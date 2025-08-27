@@ -41,7 +41,7 @@ export interface ErrorContext {
   ip?: string;
   timestamp?: string;
   stack?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ApiErrorResponse {
@@ -49,7 +49,7 @@ export interface ApiErrorResponse {
   error: {
     code: ErrorCode;
     message: string;
-    details?: any;
+    details?: unknown;
     timestamp: string;
     requestId?: string;
     path?: string;
@@ -59,7 +59,7 @@ export interface ApiErrorResponse {
 export interface ValidationErrorDetail {
   field: string;
   message: string;
-  value?: any;
+  value?: unknown;
 }
 
 export interface SimplifiedValidationError {

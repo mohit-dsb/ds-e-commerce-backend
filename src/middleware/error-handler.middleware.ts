@@ -3,7 +3,7 @@ import type { Context } from "hono";
 import { env } from "@/config/env";
 import { logger } from "@/utils/logger";
 import { HTTPException } from "hono/http-exception";
-import type { ApiErrorResponse } from "@/types/error.types";
+import type { ApiErrorResponse, ErrorCode } from "@/types/error.types";
 import { AppError, ValidationError, createValidationError } from "@/utils/errors";
 import { formatValidationError, createSingleValidationMessage, VALIDATION_CONFIG } from "@/utils/validation-errors";
 
@@ -56,7 +56,7 @@ export function createErrorResponse(
     return {
       success: false,
       error: {
-        code: "HTTP_EXCEPTION" as any,
+        code: "HTTP_EXCEPTION" as ErrorCode,
         message: sanitizeErrorMessage(error.message, isDevelopment),
         timestamp: new Date().toISOString(),
         path: context.req.path,
@@ -68,7 +68,7 @@ export function createErrorResponse(
   return {
     success: false,
     error: {
-      code: "INTERNAL_SERVER_ERROR" as any,
+      code: "INTERNAL_SERVER_ERROR" as ErrorCode,
       message: isDevelopment ? error.message : "An internal server error occurred",
       timestamp: new Date().toISOString(),
       path: context.req.path,
@@ -113,12 +113,12 @@ export const errorHandlerMiddleware = (err: Error, c: Context) => {
     if (logLevel === "error") {
       logger.error(`Application error: ${err.message}`, err, {
         errorCode: err.code,
-        metadata: err.context,
+        metadata: err.context as Record<string, unknown>,
       });
     } else {
       logger.warn(`Client error: ${err.message}`, {
         errorCode: err.code,
-        metadata: err.context,
+        metadata: err.context as Record<string, unknown>,
       });
     }
 

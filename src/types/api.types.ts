@@ -1,25 +1,20 @@
-// Re-export error types to maintain compatibility
-export type {
-  ApiErrorResponse,
-  ValidationErrorResponse,
-  ErrorContext
-} from "./error.types";
+export type { ApiErrorResponse, ValidationErrorResponse, ErrorContext } from "./error.types";
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
   data?: T;
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
     timestamp: string;
     requestId?: string;
     path?: string;
   };
 }
 
-export interface ApiSuccessResponse<T = any> {
+export interface ApiSuccessResponse<T = unknown> {
   success: true;
   message?: string;
   data?: T;
@@ -56,11 +51,4 @@ export interface PaginatedResponse<T> {
     hasNext: boolean;
     hasPrev: boolean;
   };
-}
-
-// Legacy - kept for backward compatibility but deprecated
-/** @deprecated Use ApiErrorResponse from error.types instead */
-export interface ErrorResponse {
-  error: string;
-  details?: any;
 }

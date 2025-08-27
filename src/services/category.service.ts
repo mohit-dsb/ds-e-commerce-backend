@@ -38,11 +38,7 @@ export class CategoryService {
         }
 
         // Check if category with same name already exists
-        const existingByName = await db
-          .select()
-          .from(categories)
-          .where(eq(categories.name, categoryData.name))
-          .limit(1);
+        const existingByName = await db.select().from(categories).where(eq(categories.name, categoryData.name)).limit(1);
 
         if (existingByName.length > 0) {
           throw createConflictError("Category with this name already exists");
@@ -59,11 +55,7 @@ export class CategoryService {
 
         // Validate parent category exists if parentId is provided
         if (categoryData.parentId) {
-          const parentCategory = await db
-            .select()
-            .from(categories)
-            .where(eq(categories.id, categoryData.parentId))
-            .limit(1);
+          const parentCategory = await db.select().from(categories).where(eq(categories.id, categoryData.parentId)).limit(1);
 
           if (parentCategory.length === 0) {
             throw createNotFoundError("Parent category");
@@ -79,7 +71,7 @@ export class CategoryService {
           })
           .returning();
 
-        const createdCategory = (insertResult as any[])[0] as Category;
+        const [createdCategory] = insertResult;
 
         logger.info("Category created successfully", {
           ...context,
@@ -262,11 +254,7 @@ export class CategoryService {
 
         // Validate parent category if being updated
         if (finalUpdateData.parentId && finalUpdateData.parentId !== existingCategory.parentId) {
-          const parentCategory = await db
-            .select()
-            .from(categories)
-            .where(eq(categories.id, finalUpdateData.parentId))
-            .limit(1);
+          const parentCategory = await db.select().from(categories).where(eq(categories.id, finalUpdateData.parentId)).limit(1);
 
           if (parentCategory.length === 0) {
             throw createNotFoundError("Parent category");

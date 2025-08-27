@@ -56,6 +56,4 @@ if (isProduction) {
     console.error(`❌ Missing required production environment variables: ${missing.join(", ")}`);
     process.exit(1);
   }
-
-  console.log("✅ Production environment validation passed");
 }

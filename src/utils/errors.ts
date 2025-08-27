@@ -18,7 +18,11 @@ export class AppError extends HTTPException {
     context: ErrorContext = {},
     isOperational: boolean = true
   ) {
-    super(statusCode as any, { message });
+    // Use a safe type assertion for known HTTP status codes
+    const validStatusCode = [400, 401, 403, 404, 409, 422, 500, 503].includes(statusCode) 
+      ? statusCode 
+      : 500;
+    super(validStatusCode as never, { message });
     this.code = code;
     this.context = {
       ...context,
