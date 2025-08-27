@@ -1,16 +1,14 @@
 import { db } from "@/db";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { nanoid } from "nanoid";
-import { env } from "@/config/env";
 import { logger } from "@/utils/logger";
-import type { User } from "@/db/schema";
 import { eq, and, gt } from "drizzle-orm";
+import { BCRYPT_ROUNDS } from "@/utils/constants";
+import { HonoJWTService } from "@/utils/hono-jwt";
 import { createNotFoundError } from "@/utils/errors";
 import type { ErrorContext } from "@/types/error.types";
 import { dbErrorHandlers } from "@/utils/database-errors";
-import { users, sessions, passwordResets } from "@/db/schema";
-import { BCRYPT_ROUNDS, JWT_EXPIRES_IN } from "@/utils/constants";
+import { users, sessions, passwordResets, type User } from "@/db/schema";
 
 export class AuthService {
   static async hashPassword(password: string, context: ErrorContext = {}): Promise<string> {
@@ -31,34 +29,13 @@ export class AuthService {
     }
   }
 
-  static generateToken(userId: string, context: ErrorContext = {}): string {
-    try {
-      if (!env.JWT_SECRET) {
-        logger.error("JWT secret not configured", undefined, context);
-        throw new Error("Authentication configuration error");
-      }
-      return jwt.sign({ userId }, env.JWT_SECRET, { expiresIn: JWT_EXPIRES_IN } as any);
-    } catch (error) {
-      logger.error("Token generation failed", error as Error, context);
-      throw new Error("Failed to generate authentication token");
-    }
+  static async generateToken(userId: string, context: ErrorContext = {}): Promise<string> {
+    return await HonoJWTService.generateToken(userId, {}, context);
   }
 
-  static verifyToken(token: string, context: ErrorContext = {}): { userId: string } | null {
-    try {
-      if (!env.JWT_SECRET) {
-        logger.error("JWT secret not configured", undefined, context);
-        return null;
-      }
-      return jwt.verify(token, env.JWT_SECRET) as { userId: string };
-    } catch (error) {
-      if (error instanceof jwt.JsonWebTokenError) {
-        logger.warn("Invalid JWT token provided", { ...context, metadata: { reason: error.message } });
-      } else {
-        logger.error("Token verification failed", error as Error, context);
-      }
-      return null;
-    }
+  static async verifyToken(token: string, context: ErrorContext = {}): Promise<{ userId: string } | null> {
+    const payload = await HonoJWTService.verifyToken(token, context);
+    return payload ? { userId: payload.userId } : null;
   }
 
   static async createUser(

@@ -46,7 +46,7 @@ export const adminMiddleware = async (c: Context, next: Next) => {
   // First ensure user is authenticated
   await authMiddleware(c, () => Promise.resolve());
 
-  const user = c.get("user");
+  const user = c.get("user") as AuthContext["user"];
 
   if (!user || user.role !== "admin") {
     logger.warn("Admin access denied", {
