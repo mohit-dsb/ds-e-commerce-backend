@@ -113,12 +113,10 @@ export const errorHandlerMiddleware = (err: Error, c: Context) => {
     if (logLevel === "error") {
       logger.error(`Application error: ${err.message}`, err, {
         errorCode: err.code,
-        metadata: err.context as Record<string, unknown>,
       });
     } else {
       logger.warn(`Client error: ${err.message}`, {
         errorCode: err.code,
-        metadata: err.context as Record<string, unknown>,
       });
     }
 

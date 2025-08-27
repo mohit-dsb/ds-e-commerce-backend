@@ -6,7 +6,6 @@
 import { sign, verify, decode } from "hono/jwt";
 import { env } from "@/config/env";
 import { logger } from "@/utils/logger";
-import type { ErrorContext } from "@/types/error.types";
 
 /**
  * JWT payload interface for type safety
@@ -49,10 +48,10 @@ export class HonoJWTService {
    * @returns Promise<string> - The signed JWT token
    * @throws Error if JWT secret is not configured or signing fails
    */
-  static async generateToken(userId: string, options: JWTOptions = {}, context: ErrorContext = {}): Promise<string> {
+  static async generateToken(userId: string, options: JWTOptions = {}): Promise<string> {
     try {
       if (!env.JWT_SECRET) {
-        logger.error("JWT secret not configured", undefined, context);
+        logger.error("JWT secret not configured", undefined);
         throw new Error("Authentication configuration error");
       }
 
@@ -70,7 +69,6 @@ export class HonoJWTService {
       const token = await sign(payload, env.JWT_SECRET, "HS256");
 
       logger.debug("JWT token generated successfully", {
-        ...context,
         metadata: {
           userId,
           expiresAt: new Date((now + expiresIn) * 1000).toISOString(),
@@ -81,7 +79,7 @@ export class HonoJWTService {
 
       return token;
     } catch (error) {
-      logger.error("JWT token generation failed", error as Error, context);
+      logger.error("JWT token generation failed", error as Error);
       throw new Error("Failed to generate authentication token");
     }
   }
@@ -93,16 +91,15 @@ export class HonoJWTService {
    * @param context - Error context for logging
    * @returns Promise<JWTPayload | null> - The decoded payload or null if invalid
    */
-  static async verifyToken(token: string, context: ErrorContext = {}): Promise<JWTPayload | null> {
+  static async verifyToken(token: string): Promise<JWTPayload | null> {
     try {
       if (!env.JWT_SECRET) {
-        logger.error("JWT secret not configured", undefined, context);
+        logger.error("JWT secret not configured", undefined);
         return null;
       }
 
       if (!token || typeof token !== "string") {
         logger.warn("Invalid token format provided", {
-          ...context,
           metadata: { hasToken: !!token, tokenType: typeof token },
         });
         return null;
@@ -113,7 +110,6 @@ export class HonoJWTService {
       // Additional validation
       if (!payload.userId) {
         logger.warn("JWT token missing required userId", {
-          ...context,
           metadata: { payload: { ...payload, userId: undefined } },
         });
         return null;
@@ -122,7 +118,6 @@ export class HonoJWTService {
       // Check if token is expired (Hono JWT should handle this, but double-check)
       if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
         logger.warn("JWT token is expired", {
-          ...context,
           metadata: {
             exp: payload.exp,
             now: Math.floor(Date.now() / 1000),
@@ -133,7 +128,6 @@ export class HonoJWTService {
       }
 
       logger.debug("JWT token verified successfully", {
-        ...context,
         metadata: { userId: payload.userId, exp: payload.exp },
       });
 
@@ -144,16 +138,14 @@ export class HonoJWTService {
 
       if (errorMessage.includes("expired")) {
         logger.warn("JWT token expired", {
-          ...context,
           metadata: { reason: errorMessage },
         });
       } else if (errorMessage.includes("invalid")) {
         logger.warn("Invalid JWT token provided", {
-          ...context,
           metadata: { reason: errorMessage },
         });
       } else {
-        logger.error("JWT token verification failed", error as Error, context);
+        logger.error("JWT token verification failed", error as Error);
       }
 
       return null;
@@ -167,7 +159,7 @@ export class HonoJWTService {
    * @param context - Error context for logging
    * @returns JWTPayload | null - The decoded payload or null if invalid format
    */
-  static decodeToken(token: string, context: ErrorContext = {}): JWTPayload | null {
+  static decodeToken(token: string): JWTPayload | null {
     try {
       if (!token || typeof token !== "string") {
         return null;
@@ -176,14 +168,13 @@ export class HonoJWTService {
       const payload = decode(token) as unknown as { payload: JWTPayload };
 
       if (!payload?.payload) {
-        logger.warn("Failed to decode JWT token - invalid format", context);
+        logger.warn("Failed to decode JWT token - invalid format");
         return null;
       }
 
       return payload.payload;
     } catch (error) {
       logger.warn("JWT token decode failed", {
-        ...context,
         metadata: { error: (error as Error).message },
       });
       return null;
@@ -241,19 +232,18 @@ export class HonoJWTService {
    * @param context - Error context for logging
    * @returns Promise<string | null> - The new JWT token or null if the old token is invalid
    */
-  static async refreshToken(token: string, options: JWTOptions = {}, context: ErrorContext = {}): Promise<string | null> {
-    const payload = await this.verifyToken(token, context);
+  static async refreshToken(token: string, options: JWTOptions = {}): Promise<string | null> {
+    const payload = await this.verifyToken(token);
 
     if (!payload) {
-      logger.warn("Cannot refresh invalid JWT token", context);
+      logger.warn("Cannot refresh invalid JWT token");
       return null;
     }
 
     logger.info("Refreshing JWT token", {
-      ...context,
       metadata: { userId: payload.userId },
     });
 
-    return this.generateToken(payload.userId, options, context);
+    return this.generateToken(payload.userId, options);
   }
 }

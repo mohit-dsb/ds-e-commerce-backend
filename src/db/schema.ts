@@ -58,11 +58,8 @@ export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  shortDescription: varchar("short_description", { length: 500 }),
   slug: varchar("slug", { length: 255 }).notNull().unique(),
-  sku: varchar("sku", { length: 100 }),
   price: decimal("price", { precision: 12, scale: 2 }).notNull(),
-  costPerItem: decimal("cost_per_item", { precision: 12, scale: 2 }),
   weight: decimal("weight", { precision: 8, scale: 3 }),
   weightUnit: varchar("weight_unit", { length: 10 }).default("kg"),
   status: productStatusEnum("status").default("draft").notNull(),
@@ -70,24 +67,14 @@ export const products = pgTable("products", {
   allowBackorder: boolean("allow_backorder").default(false).notNull(),
   images: jsonb("images").$type<string[]>().default([]),
   tags: jsonb("tags").$type<string[]>().default([]),
-  categoryId: uuid("category_id").references(() => categories.id, { onDelete: "set null" }),
+  categoryId: uuid("category_id")
+    .references(() => categories.id, { onDelete: "restrict" })
+    .notNull(),
   createdBy: uuid("created_by")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const productCategories = pgTable("product_categories", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  productId: uuid("product_id")
-    .references(() => products.id, { onDelete: "cascade" })
-    .notNull(),
-  categoryId: uuid("category_id")
-    .references(() => categories.id, { onDelete: "cascade" })
-    .notNull(),
-  isPrimary: boolean("is_primary").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Relations
@@ -102,7 +89,6 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
     references: [users.id],
   }),
   products: many(products),
-  productCategories: many(productCategories),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -110,15 +96,4 @@ export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   passwordResets: many(passwordResets),
   products: many(products),
-}));
-
-export const productCategoriesRelations = relations(productCategories, ({ one }) => ({
-  product: one(products, {
-    fields: [productCategories.productId],
-    references: [products.id],
-  }),
-  category: one(categories, {
-    fields: [productCategories.categoryId],
-    references: [categories.id],
-  }),
 }));

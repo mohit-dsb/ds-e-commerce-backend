@@ -1,4 +1,4 @@
-export type { ApiErrorResponse, ValidationErrorResponse, ErrorContext } from "./error.types";
+export type { ApiErrorResponse, ValidationErrorResponse } from "./error.types";
 
 export interface ApiResponse<T = unknown> {
   success: boolean;

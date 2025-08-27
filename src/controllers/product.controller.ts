@@ -21,16 +21,13 @@ export const createProduct = async (c: Context) => {
   const validatedData = getValidatedData<CreateProductRequest>(c, "json");
   const user = c.get("user") as AuthContext["user"];
 
-  const { additionalCategoryIds = [], ...productData } = validatedData;
+  const productData = validatedData;
 
   const productDataForDb: Omit<NewProduct, "id" | "createdAt" | "updatedAt"> = {
     name: productData.name,
     description: productData.description ?? null,
-    shortDescription: productData.shortDescription ?? null,
     slug: productData.slug ?? "",
-    sku: productData.sku ?? null,
     price: productData.price,
-    costPerItem: productData.costPerItem ?? null,
     weight: productData.weight ?? null,
     weightUnit: productData.weightUnit ?? "kg",
     status: productData.status ?? "draft",
@@ -38,11 +35,11 @@ export const createProduct = async (c: Context) => {
     allowBackorder: productData.allowBackorder ?? false,
     images: productData.images ?? [],
     tags: productData.tags ?? [],
-    categoryId: productData.categoryId ?? null,
+    categoryId: productData.categoryId,
     createdBy: user.id,
   };
 
-  const product = await productService.createProduct(productDataForDb, additionalCategoryIds, { userId: user.id });
+  const product = await productService.createProduct(productDataForDb);
 
   return c.json(createSuccessResponse("Product created successfully", { product }), 201);
 };
@@ -57,7 +54,7 @@ export const getProductById = async (c: Context) => {
   const id = c.req.param("id");
   const includeInactive = c.req.query("includeInactive") === "true";
 
-  const product = await productService.getProductById(id, {}, includeInactive);
+  const product = await productService.getProductById(id, includeInactive);
 
   return c.json(createSuccessResponse("Product retrieved successfully", { product }));
 };
@@ -72,7 +69,7 @@ export const getProductBySlug = async (c: Context) => {
   const slug = c.req.param("slug");
   const includeInactive = c.req.query("includeInactive") === "true";
 
-  const product = await productService.getProductBySlug(slug, {}, includeInactive);
+  const product = await productService.getProductBySlug(slug, includeInactive);
 
   return c.json(createSuccessResponse("Product retrieved successfully", { product }));
 };
@@ -86,16 +83,15 @@ export const getProductBySlug = async (c: Context) => {
 export const updateProduct = async (c: Context) => {
   const id = c.req.param("id");
   const validatedData = getValidatedData<UpdateProductRequest>(c, "json");
-  const user = c.get("user") as AuthContext["user"];
 
-  const { additionalCategoryIds, ...productData } = validatedData;
+  const productData = validatedData;
 
   // Remove undefined values
   const cleanProductData = Object.fromEntries(Object.entries(productData).filter(([_, value]) => value !== undefined)) as Partial<
     Omit<NewProduct, "id" | "createdAt" | "updatedAt">
   >;
 
-  const product = await productService.updateProduct(id, cleanProductData, additionalCategoryIds, { userId: user.id });
+  const product = await productService.updateProduct(id, cleanProductData);
 
   return c.json(createSuccessResponse("Product updated successfully", { product }));
 };
@@ -108,11 +104,8 @@ export const updateProduct = async (c: Context) => {
  */
 export const deleteProduct = async (c: Context) => {
   const id = c.req.param("id");
-  const user = c.get("user") as AuthContext["user"];
 
-  await productService.deleteProduct(id, {
-    userId: user.id,
-  });
+  await productService.deleteProduct(id);
 
   return c.json(createSuccessResponse("Product deleted successfully", { productId: id }));
 };
@@ -151,7 +144,7 @@ export const getProducts = async (c: Context) => {
     }
   });
 
-  const result = await productService.getProducts(filters, {});
+  const result = await productService.getProducts(filters);
 
   return c.json(createSuccessResponse("Products retrieved successfully", result));
 };
@@ -186,7 +179,7 @@ export const getProductsByCategory = async (c: Context) => {
     }
   });
 
-  const result = await productService.getProductsByCategory(categoryId, filters, {});
+  const result = await productService.getProductsByCategory(categoryId, filters);
 
   return c.json(createSuccessResponse("Products retrieved successfully", result));
 };
@@ -225,7 +218,7 @@ export const searchProducts = async (c: Context) => {
     }
   });
 
-  const result = await productService.searchProducts(searchTerm, filters, {});
+  const result = await productService.searchProducts(searchTerm, filters);
 
   return c.json(createSuccessResponse("Products search completed successfully", result));
 };
@@ -242,11 +235,8 @@ export const searchProducts = async (c: Context) => {
  */
 export const getLowStockProducts = async (c: Context) => {
   const threshold = c.req.query("threshold");
-  const user = c.get("user") as AuthContext["user"];
 
-  const products = await productService.getLowStockProducts(threshold ? parseInt(threshold, 10) : undefined, {
-    userId: user.id,
-  });
+  const products = await productService.getLowStockProducts(threshold ? parseInt(threshold, 10) : undefined);
 
   return c.json(createSuccessResponse("Low stock products retrieved successfully", { products }));
 };
@@ -262,9 +252,8 @@ export const bulkUpdateProductStatus = async (c: Context) => {
     productIds: string[];
     status: "draft" | "active" | "inactive" | "discontinued";
   }>(c, "json");
-  const user = c.get("user") as AuthContext["user"];
 
-  await productService.bulkUpdateProductStatus(productIds, status, { userId: user.id });
+  await productService.bulkUpdateProductStatus(productIds, status);
 
   return c.json(createSuccessResponse("Product statuses updated successfully", { updatedCount: productIds.length }));
 };

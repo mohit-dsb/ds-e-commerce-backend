@@ -1,6 +1,6 @@
 import z from "zod";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { users, categories, products, sessions, passwordResets, productCategories } from "./schema";
+import { users, categories, products, sessions, passwordResets } from "./schema";
 
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users, {
@@ -44,13 +44,7 @@ export const selectCategorySchema = createSelectSchema(categories);
 export const insertProductSchema = z.object({
   name: z.string().min(1, "Name is required").max(255, "Name must be less than 255 characters").trim(),
   description: z.string().trim().optional(),
-  shortDescription: z.string().max(500, "Short description must be less than 500 characters").trim().optional(),
-  sku: z.string().max(100, "SKU must be less than 100 characters").trim().optional(),
   price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Price must be a valid decimal with up to 2 decimal places"),
-  costPerItem: z
-    .string()
-    .regex(/^\d+(\.\d{1,2})?$/, "Cost per item must be a valid decimal with up to 2 decimal places")
-    .optional(),
   weight: z
     .string()
     .regex(/^\d+(\.\d{1,3})?$/, "Weight must be a valid decimal with up to 3 decimal places")
@@ -61,8 +55,7 @@ export const insertProductSchema = z.object({
   allowBackorder: z.boolean().optional(),
   images: z.array(z.string().url()).max(10, "Maximum 10 images allowed").optional(),
   tags: z.array(z.string().trim().min(1)).max(20, "Maximum 20 tags allowed").optional(),
-  categoryId: z.string().uuid().optional(),
-  additionalCategoryIds: z.array(z.string().uuid()).max(5, "Maximum 5 additional categories allowed").optional(),
+  categoryId: z.string().uuid("Category is required and must be valid"),
 });
 
 export const updateProductSchema = insertProductSchema.partial();
@@ -107,5 +100,3 @@ export type PasswordReset = typeof passwordResets.$inferSelect;
 export type NewPasswordReset = typeof passwordResets.$inferInsert;
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
-export type ProductCategory = typeof productCategories.$inferSelect;
-export type NewProductCategory = typeof productCategories.$inferInsert;

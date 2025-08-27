@@ -105,8 +105,8 @@ class Logger {
     this.output(logEntry);
   }
 
-  databaseError(operation: string, error: Error, context: LogContext): void {
-    this.error(`Database operation failed: ${operation}`, error, context);
+  databaseError(operation: string, error: Error): void {
+    this.error(`Database operation failed: ${operation}`, error);
   }
 
   validationError(message: string, context: LogContext): void {

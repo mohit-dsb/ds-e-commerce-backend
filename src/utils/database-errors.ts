@@ -1,6 +1,6 @@
 import { logger } from "@/utils/logger";
 import { DatabaseError, createDatabaseError, AppError } from "@/utils/errors";
-import type { ErrorContext, DatabaseErrorDetail } from "@/types/error.types";
+import type { DatabaseErrorDetail } from "@/types/error.types";
 
 export interface PostgresError extends Error {
   code?: string;
@@ -15,10 +15,10 @@ export function isDatabaseError(error: unknown): error is PostgresError {
   return Boolean(error && typeof error === "object" && error !== null && "code" in error);
 }
 
-export function handleDatabaseError(error: Error | PostgresError, context: ErrorContext = {}): DatabaseError {
+export function handleDatabaseError(error: Error | PostgresError): DatabaseError {
   if (!isDatabaseError(error)) {
-    logger.databaseError("Unknown database error", error, context);
-    return createDatabaseError("Database operation failed", { operation: "unknown" }, context, error);
+    logger.databaseError("Unknown database error", error);
+    return createDatabaseError("Database operation failed", { operation: "unknown" }, error);
   }
 
   const pgError = error;
@@ -126,25 +126,13 @@ export function handleDatabaseError(error: Error | PostgresError, context: Error
   }
 
   // Log the detailed error for debugging
-  logger.databaseError(message, pgError, {
-    ...context,
-    metadata: {
-      pgCode: pgError.code,
-      pgDetail: pgError.detail,
-      pgTable: pgError.table,
-      pgColumn: pgError.column,
-      pgConstraint: pgError.constraint,
-    },
-  });
+  logger.databaseError(message, pgError);
 
-  return createDatabaseError(userMessage, details, context, pgError);
+  return createDatabaseError(userMessage, details, pgError);
 }
 
 // Wrapper for database operations that handles errors consistently
-export async function withDatabaseErrorHandling<T>(
-  operation: () => Promise<T>,
-  context: ErrorContext = {}
-): Promise<T> {
+export async function withDatabaseErrorHandling<T>(operation: () => Promise<T>): Promise<T> {
   try {
     return await operation();
   } catch (error) {
@@ -155,37 +143,25 @@ export async function withDatabaseErrorHandling<T>(
     }
 
     // Only handle actual database errors
-    throw handleDatabaseError(error as Error, context);
+    throw handleDatabaseError(error as Error);
   }
 }
 
 // Specific handlers for common database operations
 export const dbErrorHandlers = {
-  async create<T>(operation: () => Promise<T>, resource: string, context: ErrorContext = {}): Promise<T> {
-    return withDatabaseErrorHandling(operation, {
-      ...context,
-      metadata: { operation: "create", resource },
-    });
+  async create<T>(operation: () => Promise<T>): Promise<T> {
+    return withDatabaseErrorHandling(operation);
   },
 
-  async read<T>(operation: () => Promise<T>, resource: string, context: ErrorContext = {}): Promise<T> {
-    return withDatabaseErrorHandling(operation, {
-      ...context,
-      metadata: { operation: "read", resource },
-    });
+  async read<T>(operation: () => Promise<T>): Promise<T> {
+    return withDatabaseErrorHandling(operation);
   },
 
-  async update<T>(operation: () => Promise<T>, resource: string, context: ErrorContext = {}): Promise<T> {
-    return withDatabaseErrorHandling(operation, {
-      ...context,
-      metadata: { operation: "update", resource },
-    });
+  async update<T>(operation: () => Promise<T>): Promise<T> {
+    return withDatabaseErrorHandling(operation);
   },
 
-  async delete<T>(operation: () => Promise<T>, resource: string, context: ErrorContext = {}): Promise<T> {
-    return withDatabaseErrorHandling(operation, {
-      ...context,
-      metadata: { operation: "delete", resource },
-    });
+  async delete<T>(operation: () => Promise<T>): Promise<T> {
+    return withDatabaseErrorHandling(operation);
   },
 };

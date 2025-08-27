@@ -32,18 +32,6 @@ export enum ErrorCode {
   EMAIL_SERVICE_ERROR = "EMAIL_SERVICE_ERROR",
 }
 
-export interface ErrorContext {
-  userId?: string;
-  requestId?: string;
-  endpoint?: string;
-  method?: string;
-  userAgent?: string;
-  ip?: string;
-  timestamp?: string;
-  stack?: string;
-  metadata?: Record<string, unknown>;
-}
-
 export interface ApiErrorResponse {
   success: false;
   error: {

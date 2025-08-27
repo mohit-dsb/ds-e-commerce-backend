@@ -32,11 +32,8 @@ export interface ProductWithRelations extends Product {
 export interface CreateProductRequest {
   name: string;
   description?: string;
-  shortDescription?: string;
   slug?: string;
-  sku?: string;
   price: string;
-  costPerItem?: string;
   weight?: string;
   weightUnit?: "kg" | "g" | "lb" | "oz";
   status?: "draft" | "active" | "inactive" | "discontinued";
@@ -44,18 +41,14 @@ export interface CreateProductRequest {
   allowBackorder?: boolean;
   images?: string[];
   tags?: string[];
-  categoryId?: string;
-  additionalCategoryIds?: string[];
+  categoryId: string;
 }
 
 export interface UpdateProductRequest {
   name?: string;
   description?: string;
-  shortDescription?: string;
   slug?: string;
-  sku?: string;
   price?: string;
-  costPerItem?: string;
   weight?: string;
   weightUnit?: "kg" | "g" | "lb" | "oz";
   status?: "draft" | "active" | "inactive" | "discontinued";
@@ -64,7 +57,6 @@ export interface UpdateProductRequest {
   images?: string[];
   tags?: string[];
   categoryId?: string;
-  additionalCategoryIds?: string[];
 }
 
 export interface ProductFilters {
