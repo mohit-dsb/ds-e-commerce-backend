@@ -1,5 +1,5 @@
 /**
- * Generate a URL-friendly slug from a string
+ * Generate a URL-friendly slug from a string with Unicode support
  * @param text - The text to convert to a slug
  * @returns A clean, URL-friendly slug
  */
@@ -8,14 +8,30 @@ export function generateSlug(text: string): string {
     throw new Error("Text is required to generate a slug");
   }
 
-  return text
-    .toLowerCase() // Convert to lowercase
-    .trim() // Remove leading/trailing whitespace
-    .replace(/[\s_]+/g, "-") // Replace spaces and underscores with hyphens
-    .replace(/[^\w-]+/g, "") // Remove all non-word chars except hyphens
-    .replace(/--+/g, "-") // Replace multiple hyphens with single hyphen
-    .replace(/^-+/, "") // Remove leading hyphens
-    .replace(/-+$/, ""); // Remove trailing hyphens
+  return (
+    text
+      .toLowerCase() // Convert to lowercase
+      .trim() // Remove leading/trailing whitespace
+      // Handle Unicode characters - convert accented characters to basic latin
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Remove diacritical marks
+      // Replace common special characters with meaningful equivalents
+      .replace(/[&]/g, "and")
+      .replace(/[@]/g, "at")
+      .replace(/[%]/g, "percent")
+      .replace(/[+]/g, "plus")
+      // Replace spaces, underscores, and dots with hyphens
+      .replace(/[\s_.]+/g, "-")
+      // Remove all non-alphanumeric characters except hyphens
+      .replace(/[^a-z0-9-]+/g, "")
+      // Replace multiple consecutive hyphens with single hyphen
+      .replace(/--+/g, "-")
+      // Remove leading and trailing hyphens
+      .replace(/^-+/, "")
+      .replace(/-+$/, "")
+      // Ensure maximum length for SEO (recommended: 50-60 chars)
+      .substring(0, 60)
+  );
 }
 
 /**
@@ -49,5 +65,5 @@ export function isValidSlug(slug: string): boolean {
 
   // Check if slug matches the expected pattern
   const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-  return slugPattern.test(slug) && slug.length <= 100;
+  return slugPattern.test(slug) && slug.length >= 1 && slug.length <= 255;
 }

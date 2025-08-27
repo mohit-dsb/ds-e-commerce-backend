@@ -1,10 +1,5 @@
 import { HTTPException } from "hono/http-exception";
-import {
-  ErrorCode,
-  type ErrorContext,
-  type ValidationErrorDetail,
-  type DatabaseErrorDetail,
-} from "../types/error.types";
+import { ErrorCode, type ErrorContext, type ValidationErrorDetail, type DatabaseErrorDetail } from "../types/error.types";
 
 export class AppError extends HTTPException {
   public readonly code: ErrorCode;
@@ -19,9 +14,7 @@ export class AppError extends HTTPException {
     isOperational: boolean = true
   ) {
     // Use a safe type assertion for known HTTP status codes
-    const validStatusCode = [400, 401, 403, 404, 409, 422, 500, 503].includes(statusCode) 
-      ? statusCode 
-      : 500;
+    const validStatusCode = [400, 401, 403, 404, 409, 422, 500, 503].includes(statusCode) ? statusCode : 500;
     super(validStatusCode as never, { message });
     this.code = code;
     this.context = {

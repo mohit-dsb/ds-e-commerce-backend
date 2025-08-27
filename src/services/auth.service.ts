@@ -2,13 +2,15 @@ import { db } from "@/db";
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
 import { logger } from "@/utils/logger";
-import { eq, and, gt } from "drizzle-orm";
+import { eq, and, gt, type InferSelectModel } from "drizzle-orm";
 import { BCRYPT_ROUNDS } from "@/utils/constants";
 import { HonoJWTService } from "@/utils/hono-jwt";
 import { createNotFoundError } from "@/utils/errors";
 import type { ErrorContext } from "@/types/error.types";
 import { dbErrorHandlers } from "@/utils/database-errors";
-import { users, sessions, passwordResets, type User } from "@/db/schema";
+import { users, sessions, passwordResets } from "@/db/schema";
+
+type User = InferSelectModel<typeof users>;
 
 export class AuthService {
   static async hashPassword(password: string, context: ErrorContext = {}): Promise<string> {

@@ -6,9 +6,12 @@ A production-ready, enterprise-grade e-commerce backend API built with modern te
 
 ### ✨ Core Features
 - **Authentication & Authorization**: JWT-based auth with role-based access control
+- **Product Management**: Complete product lifecycle with variants, categories, and inventory
 - **Category Management**: Hierarchical product categories with admin-only access
 - **User Management**: Registration, login, password reset, profile management
 - **Session Management**: Secure session handling with automatic cleanup
+- **Inventory Tracking**: Multiple inventory modes (none, quantity, variants)
+- **Search & Filtering**: Advanced product search with multiple filter options
 
 ### 🛡️ Security Features
 - **Password Security**: Bcrypt hashing with configurable rounds
@@ -35,6 +38,24 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
   - Password reset functionality
   - Secure password hashing with bcrypt
   - Session management
+
+- 🛍️ **Product Management**
+  - Complete product CRUD operations
+  - Product variants with different prices and attributes
+  - Multiple product images and gallery support
+  - Product categories (primary and additional)
+  - Product options (size, color, etc.)
+  - SKU management and inventory tracking
+  - Product status management (draft, active, inactive, discontinued)
+  - Advanced search and filtering
+  - Low stock alerts and bulk operations
+  - SEO-friendly slugs and meta tags
+
+- 📦 **Inventory Management**
+  - Multiple tracking modes: none, quantity, variants
+  - Low stock threshold alerts
+  - Backorder support
+  - Bulk status updates
 
 - � **Enterprise-Grade Error Handling**
   - Structured logging with request tracing
@@ -115,6 +136,58 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
 - `POST /api/auth/logout` - Logout user
 - `POST /api/auth/forgot-password` - Request password reset
 - `POST /api/auth/reset-password` - Reset password
+
+### Categories
+
+- `GET /api/categories` - Get all categories
+- `GET /api/categories/:id` - Get category by ID
+- `GET /api/categories/slug/:slug` - Get category by slug
+- `POST /api/categories` - Create category (Admin)
+- `PUT /api/categories/:id` - Update category (Admin)
+- `DELETE /api/categories/:id` - Delete category (Admin)
+
+### Products
+
+#### Public Endpoints
+- `GET /api/products` - Get all products with filtering and pagination
+- `GET /api/products/:id` - Get product by ID
+- `GET /api/products/slug/:slug` - Get product by slug
+- `GET /api/products/category/:categoryId` - Get products by category
+- `GET /api/products/search` - Search products
+
+#### Admin Endpoints
+- `POST /api/products` - Create new product
+- `PUT /api/products/:id` - Update product
+- `DELETE /api/products/:id` - Delete product
+- `GET /api/products/low-stock` - Get low stock products
+- `PATCH /api/products/bulk-status` - Bulk update product status
+
+#### Product Query Parameters
+
+**GET /api/products** supports the following query parameters:
+- `status` - Filter by status: `draft`, `active`, `inactive`, `discontinued`
+- `categoryId` - Filter by category UUID
+- `minPrice` - Minimum price filter (decimal string)
+- `maxPrice` - Maximum price filter (decimal string)
+- `inStock` - Filter by availability: `true`/`false`
+- `tags` - Comma-separated list of tags
+- `search` - Search in name, description, SKU
+- `sortBy` - Sort field: `name`, `price`, `createdAt`, `updatedAt`, `inventoryQuantity`
+- `sortOrder` - Sort direction: `asc`, `desc`
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 20, max: 100)
+
+**Examples:**
+```bash
+# Get active products under $100
+GET /api/products?status=active&maxPrice=100&sortBy=price&sortOrder=asc
+
+# Search for "laptop" in electronics category
+GET /api/products?search=laptop&categoryId=uuid-here&page=1&limit=10
+
+# Get products with specific tags
+GET /api/products?tags=featured,bestseller&inStock=true
+```
 
 ## Scripts
 

@@ -13,44 +13,32 @@ export class CategoryService {
    * Create a new category
    */
   static async createCategory(
-    categoryData: Omit<NewCategory, "id" | "createdAt" | "updatedAt">,
+    categoryData: Omit<NewCategory, "id" | "createdAt" | "updatedAt" | "slug">,
     context: ErrorContext = {}
   ): Promise<Category> {
     return dbErrorHandlers.create(
       async () => {
-        // Generate slug from name if not provided
-        let finalSlug = categoryData.slug;
-        if (!finalSlug) {
-          const baseSlug = generateSlug(categoryData.name);
+        // Always generate slug from category name for consistency and SEO
+        const baseSlug = generateSlug(categoryData.name);
 
-          // Create a function to check if slug exists
-          const slugExists = async (slug: string): Promise<boolean> => {
-            const existing = await db
-              .select({ slug: categories.slug })
-              .from(categories)
-              .where(eq(categories.slug, slug))
-              .limit(1);
-            return existing.length > 0;
-          };
+        // Create a function to check if slug exists
+        const slugExists = async (slug: string): Promise<boolean> => {
+          const existing = await db
+            .select({ slug: categories.slug })
+            .from(categories)
+            .where(eq(categories.slug, slug))
+            .limit(1);
+          return existing.length > 0;
+        };
 
-          // Generate unique slug
-          finalSlug = await generateUniqueSlug(baseSlug, slugExists);
-        }
+        // Generate unique slug
+        const finalSlug = await generateUniqueSlug(baseSlug, slugExists);
 
         // Check if category with same name already exists
         const existingByName = await db.select().from(categories).where(eq(categories.name, categoryData.name)).limit(1);
 
         if (existingByName.length > 0) {
           throw createConflictError("Category with this name already exists");
-        }
-
-        // If slug was provided, check if it already exists
-        if (categoryData.slug) {
-          const existingBySlug = await db.select().from(categories).where(eq(categories.slug, finalSlug)).limit(1);
-
-          if (existingBySlug.length > 0) {
-            throw createConflictError("Category with this slug already exists");
-          }
         }
 
         // Validate parent category exists if parentId is provided
@@ -79,7 +67,7 @@ export class CategoryService {
             categoryId: createdCategory.id,
             categoryName: createdCategory.name,
             slug: createdCategory.slug,
-            slugGenerated: !categoryData.slug,
+            slugGenerated: true,
           },
         });
 
@@ -191,7 +179,7 @@ export class CategoryService {
    */
   static async updateCategory(
     categoryId: string,
-    updateData: Partial<Omit<NewCategory, "id" | "createdBy" | "createdAt" | "updatedAt">>,
+    updateData: Partial<Omit<NewCategory, "id" | "createdBy" | "createdAt" | "updatedAt" | "slug">>,
     context: ErrorContext = {}
   ): Promise<Category> {
     return dbErrorHandlers.update(
@@ -203,10 +191,10 @@ export class CategoryService {
         }
 
         // Prepare the final update data
-        const finalUpdateData = { ...updateData };
+        const finalUpdateData: Partial<Category> = { ...updateData };
 
-        // Generate new slug if name is updated but slug is not provided
-        if (updateData.name && updateData.name !== existingCategory.name && !updateData.slug) {
+        // Always regenerate slug if name is updated for consistency and SEO
+        if (updateData.name && updateData.name !== existingCategory.name) {
           const baseSlug = generateSlug(updateData.name);
 
           // Create a function to check if slug exists (excluding current category)
@@ -276,7 +264,7 @@ export class CategoryService {
             categoryId: updatedCategory.id,
             categoryName: updatedCategory.name,
             changes: Object.keys(finalUpdateData),
-            slugRegenerated: updateData.name && !updateData.slug,
+            slugRegenerated: updateData.name && updateData.name !== existingCategory.name,
           },
         });
 

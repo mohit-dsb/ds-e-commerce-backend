@@ -4,9 +4,9 @@ import { AuthService } from "@/services/auth.service";
 import { createSuccessResponse } from "@/utils/response";
 import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
+import { sanitizeUserData, sanitizeEmail } from "@/utils/sanitization";
 import type { registerSchema, loginSchema, resetPasswordSchema } from "@/db/validators";
 import { createConflictError, createAuthError, BusinessRuleError } from "@/utils/errors";
-import { sanitizeUserData, sanitizeEmail } from "@/utils/sanitization";
 
 // Type definitions for validated request data
 type RegisterData = typeof registerSchema._type;
@@ -22,10 +22,8 @@ export class AuthController {
    */
   static async register(c: Context<{ Variables: AuthContext }>) {
     const validatedData = getValidatedData<RegisterData>(c, "json");
-    
     // Additional sanitization for extra safety
     const sanitizedData = sanitizeUserData(validatedData);
-    
     const email = sanitizedData.email ?? validatedData.email;
     const firstName = sanitizedData.firstName ?? validatedData.firstName;
     const lastName = sanitizedData.lastName ?? validatedData.lastName;
@@ -46,12 +44,15 @@ export class AuthController {
     }
 
     // Create new user
-    const user = await AuthService.createUser({
+    const userResult = await AuthService.createUser({
       email,
       password,
       firstName,
       lastName,
     });
+
+    // Type assertion is safe here because createUser throws on error
+    const user = userResult;
 
     // Create session for the new user
     const token = await AuthService.createSession(user.id);
@@ -79,7 +80,7 @@ export class AuthController {
    */
   static async login(c: Context<{ Variables: AuthContext }>) {
     const validatedData = getValidatedData<LoginData>(c, "json");
-    
+
     // Additional sanitization for email
     const email = sanitizeEmail(validatedData.email) ?? validatedData.email;
     const { password } = validatedData;
@@ -153,7 +154,7 @@ export class AuthController {
    */
   static async forgotPassword(c: Context<{ Variables: AuthContext }>) {
     const validatedData = getValidatedData<ForgotPasswordData>(c, "json");
-    
+
     // Additional sanitization for email
     const email = sanitizeEmail(validatedData.email) ?? validatedData.email;
 

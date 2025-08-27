@@ -1,5 +1,5 @@
 import type { Context } from "hono";
-import type { NewCategory } from "@/db/schema";
+import type { NewCategory } from "@/db/validators";
 import { createNotFoundError } from "@/utils/errors";
 import { createSuccessResponse } from "@/utils/response";
 import { sanitizeCategoryData } from "@/utils/sanitization";
