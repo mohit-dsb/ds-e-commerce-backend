@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { ProductController } from "@/controllers/product.controller";
+import * as productController from "@/controllers/product.controller";
 import { compatibleZValidator } from "@/middleware/validation.middleware";
 import { insertProductSchema, updateProductSchema } from "@/db/validators";
 import { authMiddleware, adminMiddleware } from "@/middleware/auth.middleware";
@@ -23,7 +23,7 @@ const productRoutes = new Hono();
  * @query {number} [page] - Page number for pagination
  * @query {number} [limit] - Number of items per page
  */
-productRoutes.get("/", (c) => ProductController.getProducts(c));
+productRoutes.get("/", productController.getProducts);
 
 /**
  * @route GET /api/products/search
@@ -41,7 +41,7 @@ productRoutes.get("/", (c) => ProductController.getProducts(c));
  * @query {number} [page] - Page number
  * @query {number} [limit] - Items per page
  */
-productRoutes.get("/search", (c) => ProductController.searchProducts(c));
+productRoutes.get("/search", productController.searchProducts);
 
 /**
  * @route GET /api/products/low-stock
@@ -49,7 +49,7 @@ productRoutes.get("/search", (c) => ProductController.searchProducts(c));
  * @access Private (Admin)
  * @query {number} [threshold] - Stock threshold (default: 5)
  */
-productRoutes.get("/low-stock", authMiddleware, adminMiddleware, (c) => ProductController.getLowStockProducts(c));
+productRoutes.get("/low-stock", authMiddleware, adminMiddleware, productController.getLowStockProducts);
 
 /**
  * @route GET /api/products/category/:categoryId
@@ -58,7 +58,7 @@ productRoutes.get("/low-stock", authMiddleware, adminMiddleware, (c) => ProductC
  * @param {string} categoryId - Category UUID
  * @query - Same as GET /api/products
  */
-productRoutes.get("/category/:categoryId", (c) => ProductController.getProductsByCategory(c));
+productRoutes.get("/category/:categoryId", productController.getProductsByCategory);
 
 /**
  * @route GET /api/products/slug/:slug
@@ -67,7 +67,7 @@ productRoutes.get("/category/:categoryId", (c) => ProductController.getProductsB
  * @param {string} slug - Product slug
  * @query {boolean} [includeInactive] - Include inactive products (admin only)
  */
-productRoutes.get("/slug/:slug", (c) => ProductController.getProductBySlug(c));
+productRoutes.get("/slug/:slug", productController.getProductBySlug);
 
 /**
  * @route GET /api/products/:id
@@ -76,7 +76,7 @@ productRoutes.get("/slug/:slug", (c) => ProductController.getProductBySlug(c));
  * @param {string} id - Product UUID
  * @query {boolean} [includeInactive] - Include inactive products (admin only)
  */
-productRoutes.get("/:id", (c) => ProductController.getProductById(c));
+productRoutes.get("/:id", productController.getProductById);
 
 /**
  * @route POST /api/products
@@ -84,8 +84,12 @@ productRoutes.get("/:id", (c) => ProductController.getProductById(c));
  * @access Private (Admin)
  * @body {CreateProductRequest} Product data
  */
-productRoutes.post("/", authMiddleware, adminMiddleware, compatibleZValidator("json", insertProductSchema), (c) =>
-  ProductController.createProduct(c)
+productRoutes.post(
+  "/",
+  authMiddleware,
+  adminMiddleware,
+  compatibleZValidator("json", insertProductSchema),
+  productController.createProduct
 );
 
 /**
@@ -95,8 +99,12 @@ productRoutes.post("/", authMiddleware, adminMiddleware, compatibleZValidator("j
  * @param {string} id - Product UUID
  * @body {UpdateProductRequest} Updated product data
  */
-productRoutes.put("/:id", authMiddleware, adminMiddleware, compatibleZValidator("json", updateProductSchema), (c) =>
-  ProductController.updateProduct(c)
+productRoutes.put(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  compatibleZValidator("json", updateProductSchema),
+  productController.updateProduct
 );
 
 /**
@@ -105,7 +113,7 @@ productRoutes.put("/:id", authMiddleware, adminMiddleware, compatibleZValidator(
  * @access Private (Admin)
  * @param {string} id - Product UUID
  */
-productRoutes.delete("/:id", authMiddleware, adminMiddleware, (c) => ProductController.deleteProduct(c));
+productRoutes.delete("/:id", authMiddleware, adminMiddleware, productController.deleteProduct);
 
 /**
  * @route PATCH /api/products/bulk-status
@@ -124,7 +132,7 @@ productRoutes.patch(
       status: z.enum(["draft", "active", "inactive", "discontinued"]),
     })
   ),
-  (c) => ProductController.bulkUpdateProductStatus(c)
+  productController.bulkUpdateProductStatus
 );
 
 export default productRoutes;
