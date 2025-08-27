@@ -1,10 +1,14 @@
 import { Hono } from "hono";
-import { CategoryController } from "../controllers/category.controller";
+import * as categoryController from "../controllers/category.controller";
 import { compatibleZValidator } from "../middleware/validation.middleware";
 import { insertCategorySchema, updateCategorySchema } from "../db/validators";
 import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
 
 const categoryRoutes = new Hono();
+
+// ============================================================================
+// Public Category Routes
+// ============================================================================
 
 /**
  * @route GET /api/categories
@@ -14,28 +18,32 @@ const categoryRoutes = new Hono();
  * @query {string} [parentId] - Filter by parent category ID (use "null" for root categories)
  * @query {string} [hierarchy] - Return hierarchical structure (true/false)
  */
-categoryRoutes.get("/", (c) => CategoryController.getCategories(c));
+categoryRoutes.get("/", categoryController.getCategories);
 
 /**
  * @route GET /api/categories/slug/:slug
  * @desc Get category by slug
  * @access Public
  */
-categoryRoutes.get("/slug/:slug", (c) => CategoryController.getCategoryBySlug(c));
+categoryRoutes.get("/slug/:slug", categoryController.getCategoryBySlug);
 
 /**
  * @route GET /api/categories/:id
  * @desc Get category by ID
  * @access Public
  */
-categoryRoutes.get("/:id", (c) => CategoryController.getCategoryById(c));
+categoryRoutes.get("/:id", categoryController.getCategoryById);
 
 /**
  * @route GET /api/categories/:id/children
  * @desc Get child categories of a parent category
  * @access Public
  */
-categoryRoutes.get("/:id/children", (c) => CategoryController.getChildCategories(c));
+categoryRoutes.get("/:id/children", categoryController.getChildCategories);
+
+// ============================================================================
+// Admin-Only Category Routes
+// ============================================================================
 
 /**
  * @route POST /api/categories
@@ -43,8 +51,12 @@ categoryRoutes.get("/:id/children", (c) => CategoryController.getChildCategories
  * @access Private (Admin)
  * @body {object} category data
  */
-categoryRoutes.post("/", authMiddleware, adminMiddleware, compatibleZValidator("json", insertCategorySchema), (c) =>
-  CategoryController.createCategory(c)
+categoryRoutes.post(
+  "/",
+  authMiddleware,
+  adminMiddleware,
+  compatibleZValidator("json", insertCategorySchema),
+  categoryController.createCategory
 );
 
 /**
@@ -53,8 +65,12 @@ categoryRoutes.post("/", authMiddleware, adminMiddleware, compatibleZValidator("
  * @access Private (Admin)
  * @body {object} updated category data
  */
-categoryRoutes.patch("/:id", authMiddleware, adminMiddleware, compatibleZValidator("json", updateCategorySchema), (c) =>
-  CategoryController.updateCategory(c)
+categoryRoutes.patch(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  compatibleZValidator("json", updateCategorySchema),
+  categoryController.updateCategory
 );
 
 /**
@@ -62,6 +78,6 @@ categoryRoutes.patch("/:id", authMiddleware, adminMiddleware, compatibleZValidat
  * @desc Delete category - soft delete (Admin only)
  * @access Private (Admin)
  */
-categoryRoutes.delete("/:id", authMiddleware, adminMiddleware, (c) => CategoryController.deleteCategory(c));
+categoryRoutes.delete("/:id", authMiddleware, adminMiddleware, categoryController.deleteCategory);
 
 export { categoryRoutes };

@@ -3,11 +3,14 @@ import type { NewCategory } from "@/db/validators";
 import { createNotFoundError } from "@/utils/errors";
 import { createSuccessResponse } from "@/utils/response";
 import { sanitizeCategoryData } from "@/utils/sanitization";
-import { CategoryService } from "@/services/category.service";
+import * as categoryService from "@/services/category.service";
 import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
 
-// Types for validation
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
 interface CreateCategoryRequest {
   name: string;
   slug?: string;
@@ -29,192 +32,205 @@ interface CategoryFilters {
   parentId?: string | null;
 }
 
-export class CategoryController {
-  /**
-   * Create a new category
-   * POST /api/categories
-   */
-  static async createCategory(c: Context) {
-    const validatedData = getValidatedData<CreateCategoryRequest>(c, "json");
-    const user = c.get("user") as AuthContext["user"];
+// ============================================================================
+// Category Management Controller Functions
+// ============================================================================
 
-    // Additional sanitization for extra safety
-    const sanitizedData = sanitizeCategoryData(validatedData);
+/**
+ * Create a new category
+ * @desc Create a new category with automatic slug generation
+ * @access Private (Admin only)
+ */
+export const createCategory = async (c: Context) => {
+  const validatedData = getValidatedData<CreateCategoryRequest>(c, "json");
+  const user = c.get("user") as AuthContext["user"];
 
-    // Merge validated and sanitized data, prioritizing sanitized values
-    const categoryData: Omit<NewCategory, "id" | "createdAt" | "updatedAt"> = {
-      name: sanitizedData.name ?? validatedData.name,
-      slug: sanitizedData.slug ?? validatedData.slug ?? "",
-      description: sanitizedData.description !== undefined ? sanitizedData.description : validatedData.description,
-      isActive: validatedData.isActive,
-      parentId: validatedData.parentId,
-      createdBy: user.id,
-    };
+  // Additional sanitization for extra safety
+  const sanitizedData = sanitizeCategoryData(validatedData);
 
-    // Validate that required fields are not empty after sanitization
-    if (!categoryData.name) {
-      throw new Error("Category name cannot be empty after sanitization");
-    }
+  // Merge validated and sanitized data, prioritizing sanitized values
+  const categoryData: Omit<NewCategory, "id" | "createdAt" | "updatedAt"> = {
+    name: sanitizedData.name ?? validatedData.name,
+    slug: sanitizedData.slug ?? validatedData.slug ?? "",
+    description: sanitizedData.description !== undefined ? sanitizedData.description : validatedData.description,
+    isActive: validatedData.isActive,
+    parentId: validatedData.parentId,
+    createdBy: user.id,
+  };
 
-    const category = await CategoryService.createCategory(categoryData);
-
-    return c.json(createSuccessResponse("Category created successfully", { category }), 201);
+  // Validate that required fields are not empty after sanitization
+  if (!categoryData.name) {
+    throw new Error("Category name cannot be empty after sanitization");
   }
 
-  /**
-   * Get all categories with optional filtering
-   * GET /api/categories
-   */
-  static async getCategories(c: Context) {
-    const isActive = c.req.query("isActive") ?? "true";
-    const parentId = c.req.query("parentId");
-    const hierarchy = c.req.query("hierarchy");
+  const category = await categoryService.createCategory(categoryData);
 
-    // If hierarchy is requested, return hierarchical structure
-    if (hierarchy === "true") {
-      const categoryHierarchy = await CategoryService.getCategoryHierarchy();
+  return c.json(createSuccessResponse("Category created successfully", { category }), 201);
+};
 
-      return c.json(
-        createSuccessResponse("Category hierarchy retrieved successfully", {
-          categories: categoryHierarchy,
-          total: categoryHierarchy.length,
-        })
-      );
+/**
+ * Update an existing category
+ * @desc Update category with automatic slug regeneration if name changes
+ * @access Private (Admin only)
+ */
+export const updateCategory = async (c: Context) => {
+  const categoryId = c.req.param("id");
+  const validatedData = getValidatedData<UpdateCategoryRequest>(c, "json");
+
+  // Additional sanitization for extra safety
+  const sanitizedData = sanitizeCategoryData(validatedData);
+
+  // Merge validated and sanitized data, prioritizing sanitized values
+  const updateData: Record<string, unknown> = {
+    ...validatedData,
+    ...(sanitizedData.name !== undefined && { name: sanitizedData.name }),
+    ...(sanitizedData.slug !== undefined && { slug: sanitizedData.slug }),
+    ...(sanitizedData.description !== undefined && { description: sanitizedData.description }),
+  };
+
+  // Remove any undefined/null/empty values to avoid updating with empty values
+  Object.keys(updateData).forEach((key) => {
+    const value = updateData[key];
+    if (value === null || value === undefined || value === "") {
+      delete updateData[key];
     }
+  });
 
-    // Regular category listing with filters
-    const filters: CategoryFilters = {};
+  const category = await categoryService.updateCategory(categoryId, updateData as Partial<UpdateCategoryRequest>);
 
-    if (isActive !== undefined) {
-      filters.isActive = isActive === "true";
-    }
+  return c.json(createSuccessResponse("Category updated successfully", { category }));
+};
 
-    if (parentId !== undefined) {
-      filters.parentId = parentId === "null" ? null : parentId;
-    }
+/**
+ * Delete category using soft delete
+ * @desc Set category as inactive instead of hard delete
+ * @access Private (Admin only)
+ */
+export const deleteCategory = async (c: Context) => {
+  const categoryId = c.req.param("id");
 
-    const categoryList = await CategoryService.getCategories(filters);
+  await categoryService.deleteCategory(categoryId);
+
+  return c.json(createSuccessResponse("Category deleted successfully", { categoryId }));
+};
+
+// ============================================================================
+// Category Retrieval Controller Functions
+// ============================================================================
+
+/**
+ * Get all categories with optional filtering and hierarchy
+ * @desc Retrieve categories with filtering options or hierarchical structure
+ * @access Public
+ */
+export const getCategories = async (c: Context) => {
+  const isActive = c.req.query("isActive") ?? "true";
+  const parentId = c.req.query("parentId");
+  const hierarchy = c.req.query("hierarchy");
+
+  // If hierarchy is requested, return hierarchical structure
+  if (hierarchy === "true") {
+    const categoryHierarchy = await categoryService.getCategoryHierarchy();
 
     return c.json(
-      createSuccessResponse("Categories retrieved successfully", {
-        categories: categoryList,
-        total: categoryList.length,
-        filters: {
-          isActive: filters.isActive,
-          parentId: filters.parentId,
-        },
+      createSuccessResponse("Category hierarchy retrieved successfully", {
+        categories: categoryHierarchy,
+        total: categoryHierarchy.length,
       })
     );
   }
 
-  /**
-   * Get category by ID
-   * GET /api/categories/:id
-   */
-  static async getCategoryById(c: Context) {
-    const categoryId = c.req.param("id");
+  // Regular category listing with filters
+  const filters: CategoryFilters = {};
 
-    const category = await CategoryService.getCategoryById(categoryId);
-
-    if (!category) {
-      throw createNotFoundError("Category");
-    }
-
-    return c.json(createSuccessResponse("Category retrieved successfully", { category }));
+  if (isActive !== undefined) {
+    filters.isActive = isActive === "true";
   }
 
-  /**
-   * Get category by slug
-   * GET /api/categories/slug/:slug
-   */
-  static async getCategoryBySlug(c: Context) {
-    const slugParam = c.req.param("slug");
-
-    // Sanitize slug parameter to prevent potential issues
-    const slug = slugParam?.trim().toLowerCase();
-
-    if (!slug) {
-      throw createNotFoundError("Category");
-    }
-
-    const category = await CategoryService.getCategoryBySlug(slug);
-
-    if (!category) {
-      throw createNotFoundError("Category");
-    }
-
-    return c.json(createSuccessResponse("Category retrieved successfully", { category }));
+  if (parentId !== undefined) {
+    filters.parentId = parentId === "null" ? null : parentId;
   }
 
-  /**
-   * Update category
-   * PATCH /api/categories/:id
-   */
-  static async updateCategory(c: Context) {
-    const categoryId = c.req.param("id");
-    const validatedData = getValidatedData<UpdateCategoryRequest>(c, "json");
+  const categoryList = await categoryService.getCategories(filters);
 
-    // Additional sanitization for extra safety
-    const sanitizedData = sanitizeCategoryData(validatedData);
+  return c.json(
+    createSuccessResponse("Categories retrieved successfully", {
+      categories: categoryList,
+      total: categoryList.length,
+      filters: {
+        isActive: filters.isActive,
+        parentId: filters.parentId,
+      },
+    })
+  );
+};
 
-    // Merge validated and sanitized data, prioritizing sanitized values
-    const updateData: Record<string, unknown> = {
-      ...validatedData,
-      ...(sanitizedData.name !== undefined && { name: sanitizedData.name }),
-      ...(sanitizedData.slug !== undefined && { slug: sanitizedData.slug }),
-      ...(sanitizedData.description !== undefined && { description: sanitizedData.description }),
-    };
+/**
+ * Get category by ID
+ * @desc Retrieve a specific category by its ID
+ * @access Public
+ */
+export const getCategoryById = async (c: Context) => {
+  const categoryId = c.req.param("id");
 
-    // Remove any undefined/null/empty values to avoid updating with empty values
-    Object.keys(updateData).forEach((key) => {
-      const value = updateData[key];
-      if (value === null || value === undefined || value === "") {
-        delete updateData[key];
-      }
-    });
+  const category = await categoryService.getCategoryById(categoryId);
 
-    const category = await CategoryService.updateCategory(categoryId, updateData as Partial<UpdateCategoryRequest>);
-
-    return c.json(createSuccessResponse("Category updated successfully", { category }));
+  if (!category) {
+    throw createNotFoundError("Category");
   }
 
-  /**
-   * Delete category (soft delete)
-   * DELETE /api/categories/:id
-   */
-  static async deleteCategory(c: Context) {
-    const categoryId = c.req.param("id");
+  return c.json(createSuccessResponse("Category retrieved successfully", { category }));
+};
 
-    await CategoryService.deleteCategory(categoryId);
+/**
+ * Get category by slug
+ * @desc Retrieve a specific category by its URL slug
+ * @access Public
+ */
+export const getCategoryBySlug = async (c: Context) => {
+  const slugParam = c.req.param("slug");
 
-    return c.json(createSuccessResponse("Category deleted successfully", { categoryId }));
+  // Sanitize slug parameter to prevent potential issues
+  const slug = slugParam?.trim().toLowerCase();
+
+  if (!slug) {
+    throw createNotFoundError("Category");
   }
 
-  /**
-   * Get child categories of a parent category
-   * GET /api/categories/:id/children
-   */
-  static async getChildCategories(c: Context) {
-    const parentId = c.req.param("id");
+  const category = await categoryService.getCategoryBySlug(slug);
 
-    // First verify parent category exists
-    const parentCategory = await CategoryService.getCategoryById(parentId);
-    if (!parentCategory) {
-      throw createNotFoundError("Parent category");
-    }
-
-    const childCategories = await CategoryService.getCategories({ parentId, isActive: true });
-
-    return c.json(
-      createSuccessResponse("Child categories retrieved successfully", {
-        parentCategory: {
-          id: parentCategory.id,
-          name: parentCategory.name,
-          slug: parentCategory.slug,
-        },
-        childCategories,
-        total: childCategories.length,
-      })
-    );
+  if (!category) {
+    throw createNotFoundError("Category");
   }
-}
+
+  return c.json(createSuccessResponse("Category retrieved successfully", { category }));
+};
+
+/**
+ * Get child categories of a parent category
+ * @desc Retrieve all child categories for a given parent
+ * @access Public
+ */
+export const getChildCategories = async (c: Context) => {
+  const parentId = c.req.param("id");
+
+  // First verify parent category exists
+  const parentCategory = await categoryService.getCategoryById(parentId);
+  if (!parentCategory) {
+    throw createNotFoundError("Parent category");
+  }
+
+  const childCategories = await categoryService.getCategories({ parentId, isActive: true });
+
+  return c.json(
+    createSuccessResponse("Child categories retrieved successfully", {
+      parentCategory: {
+        id: parentCategory.id,
+        name: parentCategory.name,
+        slug: parentCategory.slug,
+      },
+      childCategories,
+      total: childCategories.length,
+    })
+  );
+};
