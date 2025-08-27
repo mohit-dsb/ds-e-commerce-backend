@@ -1,16 +1,16 @@
-import { db } from "../db";
+import { db } from "@/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { nanoid } from "nanoid";
-import { env } from "../config/env";
-import { logger } from "../utils/logger";
+import { env } from "@/config/env";
+import { logger } from "@/utils/logger";
+import type { User } from "@/db/schema";
 import { eq, and, gt } from "drizzle-orm";
-import type { User } from "../db/validators";
-import { createNotFoundError } from "../utils/errors";
-import type { ErrorContext } from "../types/error.types";
-import { dbErrorHandlers } from "../utils/database-errors";
-import { users, sessions, passwordResets } from "../db/schema";
-import { BCRYPT_ROUNDS, JWT_EXPIRES_IN } from "../utils/constants";
+import { createNotFoundError } from "@/utils/errors";
+import type { ErrorContext } from "@/types/error.types";
+import { dbErrorHandlers } from "@/utils/database-errors";
+import { users, sessions, passwordResets } from "@/db/schema";
+import { BCRYPT_ROUNDS, JWT_EXPIRES_IN } from "@/utils/constants";
 
 export class AuthService {
   static async hashPassword(password: string, context: ErrorContext = {}): Promise<string> {
@@ -158,7 +158,6 @@ export class AuthService {
 
         if (!session) {
           logger.warn("Invalid or expired session token", {
-            ...context,
             metadata: { hasToken: !!token },
           });
           return null;

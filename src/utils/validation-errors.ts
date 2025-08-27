@@ -1,5 +1,5 @@
 import { ZodError, ZodIssue } from "zod";
-import type { ValidationErrorDetail } from "../types/error.types";
+import type { ValidationErrorDetail } from "@/types/error.types";
 
 /**
  * Field mapping for user-friendly field names
@@ -18,6 +18,12 @@ const FIELD_DISPLAY_NAMES: Record<string, string> = {
   state: "State",
   zipCode: "ZIP code",
   country: "Country",
+  // Category fields
+  name: "Name",
+  slug: "Slug",
+  description: "Description",
+  parentId: "Parent category",
+  isActive: "Active status",
 };
 
 /**
@@ -125,10 +131,21 @@ export function formatValidationError(
 ): ValidationErrorDetail[] {
   const { firstErrorOnly = true, includeFieldPath = false } = options;
 
+  // Safety check for errors array
+  if (!zodError?.errors || zodError.errors.length === 0) {
+    return [
+      {
+        field: "request",
+        message: "Invalid request data",
+        value: undefined,
+      },
+    ];
+  }
+
   // Get all errors or just the first one
   const errorsToProcess = firstErrorOnly ? [zodError.errors[0]] : zodError.errors;
 
-  return errorsToProcess.map((issue) => {
+  return errorsToProcess.filter(Boolean).map((issue) => {
     const field = issue.path.join(".");
     const userFriendlyMessage = generateUserFriendlyMessage(issue);
 
@@ -144,7 +161,16 @@ export function formatValidationError(
  * Create a single, user-friendly validation error message
  */
 export function createSingleValidationMessage(zodError: ZodError): string {
-  const firstError = zodError.errors[0];
+  // Check if we have a valid ZodError with errors
+  if (!zodError?.errors || zodError.errors.length === 0) {
+    return "Invalid request data";
+  }
+
+  const [firstError] = zodError.errors;
+  if (!firstError) {
+    return "Invalid request data";
+  }
+
   return generateUserFriendlyMessage(firstError);
 }
 

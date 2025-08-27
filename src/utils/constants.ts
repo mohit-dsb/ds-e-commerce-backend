@@ -2,7 +2,7 @@ import { env } from "../config/env";
 
 // Authentication & Security
 export const BCRYPT_ROUNDS = 12; // Default fallback value
-export const JWT_EXPIRES_IN = env.JWT_EXPIRES_IN;
+export const {JWT_EXPIRES_IN} = env;
 
 // Rate Limiting
 export const RATE_LIMIT = {

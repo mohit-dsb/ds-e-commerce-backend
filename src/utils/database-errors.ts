@@ -1,6 +1,6 @@
-import { logger } from "./logger";
-import { DatabaseError, createDatabaseError } from "./errors";
-import type { ErrorContext, DatabaseErrorDetail } from "../types/error.types";
+import { logger } from "@/utils/logger";
+import { DatabaseError, createDatabaseError, AppError } from "@/utils/errors";
+import type { ErrorContext, DatabaseErrorDetail } from "@/types/error.types";
 
 export interface PostgresError extends Error {
   code?: string;
@@ -21,7 +21,7 @@ export function handleDatabaseError(error: Error | PostgresError, context: Error
     return createDatabaseError("Database operation failed", { operation: "unknown" }, context, error);
   }
 
-  const pgError = error as PostgresError;
+  const pgError = error;
   const details: DatabaseErrorDetail = {
     table: pgError.table,
     constraint: pgError.constraint,
@@ -34,7 +34,31 @@ export function handleDatabaseError(error: Error | PostgresError, context: Error
   switch (pgError.code) {
     case "23505": // unique_violation
       message = "Unique constraint violation";
-      userMessage = "This record already exists";
+
+      // Provide more specific messages based on the constraint
+      if (pgError.constraint) {
+        if (
+          pgError.constraint.includes("categories_name_unique") ||
+          (pgError.table === "categories" && pgError.detail?.includes("name"))
+        ) {
+          userMessage = "A category with this name already exists";
+        } else if (
+          pgError.constraint.includes("categories_slug_unique") ||
+          (pgError.table === "categories" && pgError.detail?.includes("slug"))
+        ) {
+          userMessage = "A category with this slug already exists";
+        } else if (
+          pgError.constraint.includes("users_email_unique") ||
+          (pgError.table === "users" && pgError.detail?.includes("email"))
+        ) {
+          userMessage = "An account with this email already exists";
+        } else {
+          userMessage = "This record already exists";
+        }
+      } else {
+        userMessage = "This record already exists";
+      }
+
       details.operation = "insert/update";
       break;
 
@@ -124,6 +148,13 @@ export async function withDatabaseErrorHandling<T>(
   try {
     return await operation();
   } catch (error) {
+    // If it's already an AppError (like ConflictError, NotFoundError, etc.),
+    // let it pass through unchanged to avoid double-wrapping
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    // Only handle actual database errors
     throw handleDatabaseError(error as Error, context);
   }
 }

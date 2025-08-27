@@ -1,4 +1,4 @@
-import { env } from "../config/env";
+import { env } from "@/config/env";
 
 export enum LogLevel {
   ERROR = "error",
@@ -103,39 +103,12 @@ class Logger {
     this.output(logEntry);
   }
 
-  // Convenience methods for common logging scenarios
-  requestStart(method: string, path: string, context: LogContext): void {
-    this.info(`${method} ${path} - Request started`, context);
-  }
-
-  requestEnd(method: string, path: string, statusCode: number, duration: number, context: LogContext): void {
-    const level = statusCode >= 500 ? LogLevel.ERROR : statusCode >= 400 ? LogLevel.WARN : LogLevel.INFO;
-    const logEntry = this.formatLog(level, `${method} ${path} - Request completed`, {
-      ...context,
-      statusCode,
-      duration,
-    });
-    this.output(logEntry);
-  }
-
-  authFailure(reason: string, context: LogContext): void {
-    this.warn(`Authentication failed: ${reason}`, context);
-  }
-
   databaseError(operation: string, error: Error, context: LogContext): void {
     this.error(`Database operation failed: ${operation}`, error, context);
   }
 
   validationError(message: string, context: LogContext): void {
     this.warn(`Validation error: ${message}`, context);
-  }
-
-  businessRuleViolation(rule: string, context: LogContext): void {
-    this.warn(`Business rule violation: ${rule}`, context);
-  }
-
-  externalServiceError(service: string, error: Error, context: LogContext): void {
-    this.error(`External service error: ${service}`, error, context);
   }
 }
 

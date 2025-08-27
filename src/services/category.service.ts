@@ -1,11 +1,12 @@
-import { db } from "../db";
-import { logger } from "../utils/logger";
-import { categories } from "../db/schema";
-import type { ErrorContext } from "../types/error.types";
-import { dbErrorHandlers } from "../utils/database-errors";
-import type { Category, NewCategory } from "../db/validators";
+import { db } from "@/db";
+import { logger } from "@/utils/logger";
+import { categories } from "@/db/schema";
+import type { ErrorContext } from "@/types/error.types";
+import { dbErrorHandlers } from "@/utils/database-errors";
+import type { Category, NewCategory } from "@/db/validators";
+import { generateSlug, generateUniqueSlug } from "@/utils/slug";
 import { eq, and, isNull, asc, or, not, type SQL } from "drizzle-orm";
-import { createNotFoundError, createConflictError } from "../utils/errors";
+import { createNotFoundError, createConflictError } from "@/utils/errors";
 
 export class CategoryService {
   /**
@@ -17,19 +18,43 @@ export class CategoryService {
   ): Promise<Category> {
     return dbErrorHandlers.create(
       async () => {
-        // Check if category with same name or slug already exists
-        const existingCategory = await db
+        // Generate slug from name if not provided
+        let finalSlug = categoryData.slug;
+        if (!finalSlug) {
+          const baseSlug = generateSlug(categoryData.name);
+
+          // Create a function to check if slug exists
+          const slugExists = async (slug: string): Promise<boolean> => {
+            const existing = await db
+              .select({ slug: categories.slug })
+              .from(categories)
+              .where(eq(categories.slug, slug))
+              .limit(1);
+            return existing.length > 0;
+          };
+
+          // Generate unique slug
+          finalSlug = await generateUniqueSlug(baseSlug, slugExists);
+        }
+
+        // Check if category with same name already exists
+        const existingByName = await db
           .select()
           .from(categories)
-          .where(or(eq(categories.name, categoryData.name), eq(categories.slug, categoryData.slug)))
+          .where(eq(categories.name, categoryData.name))
           .limit(1);
 
-        if (existingCategory.length > 0) {
-          throw createConflictError(
-            existingCategory[0].name === categoryData.name
-              ? "Category with this name already exists"
-              : "Category with this slug already exists"
-          );
+        if (existingByName.length > 0) {
+          throw createConflictError("Category with this name already exists");
+        }
+
+        // If slug was provided, check if it already exists
+        if (categoryData.slug) {
+          const existingBySlug = await db.select().from(categories).where(eq(categories.slug, finalSlug)).limit(1);
+
+          if (existingBySlug.length > 0) {
+            throw createConflictError("Category with this slug already exists");
+          }
         }
 
         // Validate parent category exists if parentId is provided
@@ -45,24 +70,28 @@ export class CategoryService {
           }
         }
 
-        const newCategory = await db
+        const insertResult = await db
           .insert(categories)
           .values({
             ...categoryData,
+            slug: finalSlug,
             updatedAt: new Date(),
           })
           .returning();
 
+        const createdCategory = (insertResult as any[])[0] as Category;
+
         logger.info("Category created successfully", {
           ...context,
           metadata: {
-            categoryId: newCategory[0].id,
-            categoryName: newCategory[0].name,
-            slug: newCategory[0].slug,
+            categoryId: createdCategory.id,
+            categoryName: createdCategory.name,
+            slug: createdCategory.slug,
+            slugGenerated: !categoryData.slug,
           },
         });
 
-        return newCategory[0];
+        return createdCategory;
       },
       "category",
       context
@@ -112,7 +141,7 @@ export class CategoryService {
           },
         });
 
-        return categoryList;
+        return categoryList as Category[];
       },
       "category",
       context
@@ -181,16 +210,37 @@ export class CategoryService {
           throw createNotFoundError("Category");
         }
 
+        // Prepare the final update data
+        const finalUpdateData = { ...updateData };
+
+        // Generate new slug if name is updated but slug is not provided
+        if (updateData.name && updateData.name !== existingCategory.name && !updateData.slug) {
+          const baseSlug = generateSlug(updateData.name);
+
+          // Create a function to check if slug exists (excluding current category)
+          const slugExists = async (slug: string): Promise<boolean> => {
+            const existing = await db
+              .select({ slug: categories.slug })
+              .from(categories)
+              .where(and(eq(categories.slug, slug), not(eq(categories.id, categoryId))))
+              .limit(1);
+            return existing.length > 0;
+          };
+
+          // Generate unique slug
+          finalUpdateData.slug = await generateUniqueSlug(baseSlug, slugExists);
+        }
+
         // Check for conflicts if name or slug is being updated
-        if (updateData.name || updateData.slug) {
+        if (finalUpdateData.name || finalUpdateData.slug) {
           const conflictConditions: SQL[] = [];
 
-          if (updateData.name && updateData.name !== existingCategory.name) {
-            conflictConditions.push(eq(categories.name, updateData.name));
+          if (finalUpdateData.name && finalUpdateData.name !== existingCategory.name) {
+            conflictConditions.push(eq(categories.name, finalUpdateData.name));
           }
 
-          if (updateData.slug && updateData.slug !== existingCategory.slug) {
-            conflictConditions.push(eq(categories.slug, updateData.slug));
+          if (finalUpdateData.slug && finalUpdateData.slug !== existingCategory.slug) {
+            conflictConditions.push(eq(categories.slug, finalUpdateData.slug));
           }
 
           if (conflictConditions.length > 0) {
@@ -202,7 +252,7 @@ export class CategoryService {
 
             if (conflictingCategory.length > 0) {
               throw createConflictError(
-                conflictingCategory[0].name === updateData.name
+                conflictingCategory[0].name === finalUpdateData.name
                   ? "Category with this name already exists"
                   : "Category with this slug already exists"
               );
@@ -211,11 +261,11 @@ export class CategoryService {
         }
 
         // Validate parent category if being updated
-        if (updateData.parentId && updateData.parentId !== existingCategory.parentId) {
+        if (finalUpdateData.parentId && finalUpdateData.parentId !== existingCategory.parentId) {
           const parentCategory = await db
             .select()
             .from(categories)
-            .where(eq(categories.id, updateData.parentId))
+            .where(eq(categories.id, finalUpdateData.parentId))
             .limit(1);
 
           if (parentCategory.length === 0) {
@@ -226,7 +276,7 @@ export class CategoryService {
         const [updatedCategory] = await db
           .update(categories)
           .set({
-            ...updateData,
+            ...finalUpdateData,
             updatedAt: new Date(),
           })
           .where(eq(categories.id, categoryId))
@@ -237,7 +287,8 @@ export class CategoryService {
           metadata: {
             categoryId: updatedCategory.id,
             categoryName: updatedCategory.name,
-            changes: Object.keys(updateData),
+            changes: Object.keys(finalUpdateData),
+            slugRegenerated: updateData.name && !updateData.slug,
           },
         });
 

@@ -50,7 +50,7 @@ export class DatabaseError extends AppError {
     this.details = details;
 
     // Preserve original stack trace if available
-    if (originalError && originalError.stack) {
+    if (originalError?.stack) {
       this.context.stack = originalError.stack;
     }
   }

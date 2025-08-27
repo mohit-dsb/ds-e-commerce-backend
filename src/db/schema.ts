@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, uuid, varchar, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 // Define the role enum first
 export const roleEnum = pgEnum("role", ["customer", "admin"]);
@@ -21,7 +22,7 @@ export const categories = pgTable("categories", {
   description: text("description"),
   slug: varchar("slug", { length: 100 }).notNull().unique(),
   isActive: boolean("is_active").default(true).notNull(),
-  parentId: uuid("parent_id").references(() => categories.id, { onDelete: "set null" }),
+  parentId: uuid("parent_id"),
   createdBy: uuid("created_by")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
@@ -49,3 +50,32 @@ export const passwordResets = pgTable("password_resets", {
   used: boolean("used").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// Relations
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
+  parent: one(categories, {
+    fields: [categories.parentId],
+    references: [categories.id],
+  }),
+  children: many(categories),
+  createdBy: one(users, {
+    fields: [categories.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  categories: many(categories),
+  sessions: many(sessions),
+  passwordResets: many(passwordResets),
+}));
+
+// Type exports
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type Category = typeof categories.$inferSelect;
+export type NewCategory = typeof categories.$inferInsert;
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;
+export type PasswordReset = typeof passwordResets.$inferSelect;
+export type NewPasswordReset = typeof passwordResets.$inferInsert;

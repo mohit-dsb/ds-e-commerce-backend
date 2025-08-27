@@ -52,12 +52,12 @@ categoryRoutes.post(
 );
 
 /**
- * @route PUT /api/categories/:id
+ * @route PATCH /api/categories/:id
  * @desc Update category (Admin only)
  * @access Private (Admin)
  * @body {object} updated category data
  */
-categoryRoutes.put(
+categoryRoutes.patch(
   "/:id",
   authMiddleware,
   adminMiddleware,

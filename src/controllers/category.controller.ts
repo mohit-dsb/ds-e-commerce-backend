@@ -1,10 +1,9 @@
 import type { Context } from "hono";
-import { logger } from "../utils/logger";
-import { createNotFoundError } from "../utils/errors";
-import { createSuccessResponse } from "../utils/response";
-import { CategoryService } from "../services/category.service";
-import { getValidatedData } from "../middleware/validation.middleware";
-import { createErrorContext } from "../middleware/request-context.middleware";
+import { createNotFoundError } from "@/utils/errors";
+import { createSuccessResponse } from "@/utils/response";
+import { CategoryService } from "@/services/category.service";
+import { sanitizeCategoryData } from "@/utils/sanitization";
+import { getValidatedData } from "@/middleware/validation.middleware";
 
 export class CategoryController {
   /**
@@ -14,24 +13,25 @@ export class CategoryController {
   static async createCategory(c: Context) {
     const validatedData = getValidatedData<any>(c, "json");
     const user = c.get("user");
-    const context = createErrorContext(c, user?.id);
 
-    logger.info("Creating new category", {
-      ...context,
-      metadata: {
-        categoryName: validatedData.name,
-        slug: validatedData.slug,
-        createdBy: user?.id,
-      },
-    });
+    // Additional sanitization for extra safety
+    const sanitizedData = sanitizeCategoryData(validatedData);
 
-    const category = await CategoryService.createCategory(
-      {
-        ...validatedData,
-        createdBy: user.id,
-      },
-      context
-    );
+    // Merge validated and sanitized data, prioritizing sanitized values
+    const categoryData = {
+      ...validatedData,
+      name: sanitizedData.name ?? validatedData.name,
+      slug: sanitizedData.slug ?? validatedData.slug,
+      description: sanitizedData.description !== undefined ? sanitizedData.description : validatedData.description,
+      createdBy: user.id,
+    };
+
+    // Validate that required fields are not empty after sanitization
+    if (!categoryData.name) {
+      throw new Error("Category name cannot be empty after sanitization");
+    }
+
+    const category = await CategoryService.createCategory(categoryData);
 
     return c.json(createSuccessResponse("Category created successfully", { category }), 201);
   }
@@ -41,31 +41,24 @@ export class CategoryController {
    * GET /api/categories
    */
   static async getCategories(c: Context) {
-    const isActive = c.req.query("isActive");
+    const isActive = c.req.query("isActive") || "true";
     const parentId = c.req.query("parentId");
     const hierarchy = c.req.query("hierarchy");
-    const context = createErrorContext(c);
 
     // If hierarchy is requested, return hierarchical structure
     if (hierarchy === "true") {
-      logger.info("Retrieving category hierarchy", {
-        ...context,
-        metadata: { requestType: "hierarchy" },
-      });
-
-      const categoryHierarchy = await CategoryService.getCategoryHierarchy(context);
+      const categoryHierarchy = await CategoryService.getCategoryHierarchy();
 
       return c.json(
         createSuccessResponse("Category hierarchy retrieved successfully", {
           categories: categoryHierarchy,
           total: categoryHierarchy.length,
-          type: "hierarchy",
         })
       );
     }
 
-    // Build filters object
-    const filters: { isActive?: boolean; parentId?: string | null } = {};
+    // Regular category listing with filters
+    const filters: any = {};
 
     if (isActive !== undefined) {
       filters.isActive = isActive === "true";
@@ -75,18 +68,16 @@ export class CategoryController {
       filters.parentId = parentId === "null" ? null : parentId;
     }
 
-    logger.info("Retrieving categories with filters", {
-      ...context,
-      metadata: { filters },
-    });
-
-    const categories = await CategoryService.getCategories(filters, context);
+    const categoryList = await CategoryService.getCategories(filters);
 
     return c.json(
       createSuccessResponse("Categories retrieved successfully", {
-        categories,
-        total: categories.length,
-        filters,
+        categories: categoryList,
+        total: categoryList.length,
+        filters: {
+          isActive: filters.isActive,
+          parentId: filters.parentId,
+        },
       })
     );
   }
@@ -97,14 +88,8 @@ export class CategoryController {
    */
   static async getCategoryById(c: Context) {
     const categoryId = c.req.param("id");
-    const context = createErrorContext(c);
 
-    logger.info("Retrieving category by ID", {
-      ...context,
-      metadata: { categoryId },
-    });
-
-    const category = await CategoryService.getCategoryById(categoryId, context);
+    const category = await CategoryService.getCategoryById(categoryId);
 
     if (!category) {
       throw createNotFoundError("Category");
@@ -118,15 +103,16 @@ export class CategoryController {
    * GET /api/categories/slug/:slug
    */
   static async getCategoryBySlug(c: Context) {
-    const slug = c.req.param("slug");
-    const context = createErrorContext(c);
+    const slugParam = c.req.param("slug");
 
-    logger.info("Retrieving category by slug", {
-      ...context,
-      metadata: { slug },
-    });
+    // Sanitize slug parameter to prevent potential issues
+    const slug = slugParam?.trim().toLowerCase();
 
-    const category = await CategoryService.getCategoryBySlug(slug, context);
+    if (!slug) {
+      throw createNotFoundError("Category");
+    }
+
+    const category = await CategoryService.getCategoryBySlug(slug);
 
     if (!category) {
       throw createNotFoundError("Category");
@@ -137,24 +123,31 @@ export class CategoryController {
 
   /**
    * Update category
-   * PUT /api/categories/:id
+   * PATCH /api/categories/:id
    */
   static async updateCategory(c: Context) {
     const categoryId = c.req.param("id");
     const validatedData = getValidatedData<any>(c, "json");
-    const user = c.get("user");
-    const context = createErrorContext(c, user?.id);
 
-    logger.info("Updating category", {
-      ...context,
-      metadata: {
-        categoryId,
-        changes: Object.keys(validatedData),
-        updatedBy: user?.id,
-      },
+    // Additional sanitization for extra safety
+    const sanitizedData = sanitizeCategoryData(validatedData);
+
+    // Merge validated and sanitized data, prioritizing sanitized values
+    const updateData = {
+      ...validatedData,
+      ...(sanitizedData.name !== undefined && { name: sanitizedData.name }),
+      ...(sanitizedData.slug !== undefined && { slug: sanitizedData.slug }),
+      ...(sanitizedData.description !== undefined && { description: sanitizedData.description }),
+    };
+
+    // Remove any undefined/null values to avoid updating with empty values
+    Object.keys(updateData).forEach((key) => {
+      if (updateData[key] === null || updateData[key] === undefined || updateData[key] === "") {
+        delete updateData[key];
+      }
     });
 
-    const category = await CategoryService.updateCategory(categoryId, validatedData, context);
+    const category = await CategoryService.updateCategory(categoryId, updateData);
 
     return c.json(createSuccessResponse("Category updated successfully", { category }));
   }
@@ -165,18 +158,8 @@ export class CategoryController {
    */
   static async deleteCategory(c: Context) {
     const categoryId = c.req.param("id");
-    const user = c.get("user");
-    const context = createErrorContext(c, user?.id);
 
-    logger.info("Deleting category", {
-      ...context,
-      metadata: {
-        categoryId,
-        deletedBy: user?.id,
-      },
-    });
-
-    await CategoryService.deleteCategory(categoryId, context);
+    await CategoryService.deleteCategory(categoryId);
 
     return c.json(createSuccessResponse("Category deleted successfully", { categoryId }));
   }
@@ -187,20 +170,14 @@ export class CategoryController {
    */
   static async getChildCategories(c: Context) {
     const parentId = c.req.param("id");
-    const context = createErrorContext(c);
-
-    logger.info("Retrieving child categories", {
-      ...context,
-      metadata: { parentId },
-    });
 
     // First verify parent category exists
-    const parentCategory = await CategoryService.getCategoryById(parentId, context);
+    const parentCategory = await CategoryService.getCategoryById(parentId);
     if (!parentCategory) {
       throw createNotFoundError("Parent category");
     }
 
-    const childCategories = await CategoryService.getCategories({ parentId, isActive: true }, context);
+    const childCategories = await CategoryService.getCategories({ parentId, isActive: true });
 
     return c.json(
       createSuccessResponse("Child categories retrieved successfully", {

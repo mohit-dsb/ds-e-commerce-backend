@@ -1,12 +1,12 @@
 import type { Context } from "hono";
-import { logger } from "../utils/logger";
-import { AuthService } from "../services/auth.service";
-import { createSuccessResponse } from "../utils/response";
-import type { AuthContext } from "../middleware/auth.middleware";
-import { getValidatedData } from "../middleware/validation.middleware";
-import { createErrorContext } from "../middleware/request-context.middleware";
-import type { registerSchema, loginSchema, resetPasswordSchema } from "../db/validators";
-import { createConflictError, createAuthError, BusinessRuleError } from "../utils/errors";
+import { logger } from "@/utils/logger";
+import { AuthService } from "@/services/auth.service";
+import { createSuccessResponse } from "@/utils/response";
+import type { AuthContext } from "@/middleware/auth.middleware";
+import { getValidatedData } from "@/middleware/validation.middleware";
+import type { registerSchema, loginSchema, resetPasswordSchema } from "@/db/validators";
+import { createConflictError, createAuthError, BusinessRuleError } from "@/utils/errors";
+import { sanitizeUserData, sanitizeEmail } from "@/utils/sanitization";
 
 // Type definitions for validated request data
 type RegisterData = typeof registerSchema._type;
@@ -21,37 +21,40 @@ export class AuthController {
    * @access Public
    */
   static async register(c: Context<{ Variables: AuthContext }>) {
-    const { email, password, firstName, lastName } = getValidatedData<RegisterData>(c, "json");
-    const context = createErrorContext(c);
+    const validatedData = getValidatedData<RegisterData>(c, "json");
+    
+    // Additional sanitization for extra safety
+    const sanitizedData = sanitizeUserData(validatedData);
+    
+    const email = sanitizedData.email || validatedData.email;
+    const firstName = sanitizedData.firstName || validatedData.firstName;
+    const lastName = sanitizedData.lastName || validatedData.lastName;
+    const { password } = validatedData;
+
+    // Validate that required fields are not empty after sanitization
+    if (!email || !firstName || !lastName) {
+      throw new BusinessRuleError("Invalid or empty required fields after sanitization");
+    }
 
     // Check if user already exists
-    const existingUser = await AuthService.getUserByEmail(email, context);
+    const existingUser = await AuthService.getUserByEmail(email);
     if (existingUser) {
       logger.warn("Registration attempt with existing email", {
-        ...context,
         metadata: { email },
       });
       throw createConflictError("User already exists");
     }
 
     // Create new user
-    const user = await AuthService.createUser(
-      {
-        email,
-        password,
-        firstName,
-        lastName,
-      },
-      context
-    );
+    const user = await AuthService.createUser({
+      email,
+      password,
+      firstName,
+      lastName,
+    });
 
     // Create session for the new user
-    const token = await AuthService.createSession(user.id, context);
-
-    logger.info("User registered successfully", {
-      ...context,
-      metadata: { userId: user.id, email },
-    });
+    const token = await AuthService.createSession(user.id);
 
     return c.json(
       createSuccessResponse("User registered successfully", {
@@ -75,36 +78,32 @@ export class AuthController {
    * @access Public
    */
   static async login(c: Context<{ Variables: AuthContext }>) {
-    const { email, password } = getValidatedData<LoginData>(c, "json");
-    const context = createErrorContext(c);
+    const validatedData = getValidatedData<LoginData>(c, "json");
+    
+    // Additional sanitization for email
+    const email = sanitizeEmail(validatedData.email) || validatedData.email;
+    const { password } = validatedData;
 
     // Find user by email
-    const user = await AuthService.getUserByEmail(email, context);
+    const user = await AuthService.getUserByEmail(email);
     if (!user) {
       logger.warn("Login attempt with non-existent email", {
-        ...context,
         metadata: { email },
       });
       throw createAuthError("Invalid credentials");
     }
 
     // Verify password
-    const isValidPassword = await AuthService.verifyPassword(password, user.password, context);
+    const isValidPassword = await AuthService.verifyPassword(password, user.password);
     if (!isValidPassword) {
       logger.warn("Login attempt with invalid password", {
-        ...context,
         metadata: { email, userId: user.id },
       });
       throw createAuthError("Invalid credentials");
     }
 
     // Create new session
-    const token = await AuthService.createSession(user.id, context);
-
-    logger.info("User logged in successfully", {
-      ...context,
-      metadata: { userId: user.id, email },
-    });
+    const token = await AuthService.createSession(user.id);
 
     return c.json(
       createSuccessResponse("Login successful", {
@@ -128,12 +127,6 @@ export class AuthController {
    */
   static async getProfile(c: Context<{ Variables: AuthContext }>) {
     const user = c.get("user");
-    const context = createErrorContext(c, user?.id);
-
-    logger.info("User profile accessed", {
-      ...context,
-      metadata: { userId: user?.id },
-    });
 
     return c.json(createSuccessResponse("Profile retrieved successfully", { user }));
   }
@@ -146,16 +139,9 @@ export class AuthController {
   static async logout(c: Context<{ Variables: AuthContext }>) {
     const authHeader = c.req.header("Authorization");
     const token = authHeader!.substring(7); // Remove "Bearer " prefix
-    const user = c.get("user");
-    const context = createErrorContext(c, user?.id);
 
     // Revoke the session token
-    await AuthService.revokeSession(token, context);
-
-    logger.info("User logged out successfully", {
-      ...context,
-      metadata: { userId: user?.id },
-    });
+    await AuthService.revokeSession(token);
 
     return c.json(createSuccessResponse("Logout successful"));
   }
@@ -166,24 +152,21 @@ export class AuthController {
    * @access Public
    */
   static async forgotPassword(c: Context<{ Variables: AuthContext }>) {
-    const { email } = getValidatedData<ForgotPasswordData>(c, "json");
-    const context = createErrorContext(c);
+    const validatedData = getValidatedData<ForgotPasswordData>(c, "json");
+    
+    // Additional sanitization for email
+    const email = sanitizeEmail(validatedData.email) || validatedData.email;
 
-    const user = await AuthService.getUserByEmail(email, context);
+    const user = await AuthService.getUserByEmail(email);
     if (!user) {
       // Security best practice: Don't reveal if user exists or not
-      logger.info("Password reset requested for non-existent email", {
-        ...context,
-        metadata: { email },
-      });
       return c.json(createSuccessResponse("If the email exists, a reset link has been sent"));
     }
 
-    const resetToken = await AuthService.createPasswordResetToken(user.id, context);
+    const resetToken = await AuthService.createPasswordResetToken(user.id);
 
     // TODO: In production, send email with reset link instead of logging
     logger.info("Password reset token generated - Email would be sent in production", {
-      ...context,
       metadata: {
         userId: user.id,
         email: user.email,
@@ -197,11 +180,6 @@ export class AuthController {
       console.log(`Password reset token for ${email}: ${resetToken}`);
     }
 
-    logger.info("Password reset token generated", {
-      ...context,
-      metadata: { userId: user.id, email },
-    });
-
     return c.json(createSuccessResponse("If the email exists, a reset link has been sent"));
   }
 
@@ -212,26 +190,19 @@ export class AuthController {
    */
   static async resetPassword(c: Context<{ Variables: AuthContext }>) {
     const { token, password } = getValidatedData<ResetPasswordData>(c, "json");
-    const context = createErrorContext(c);
 
     // Validate reset token
-    const userId = await AuthService.validatePasswordResetToken(token, context);
+    const userId = await AuthService.validatePasswordResetToken(token);
     if (!userId) {
       logger.warn("Password reset attempt with invalid token", {
-        ...context,
         metadata: { hasToken: !!token },
       });
       throw new BusinessRuleError("Invalid or expired reset token");
     }
 
     // Update password and mark token as used
-    await AuthService.updatePassword(userId, password, context);
-    await AuthService.usePasswordResetToken(token, context);
-
-    logger.info("Password reset completed successfully", {
-      ...context,
-      metadata: { userId },
-    });
+    await AuthService.updatePassword(userId, password);
+    await AuthService.usePasswordResetToken(token);
 
     return c.json(createSuccessResponse("Password reset successful"));
   }

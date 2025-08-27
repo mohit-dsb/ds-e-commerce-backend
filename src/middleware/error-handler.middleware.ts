@@ -1,12 +1,11 @@
 import { ZodError } from "zod";
 import type { Context } from "hono";
-import { env } from "../config/env";
-import { logger } from "../utils/logger";
+import { env } from "@/config/env";
+import { logger } from "@/utils/logger";
 import { HTTPException } from "hono/http-exception";
-import { AppError, ValidationError, createValidationError } from "../utils/errors";
-import { getRequestContext, createErrorContext } from "./request-context.middleware";
-import { formatValidationError, createSingleValidationMessage, VALIDATION_CONFIG } from "../utils/validation-errors";
-import type { ApiErrorResponse } from "../types/error.types";
+import type { ApiErrorResponse } from "@/types/error.types";
+import { AppError, ValidationError, createValidationError } from "@/utils/errors";
+import { formatValidationError, createSingleValidationMessage, VALIDATION_CONFIG } from "@/utils/validation-errors";
 
 function sanitizeErrorMessage(message: string, isDevelopment: boolean): string {
   if (isDevelopment) {
@@ -30,8 +29,6 @@ export function createErrorResponse(
   context: Context,
   isDevelopment: boolean = false
 ): ApiErrorResponse {
-  const requestContext = getRequestContext(context);
-
   if (error instanceof AppError) {
     const response: ApiErrorResponse = {
       success: false,
@@ -39,8 +36,7 @@ export function createErrorResponse(
         code: error.code,
         message: sanitizeErrorMessage(error.message, isDevelopment),
         timestamp: new Date().toISOString(),
-        requestId: requestContext?.requestId,
-        path: requestContext?.path,
+        path: context.req.path,
       },
     };
 
@@ -63,8 +59,7 @@ export function createErrorResponse(
         code: "HTTP_EXCEPTION" as any,
         message: sanitizeErrorMessage(error.message, isDevelopment),
         timestamp: new Date().toISOString(),
-        requestId: requestContext?.requestId,
-        path: requestContext?.path,
+        path: context.req.path,
       },
     };
   }
@@ -76,15 +71,13 @@ export function createErrorResponse(
       code: "INTERNAL_SERVER_ERROR" as any,
       message: isDevelopment ? error.message : "An internal server error occurred",
       timestamp: new Date().toISOString(),
-      requestId: requestContext?.requestId,
-      path: requestContext?.path,
+      path: context.req.path,
     },
   };
 }
 
 export const errorHandlerMiddleware = (err: Error, c: Context) => {
   const isDevelopment = env.NODE_ENV === "development";
-  const errorContext = createErrorContext(c);
 
   // Handle Zod validation errors with enhanced formatting
   if (err instanceof ZodError) {
@@ -97,13 +90,12 @@ export const errorHandlerMiddleware = (err: Error, c: Context) => {
     // Create a single, user-friendly error message
     const singleMessage = createSingleValidationMessage(err);
 
-    const validationError = createValidationError(validationDetails, errorContext);
+    const validationError = createValidationError(validationDetails);
 
     // Override the default message with our user-friendly one
     validationError.message = singleMessage;
 
     logger.validationError("Request validation failed", {
-      ...errorContext,
       metadata: {
         validationErrors: validationDetails,
         originalZodErrors: isDevelopment ? err.errors : undefined,
@@ -120,13 +112,11 @@ export const errorHandlerMiddleware = (err: Error, c: Context) => {
 
     if (logLevel === "error") {
       logger.error(`Application error: ${err.message}`, err, {
-        ...errorContext,
         errorCode: err.code,
         metadata: err.context,
       });
     } else {
       logger.warn(`Client error: ${err.message}`, {
-        ...errorContext,
         errorCode: err.code,
         metadata: err.context,
       });
@@ -139,7 +129,6 @@ export const errorHandlerMiddleware = (err: Error, c: Context) => {
   // Handle HTTPException instances
   if (err instanceof HTTPException) {
     logger.warn(`HTTP exception: ${err.message}`, {
-      ...errorContext,
       statusCode: err.status,
     });
 
@@ -149,7 +138,6 @@ export const errorHandlerMiddleware = (err: Error, c: Context) => {
 
   // Handle unexpected errors
   logger.error("Unhandled error occurred", err, {
-    ...errorContext,
     metadata: {
       stack: err.stack,
       name: err.name,
@@ -158,30 +146,4 @@ export const errorHandlerMiddleware = (err: Error, c: Context) => {
 
   const response = createErrorResponse(err, c, isDevelopment);
   return c.json(response, 500);
-};
-
-// Request logging middleware
-export const requestLoggingMiddleware = async (c: Context, next: Function) => {
-  const requestContext = getRequestContext(c);
-
-  if (requestContext) {
-    logger.requestStart(requestContext.method, requestContext.path, {
-      requestId: requestContext.requestId,
-      ip: requestContext.ip,
-      userAgent: requestContext.userAgent,
-    });
-  }
-
-  await next();
-
-  if (requestContext) {
-    const duration = Date.now() - requestContext.startTime;
-    const statusCode = c.res.status;
-
-    logger.requestEnd(requestContext.method, requestContext.path, statusCode, duration, {
-      requestId: requestContext.requestId,
-      ip: requestContext.ip,
-      userAgent: requestContext.userAgent,
-    });
-  }
 };
