@@ -1,6 +1,6 @@
 import { logger } from "../utils/logger";
 import type { Context, Next } from "hono";
-import { AuthService } from "../services/auth.service";
+import * as authService from "../services/auth.service";
 import { createAuthError, createForbiddenError } from "../utils/errors";
 
 export interface AuthContext {
@@ -23,7 +23,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
   }
 
   const token = authHeader.substring(7);
-  const user = await AuthService.validateSession(token);
+  const user = await authService.validateSession(token);
 
   if (!user) {
     logger.warn("Invalid or expired session token");
