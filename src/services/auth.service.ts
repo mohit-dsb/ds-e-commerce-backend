@@ -2,45 +2,13 @@ import { db } from "@/db";
 import { nanoid } from "nanoid";
 import { logger } from "@/utils/logger";
 import { HonoJWTService } from "@/utils/hono-jwt";
+import { verifyPassword } from "@/utils/password";
 import { createNotFoundError } from "@/utils/errors";
 import { dbErrorHandlers } from "@/utils/database-errors";
 import { users, sessions, passwordResets } from "@/db/schema";
 import { eq, and, gt, type InferSelectModel } from "drizzle-orm";
 
 export type User = InferSelectModel<typeof users>;
-
-// ============================================================================
-// Password Management Functions
-// ============================================================================
-
-/**
- * Hash a password using Bun's built-in password hashing
- * @param password - Plain text password to hash
- * @returns Promise resolving to hashed password
- */
-export const hashPassword = async (password: string): Promise<string> => {
-  try {
-    return await Bun.password.hash(password);
-  } catch (error) {
-    logger.error("Password hashing failed", error as Error, {});
-    throw new Error("Failed to process password");
-  }
-};
-
-/**
- * Verify a password against its hash using Bun's built-in password verification
- * @param password - Plain text password to verify
- * @param hashedPassword - Hashed password to compare against
- * @returns Promise resolving to boolean indicating if password is valid
- */
-export const verifyPassword = async (password: string, hashedPassword: string): Promise<boolean> => {
-  try {
-    return await Bun.password.verify(password, hashedPassword);
-  } catch (error) {
-    logger.error("Password verification failed", error as Error, {});
-    return false;
-  }
-};
 
 // ============================================================================
 // JWT Token Management Functions
@@ -66,95 +34,32 @@ export const verifyToken = async (token: string): Promise<{ userId: string } | n
 };
 
 // ============================================================================
-// User Management Functions
+// Authentication Functions
 // ============================================================================
 
 /**
- * Create a new user account
- * @param data - User registration data
- * @returns Promise resolving to created user
+ * Authenticate user with email and password
+ * @param email - User email
+ * @param password - User password
+ * @returns Promise resolving to user or null if authentication fails
  */
-export const createUser = async (data: {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}): Promise<User> => {
-  return dbErrorHandlers.create(async () => {
-    const hashedPassword = await hashPassword(data.password);
-
-    const [user] = await db
-      .insert(users)
-      .values({
-        email: data.email,
-        password: hashedPassword,
-        firstName: data.firstName,
-        lastName: data.lastName,
-      })
-      .returning();
-
-    if (!user) {
-      logger.error("Failed to create user - no user returned", undefined, {});
-      throw new Error("Failed to create user account");
-    }
-
-    logger.info("User created successfully", {
-      metadata: { userId: user.id, email: data.email },
-    });
-
-    return user;
-  });
-};
-
-/**
- * Retrieve a user by email address
- * @param email - Email address to search for
- * @returns Promise resolving to user or null if not found
- */
-export const getUserByEmail = async (email: string): Promise<User | null> => {
+export const authenticateUser = async (email: string, password: string): Promise<User | null> => {
   return dbErrorHandlers.read(async () => {
     const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || null;
-  });
-};
 
-/**
- * Retrieve a user by ID
- * @param id - User ID to search for
- * @returns Promise resolving to user or null if not found
- */
-export const getUserById = async (id: string): Promise<User | null> => {
-  return dbErrorHandlers.read(async () => {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || null;
-  });
-};
-
-/**
- * Update a user's password
- * @param userId - ID of user to update password for
- * @param newPassword - New plain text password
- */
-export const updatePassword = async (userId: string, newPassword: string): Promise<void> => {
-  await dbErrorHandlers.update(async () => {
-    // Verify user exists
-    const user = await getUserById(userId);
     if (!user) {
-      throw createNotFoundError("User");
+      logger.warn("Authentication failed - user not found", { metadata: { email } });
+      return null;
     }
 
-    const hashedPassword = await hashPassword(newPassword);
-    await db
-      .update(users)
-      .set({
-        password: hashedPassword,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId));
+    const isPasswordValid = await verifyPassword(password, user.password);
+    if (!isPasswordValid) {
+      logger.warn("Authentication failed - invalid password", { metadata: { email } });
+      return null;
+    }
 
-    logger.info("User password updated", {
-      metadata: { userId },
-    });
+    logger.info("User authenticated successfully", { metadata: { userId: user.id, email } });
+    return user;
   });
 };
 
@@ -230,13 +135,13 @@ export const revokeSession = async (token: string): Promise<void> => {
 
 /**
  * Create a password reset token for a user
- * @param userId - User ID to create reset token for
+ * @param email - Email of the user to create reset token for
  * @returns Promise resolving to reset token
  */
-export const createPasswordResetToken = async (userId: string): Promise<string> => {
+export const createPasswordResetToken = async (email: string): Promise<string> => {
   return dbErrorHandlers.create(async () => {
-    // Check if user exists
-    const user = await getUserById(userId);
+    // Check if user exists by email
+    const [user] = await db.select().from(users).where(eq(users.email, email));
     if (!user) {
       throw createNotFoundError("User");
     }
@@ -245,13 +150,13 @@ export const createPasswordResetToken = async (userId: string): Promise<string> 
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     await db.insert(passwordResets).values({
-      userId,
+      userId: user.id,
       token,
       expiresAt,
     });
 
     logger.info("Password reset token created", {
-      metadata: { userId, expiresAt: expiresAt.toISOString() },
+      metadata: { userId: user.id, expiresAt: expiresAt.toISOString() },
     });
 
     return token;

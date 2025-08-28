@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import { logger } from "@/utils/logger";
 import * as authService from "@/services/auth.service";
+import * as userService from "@/services/user.service";
 import { createSuccessResponse } from "@/utils/response";
 import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
@@ -42,7 +43,7 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
   }
 
   // Check if user already exists
-  const existingUser = await authService.getUserByEmail(email);
+  const existingUser = await userService.getUserByEmail(email);
   if (existingUser) {
     logger.warn("Registration attempt with existing email", {
       metadata: { email },
@@ -51,7 +52,7 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
   }
 
   // Create new user
-  const user = await authService.createUser({
+  const user = await userService.createUser({
     email,
     password,
     firstName,
@@ -89,20 +90,11 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
   const email = sanitizeEmail(validatedData.email) ?? validatedData.email;
   const { password } = validatedData;
 
-  // Find user by email
-  const user = await authService.getUserByEmail(email);
+  // Authenticate user
+  const user = await authService.authenticateUser(email, password);
   if (!user) {
-    logger.warn("Login attempt with non-existent email", {
+    logger.warn("Authentication failed", {
       metadata: { email },
-    });
-    throw createAuthError("Invalid credentials");
-  }
-
-  // Verify password
-  const isValidPassword = await authService.verifyPassword(password, user.password);
-  if (!isValidPassword) {
-    logger.warn("Login attempt with invalid password", {
-      metadata: { email, userId: user.id },
     });
     throw createAuthError("Invalid credentials");
   }
@@ -123,16 +115,6 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
       token,
     })
   );
-};
-
-/**
- * Get current authenticated user profile
- * @desc Retrieve current user's profile information
- * @access Private (requires authentication)
- */
-export const getProfile = (c: Context<{ Variables: AuthContext }>) => {
-  const user = c.get("user");
-  return c.json(createSuccessResponse("Profile retrieved successfully", { user }));
 };
 
 /**
@@ -161,13 +143,13 @@ export const forgotPassword = async (c: Context<{ Variables: AuthContext }>) => 
   // Additional sanitization for email
   const email = sanitizeEmail(validatedData.email) ?? validatedData.email;
 
-  const user = await authService.getUserByEmail(email);
+  const user = await userService.getUserByEmail(email);
   if (!user) {
     // Security best practice: Don't reveal if user exists or not
     return c.json(createSuccessResponse("If the email exists, a reset link has been sent"));
   }
 
-  const resetToken = await authService.createPasswordResetToken(user.id);
+  const resetToken = await authService.createPasswordResetToken(email);
 
   // TODO: In production, send email with reset link instead of logging
   logger.info("Password reset token generated - Email would be sent in production", {
@@ -205,7 +187,7 @@ export const resetPassword = async (c: Context<{ Variables: AuthContext }>) => {
   }
 
   // Update password and mark token as used
-  await authService.updatePassword(userId, password);
+  await userService.updatePassword(userId, password);
   await authService.usePasswordResetToken(token);
 
   return c.json(createSuccessResponse("Password reset successful"));

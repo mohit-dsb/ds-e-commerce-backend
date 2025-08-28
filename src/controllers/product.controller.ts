@@ -1,41 +1,37 @@
 import type { Context } from "hono";
 import type { NewProduct } from "@/db/validators";
-import { createNotFoundError } from "@/utils/errors";
 import { createSuccessResponse } from "@/utils/response";
+import { createNotFoundError } from "@/utils/errors";
 import * as productService from "@/services/product.service";
 import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
 import type { CreateProductRequest, ProductFilters, UpdateProductRequest } from "@/types/product.types";
 
 // ============================================================================
-// Product CRUD Operations
+// Product Controller Functions
 // ============================================================================
 
 /**
  * Create a new product
  * POST /api/products
- * @param c - Hono context object
- * @returns Created product response
  */
-export const createProduct = async (c: Context) => {
+export const createProduct = async (c: Context<{ Variables: AuthContext }>) => {
   const validatedData = getValidatedData<CreateProductRequest>(c, "json");
-  const user = c.get("user") as AuthContext["user"];
-
-  const productData = validatedData;
+  const user = c.get("user");
 
   const productDataForDb: Omit<NewProduct, "id" | "createdAt" | "updatedAt"> = {
-    name: productData.name,
-    description: productData.description ?? null,
-    slug: productData.slug ?? "",
-    price: productData.price,
-    weight: productData.weight ?? null,
-    weightUnit: productData.weightUnit ?? "kg",
-    status: productData.status ?? "draft",
-    inventoryQuantity: productData.inventoryQuantity ?? 0,
-    allowBackorder: productData.allowBackorder ?? false,
-    images: productData.images ?? [],
-    tags: productData.tags ?? [],
-    categoryId: productData.categoryId,
+    name: validatedData.name,
+    description: validatedData.description ?? null,
+    slug: validatedData.slug ?? "",
+    price: validatedData.price,
+    weight: validatedData.weight ?? null,
+    weightUnit: validatedData.weightUnit ?? "kg",
+    status: validatedData.status ?? "draft",
+    inventoryQuantity: validatedData.inventoryQuantity ?? 0,
+    allowBackorder: validatedData.allowBackorder ?? false,
+    images: validatedData.images ?? [],
+    tags: validatedData.tags ?? [],
+    categoryId: validatedData.categoryId,
     createdBy: user.id,
   };
 
@@ -47,8 +43,6 @@ export const createProduct = async (c: Context) => {
 /**
  * Get product by ID
  * GET /api/products/:id
- * @param c - Hono context object
- * @returns Product details response
  */
 export const getProductById = async (c: Context) => {
   const id = c.req.param("id");
@@ -62,8 +56,6 @@ export const getProductById = async (c: Context) => {
 /**
  * Get product by slug
  * GET /api/products/slug/:slug
- * @param c - Hono context object
- * @returns Product details response
  */
 export const getProductBySlug = async (c: Context) => {
   const slug = c.req.param("slug");
@@ -77,19 +69,15 @@ export const getProductBySlug = async (c: Context) => {
 /**
  * Update a product
  * PATCH /api/products/:id
- * @param c - Hono context object
- * @returns Updated product response
  */
 export const updateProduct = async (c: Context) => {
   const id = c.req.param("id");
   const validatedData = getValidatedData<UpdateProductRequest>(c, "json");
 
-  const productData = validatedData;
-
   // Remove undefined values
-  const cleanProductData = Object.fromEntries(Object.entries(productData).filter(([_, value]) => value !== undefined)) as Partial<
-    Omit<NewProduct, "id" | "createdAt" | "updatedAt">
-  >;
+  const cleanProductData = Object.fromEntries(
+    Object.entries(validatedData).filter(([_, value]) => value !== undefined)
+  ) as Partial<Omit<NewProduct, "id" | "createdAt" | "updatedAt">>;
 
   const product = await productService.updateProduct(id, cleanProductData);
 

@@ -25,13 +25,6 @@ authRoutes.post("/register", compatibleZValidator("json", registerSchema), authC
 authRoutes.post("/login", compatibleZValidator("json", loginSchema), authController.login);
 
 /**
- * @route   GET /me
- * @desc    Get current authenticated user profile
- * @access  Private
- */
-authRoutes.get("/me", authMiddleware, authController.getProfile);
-
-/**
  * @route   POST /logout
  * @desc    Logout current user by revoking session
  * @access  Private
