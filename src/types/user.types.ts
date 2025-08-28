@@ -56,7 +56,6 @@ export interface CartItemWithProduct {
 export interface ShoppingCartWithItems {
   id: string;
   userId: string;
-  sessionId?: string | null;
   expiresAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -131,7 +130,6 @@ export interface UserOperationResult {
 export interface CartEntity {
   id: string;
   userId: string | null;
-  sessionId: string | null;
   expiresAt: Date | null;
   createdAt: Date;
   updatedAt: Date;

@@ -1,6 +1,6 @@
 import z from "zod";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { users, categories, products, sessions, passwordResets, orders, orderItems, shippingAddresses } from "./schema";
+import { users, categories, products, passwordResets, orders, orderItems, shippingAddresses } from "./schema";
 
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users, {
@@ -164,8 +164,6 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Category = typeof categories.$inferSelect;
 export type NewCategory = typeof categories.$inferInsert;
-export type Session = typeof sessions.$inferSelect;
-export type NewSession = typeof sessions.$inferInsert;
 export type PasswordReset = typeof passwordResets.$inferSelect;
 export type NewPasswordReset = typeof passwordResets.$inferInsert;
 export type Product = typeof products.$inferSelect;

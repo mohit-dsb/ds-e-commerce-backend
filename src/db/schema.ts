@@ -48,14 +48,23 @@ export const categories = pgTable("categories", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const sessions = pgTable("sessions", {
+export const refreshTokens = pgTable("refresh_tokens", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
-  token: text("token").notNull().unique(),
+  tokenHash: text("token_hash").notNull().unique(), // Store hashed version for security
   expiresAt: timestamp("expires_at").notNull(),
+  isRevoked: boolean("is_revoked").default(false).notNull(),
+  revokedAt: timestamp("revoked_at"),
+  revokedBy: uuid("revoked_by").references(() => users.id, { onDelete: "set null" }), // Admin who revoked it
+  parentTokenId: uuid("parent_token_id"), // Self-reference for token families - will add reference later
+  deviceFingerprint: varchar("device_fingerprint", { length: 255 }), // For device tracking
+  ipAddress: varchar("ip_address", { length: 45 }), // Supports both IPv4 and IPv6
+  userAgent: text("user_agent"),
+  lastUsedAt: timestamp("last_used_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const passwordResets = pgTable("password_resets", {
@@ -208,7 +217,6 @@ export const orderStatusHistory = pgTable("order_status_history", {
 export const shoppingCarts = pgTable("shopping_carts", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
-  sessionId: varchar("session_id", { length: 255 }), // For guest users
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -250,20 +258,32 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
 
 export const usersRelations = relations(users, ({ many }) => ({
   categories: many(categories),
-  sessions: many(sessions),
+  refreshTokens: many(refreshTokens),
   passwordResets: many(passwordResets),
   products: many(products),
   shippingAddresses: many(shippingAddresses),
   orders: many(orders),
   shoppingCarts: many(shoppingCarts),
   orderStatusChanges: many(orderStatusHistory),
+  revokedRefreshTokens: many(refreshTokens, { relationName: "revokedBy" }),
 }));
 
-export const sessionsRelations = relations(sessions, ({ one }) => ({
+export const refreshTokensRelations = relations(refreshTokens, ({ one, many }) => ({
   user: one(users, {
-    fields: [sessions.userId],
+    fields: [refreshTokens.userId],
     references: [users.id],
   }),
+  revokedBy: one(users, {
+    fields: [refreshTokens.revokedBy],
+    references: [users.id],
+    relationName: "revokedBy",
+  }),
+  parentToken: one(refreshTokens, {
+    fields: [refreshTokens.parentTokenId],
+    references: [refreshTokens.id],
+    relationName: "tokenFamily",
+  }),
+  childTokens: many(refreshTokens, { relationName: "tokenFamily" }),
 }));
 
 export const passwordResetsRelations = relations(passwordResets, ({ one }) => ({

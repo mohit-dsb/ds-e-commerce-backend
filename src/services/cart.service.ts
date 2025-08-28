@@ -91,7 +91,6 @@ export const getUserCart = async (userId: string, includeProduct = true): Promis
     .select({
       id: shoppingCarts.id,
       userId: shoppingCarts.userId,
-      sessionId: shoppingCarts.sessionId,
       expiresAt: shoppingCarts.expiresAt,
       createdAt: shoppingCarts.createdAt,
       updatedAt: shoppingCarts.updatedAt,
@@ -187,7 +186,6 @@ export const getUserCart = async (userId: string, includeProduct = true): Promis
   return {
     id: cart[0].id,
     userId: cart[0].userId!,
-    sessionId: cart[0].sessionId,
     expiresAt: cart[0].expiresAt,
     createdAt: cart[0].createdAt,
     updatedAt: cart[0].updatedAt,

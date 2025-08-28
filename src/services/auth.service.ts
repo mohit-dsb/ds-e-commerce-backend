@@ -2,11 +2,11 @@ import { db } from "@/db";
 import { nanoid } from "nanoid";
 import { logger } from "@/utils/logger";
 import { HonoJWTService } from "@/utils/hono-jwt";
-import { verifyPassword } from "@/utils/password";
+import { verifyPassword, hashPassword } from "@/utils/password";
 import { createNotFoundError } from "@/utils/errors";
 import { dbErrorHandlers } from "@/utils/database-errors";
-import { users, sessions, passwordResets } from "@/db/schema";
-import { eq, and, gt, type InferSelectModel } from "drizzle-orm";
+import { users, refreshTokens, passwordResets } from "@/db/schema";
+import { eq, and, gt, lt, or, type InferSelectModel } from "drizzle-orm";
 
 export type User = InferSelectModel<typeof users>;
 
@@ -64,68 +64,185 @@ export const authenticateUser = async (email: string, password: string): Promise
 };
 
 // ============================================================================
-// Session Management Functions
+// Refresh Token Management Functions
 // ============================================================================
 
+export interface RefreshTokenMetadata {
+  ipAddress?: string;
+  userAgent?: string;
+  deviceFingerprint?: string;
+}
+
 /**
- * Create a new session for a user
- * @param userId - User ID to create session for
- * @returns Promise resolving to session token
+ * Create a new refresh token for a user
+ * @param userId - User ID to create refresh token for
+ * @param metadata - Device and request metadata for security tracking
+ * @param parentTokenId - Parent token ID for token family rotation
+ * @returns Promise resolving to plain refresh token string (not hashed)
  */
-export const createSession = async (userId: string): Promise<string> => {
+export const createRefreshToken = async (
+  userId: string,
+  metadata: RefreshTokenMetadata = {},
+  parentTokenId?: string
+): Promise<string> => {
   return dbErrorHandlers.create(async () => {
-    const token = nanoid(32);
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    // Generate a secure random token
+    const token = nanoid(64); // Longer tokens for refresh tokens
+    const tokenHash = await hashPassword(token); // Hash the token for storage
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
-    await db.insert(sessions).values({
+    await db.insert(refreshTokens).values({
       userId,
-      token,
+      tokenHash,
       expiresAt,
+      parentTokenId,
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+      deviceFingerprint: metadata.deviceFingerprint,
     });
 
-    logger.info("Session created", {
-      metadata: { userId, expiresAt: expiresAt.toISOString() },
+    logger.info("Refresh token created", {
+      metadata: {
+        userId,
+        expiresAt: expiresAt.toISOString(),
+        hasParent: !!parentTokenId,
+        ipAddress: metadata.ipAddress,
+      },
     });
 
-    return token;
+    return token; // Return plain token (not hashed) to client
   });
 };
 
 /**
- * Validate a session token and return associated user
- * @param token - Session token to validate
- * @returns Promise resolving to user or null if session invalid
+ * Validate a refresh token and return user ID
+ * @param token - Plain refresh token to validate
+ * @returns Promise resolving to user ID or null if token invalid
  */
-export const validateSession = async (token: string): Promise<User | null> => {
+export const validateRefreshToken = async (token: string): Promise<string | null> => {
   return dbErrorHandlers.read(async () => {
-    const [session] = await db
-      .select({ user: users })
-      .from(sessions)
-      .innerJoin(users, eq(sessions.userId, users.id))
-      .where(and(eq(sessions.token, token), gt(sessions.expiresAt, new Date())));
+    // Get all non-revoked, non-expired refresh tokens for hash comparison
+    const tokens = await db
+      .select()
+      .from(refreshTokens)
+      .where(and(eq(refreshTokens.isRevoked, false), gt(refreshTokens.expiresAt, new Date())));
 
-    if (!session) {
-      logger.warn("Invalid or expired session token", {
-        metadata: { hasToken: !!token },
-      });
+    // Find matching token by comparing hashes
+    for (const storedToken of tokens) {
+      const isValid = await verifyPassword(token, storedToken.tokenHash);
+      if (isValid) {
+        // Update last used timestamp
+        await db
+          .update(refreshTokens)
+          .set({
+            lastUsedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(refreshTokens.id, storedToken.id));
+
+        logger.info("Refresh token validated", {
+          metadata: {
+            userId: storedToken.userId,
+            tokenId: storedToken.id,
+            lastUsed: new Date().toISOString(),
+          },
+        });
+
+        return storedToken.userId;
+      }
+    }
+
+    logger.warn("Invalid or expired refresh token", {
+      metadata: { hasToken: !!token },
+    });
+    return null;
+  });
+};
+
+/**
+ * Rotate refresh token - create new token and revoke old one
+ * @param oldToken - Current refresh token to replace
+ * @param metadata - Device and request metadata for new token
+ * @returns Promise resolving to new refresh token or null if old token invalid
+ */
+export const rotateRefreshToken = async (oldToken: string, metadata: RefreshTokenMetadata = {}): Promise<string | null> => {
+  return dbErrorHandlers.update(async () => {
+    // First validate the old token
+    const userId = await validateRefreshToken(oldToken);
+    if (!userId) {
       return null;
     }
 
-    return session.user;
+    // Find the old token in database
+    const tokens = await db
+      .select()
+      .from(refreshTokens)
+      .where(and(eq(refreshTokens.isRevoked, false), gt(refreshTokens.expiresAt, new Date())));
+
+    let oldTokenRecord = null;
+    for (const storedToken of tokens) {
+      const isMatch = await verifyPassword(oldToken, storedToken.tokenHash);
+      if (isMatch) {
+        oldTokenRecord = storedToken;
+        break;
+      }
+    }
+
+    if (!oldTokenRecord) {
+      return null;
+    }
+
+    // Create new token with old token as parent (token family)
+    const newToken = await createRefreshToken(userId, metadata, oldTokenRecord.id);
+
+    // Revoke the old token
+    await db
+      .update(refreshTokens)
+      .set({
+        isRevoked: true,
+        revokedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(refreshTokens.id, oldTokenRecord.id));
+
+    logger.info("Refresh token rotated", {
+      metadata: {
+        userId,
+        oldTokenId: oldTokenRecord.id,
+        parentTokenId: oldTokenRecord.id,
+      },
+    });
+
+    return newToken;
   });
 };
 
 /**
- * Revoke/delete a session token
- * @param token - Session token to revoke
+ * Cleanup expired refresh tokens (maintenance function)
+ * @param olderThanDays - Remove tokens expired more than X days ago (default: 7)
+ * @returns Promise resolving to number of tokens cleaned up
  */
-export const revokeSession = async (token: string): Promise<void> => {
-  await dbErrorHandlers.delete(async () => {
-    await db.delete(sessions).where(eq(sessions.token, token));
+export const cleanupExpiredRefreshTokens = async (olderThanDays: number = 7): Promise<number> => {
+  return dbErrorHandlers.delete(async () => {
+    const cutoffDate = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
 
-    logger.info("Session revoked", {
-      metadata: { tokenProvided: !!token },
+    const deletedTokens = await db
+      .delete(refreshTokens)
+      .where(
+        or(
+          lt(refreshTokens.expiresAt, cutoffDate),
+          and(eq(refreshTokens.isRevoked, true), lt(refreshTokens.revokedAt, cutoffDate))
+        )
+      );
+
+    logger.info("Expired refresh tokens cleaned up", {
+      metadata: {
+        cutoffDate: cutoffDate.toISOString(),
+        deletedCount: deletedTokens,
+      },
     });
+
+    return deletedTokens as unknown as number;
   });
 };
 

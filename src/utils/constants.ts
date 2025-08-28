@@ -33,12 +33,6 @@ export const DATABASE = {
   MAX_CONNECTIONS: 20,
 } as const;
 
-// Session Management
-export const SESSION = {
-  DURATION: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-  CLEANUP_INTERVAL: 24 * 60 * 60 * 1000, // 24 hours
-} as const;
-
 // Password Reset
 export const PASSWORD_RESET = {
   TOKEN_EXPIRY: 60 * 60 * 1000, // 1 hour in milliseconds

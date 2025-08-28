@@ -10,7 +10,6 @@ A production-ready, enterprise-grade e-commerce backend API built with modern te
 - **Image Upload & Management**: Cloudinary integration for product photo storage with transformations
 - **Category Management**: Hierarchical product categories with admin-only access
 - **User Management**: Registration, login, password reset, profile management
-- **Session Management**: Secure session handling with automatic cleanup
 - **Inventory Tracking**: Multiple inventory modes (none, quantity, variants)
 - **Search & Filtering**: Advanced product search with multiple filter options
 
@@ -35,10 +34,9 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
 
 - 🔐 **Authentication System**
   - User registration and login
-  - JWT-based sessions
+  - JWT-based auth
   - Password reset functionality
   - Secure password hashing with bcrypt
-  - Session management
 
 - 🛍️ **Product Management**
   - Complete product CRUD operations
@@ -134,7 +132,6 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - Login user
 - `GET /api/auth/me` - Get current user profile
-- `POST /api/auth/logout` - Logout user
 - `POST /api/auth/forgot-password` - Request password reset
 - `POST /api/auth/reset-password` - Reset password
 

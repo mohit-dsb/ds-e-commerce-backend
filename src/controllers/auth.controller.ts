@@ -2,10 +2,10 @@ import type { Context } from "hono";
 import { logger } from "@/utils/logger";
 import * as authService from "@/services/auth.service";
 import * as userService from "@/services/user.service";
-import { createSuccessResponse } from "@/utils/response";
 import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
 import { sanitizeUserData, sanitizeEmail } from "@/utils/sanitization";
+import { createSuccessResponse, extractDeviceMetadata } from "@/utils/response";
 import type { registerSchema, loginSchema, resetPasswordSchema } from "@/db/validators";
 import { createConflictError, createAuthError, BusinessRuleError } from "@/utils/errors";
 
@@ -17,6 +17,7 @@ type RegisterData = typeof registerSchema._type;
 type LoginData = typeof loginSchema._type;
 type ResetPasswordData = typeof resetPasswordSchema._type;
 type ForgotPasswordData = Pick<LoginData, "email">;
+type RefreshTokenData = { refreshToken: string };
 
 // ============================================================================
 // Authentication Controller Functions
@@ -59,8 +60,22 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
     lastName,
   });
 
-  // Create session for the new user
-  const token = await authService.createSession(user.id);
+  // Extract device metadata for security tracking
+  const deviceMetadata = extractDeviceMetadata(c);
+
+  // Generate JWT access token and refresh token
+  const [accessToken, refreshToken] = await Promise.all([
+    authService.generateToken(user.id),
+    authService.createRefreshToken(user.id, deviceMetadata),
+  ]);
+
+  logger.info("User registered with tokens", {
+    metadata: {
+      userId: user.id,
+      ipAddress: deviceMetadata.ipAddress,
+      hasDeviceFingerprint: !!deviceMetadata.deviceFingerprint,
+    },
+  });
 
   return c.json(
     createSuccessResponse("User registered successfully", {
@@ -72,7 +87,8 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
         role: user.role,
         isVerified: user.isVerified,
       },
-      token,
+      accessToken,
+      refreshToken,
     }),
     201
   );
@@ -80,7 +96,7 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
 
 /**
  * Login user with email and password
- * @desc Authenticate user and create session
+ * @desc Authenticate user
  * @access Public
  */
 export const login = async (c: Context<{ Variables: AuthContext }>) => {
@@ -99,8 +115,22 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
     throw createAuthError("Invalid credentials");
   }
 
-  // Create new session
-  const token = await authService.createSession(user.id);
+  // Extract device metadata for security tracking
+  const deviceMetadata = extractDeviceMetadata(c);
+
+  // Generate JWT access token and refresh token
+  const [accessToken, refreshToken] = await Promise.all([
+    authService.generateToken(user.id),
+    authService.createRefreshToken(user.id, deviceMetadata),
+  ]);
+
+  logger.info("User logged in with tokens", {
+    metadata: {
+      userId: user.id,
+      ipAddress: deviceMetadata.ipAddress,
+      hasDeviceFingerprint: !!deviceMetadata.deviceFingerprint,
+    },
+  });
 
   return c.json(
     createSuccessResponse("Login successful", {
@@ -112,24 +142,73 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
         role: user.role,
         isVerified: user.isVerified,
       },
-      token,
+      accessToken,
+      refreshToken,
     })
   );
 };
 
 /**
- * Logout current user by revoking session
- * @desc Invalidate current session token
- * @access Private (requires authentication)
+ * Refresh access token using refresh token
+ * @desc Generate new access token and rotate refresh token
+ * @access Public (requires valid refresh token)
+ * @note This endpoint should have rate limiting in production
  */
-export const logout = async (c: Context<{ Variables: AuthContext }>) => {
-  const authHeader = c.req.header("Authorization");
-  const token = authHeader!.substring(7); // Remove "Bearer " prefix
+export const refreshToken = async (c: Context<{ Variables: AuthContext }>) => {
+  const body = (await c.req.json()) as unknown;
 
-  // Revoke the session token
-  await authService.revokeSession(token);
+  // Type guard to ensure body has the expected structure
+  if (!body || typeof body !== "object" || !("refreshToken" in body)) {
+    logger.warn("Refresh token request without valid body structure");
+    throw createAuthError("Invalid request body");
+  }
 
-  return c.json(createSuccessResponse("Logout successful"));
+  const { refreshToken: oldRefreshToken } = body as RefreshTokenData;
+
+  if (!oldRefreshToken || typeof oldRefreshToken !== "string") {
+    logger.warn("Refresh token request without valid token");
+    throw createAuthError("Refresh token required");
+  }
+
+  // Extract device metadata for new token
+  const deviceMetadata = extractDeviceMetadata(c);
+
+  // Rotate refresh token (validates old token and creates new one)
+  const newRefreshToken = await authService.rotateRefreshToken(oldRefreshToken, deviceMetadata);
+
+  if (!newRefreshToken) {
+    logger.warn("Refresh token rotation failed", {
+      metadata: {
+        ipAddress: deviceMetadata.ipAddress,
+        hasToken: !!oldRefreshToken,
+      },
+    });
+    throw createAuthError("Invalid or expired refresh token");
+  }
+
+  // Get user ID from the validated refresh token
+  const userId = await authService.validateRefreshToken(newRefreshToken);
+  if (!userId) {
+    logger.error("New refresh token validation failed after creation");
+    throw createAuthError("Token generation failed");
+  }
+
+  // Generate new access token
+  const accessToken = await authService.generateToken(userId);
+
+  logger.info("Tokens refreshed successfully", {
+    metadata: {
+      userId,
+      ipAddress: deviceMetadata.ipAddress,
+    },
+  });
+
+  return c.json(
+    createSuccessResponse("Tokens refreshed successfully", {
+      accessToken,
+      refreshToken: newRefreshToken,
+    })
+  );
 };
 
 /**
