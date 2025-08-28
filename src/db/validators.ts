@@ -214,3 +214,57 @@ export const updateProductImagesSchema = z.object({
   images: z.array(z.string().url()).max(10, "Maximum 10 images allowed").optional(),
   imagesToRemove: z.array(z.string()).optional(), // Public IDs to remove
 });
+
+// ============================================================================
+// Shopping Cart Validation Schemas
+// ============================================================================
+
+// Add item to cart schema
+export const addToCartSchema = z.object({
+  productId: z.string().uuid("Invalid product ID"),
+  quantity: z.number().int().min(1, "Quantity must be at least 1").max(99, "Quantity cannot exceed 99"),
+  productVariant: z
+    .object({
+      size: z.string().trim().optional(),
+      color: z.string().trim().optional(),
+      material: z.string().trim().optional(),
+    })
+    .catchall(z.unknown())
+    .optional(),
+});
+
+// Update cart item quantity schema
+export const updateCartItemSchema = z.object({
+  quantity: z.number().int().min(1, "Quantity must be at least 1").max(99, "Quantity cannot exceed 99"),
+});
+
+// Remove cart item schema
+export const removeCartItemSchema = z.object({
+  itemId: z.string().uuid("Invalid item ID"),
+});
+
+// Cart query parameters schema
+export const cartQuerySchema = z.object({
+  includeProduct: z.boolean().optional().default(true),
+});
+
+// ============================================================================
+// User Profile Validation Schemas
+// ============================================================================
+
+// Update user profile schema
+export const updateUserProfileSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(100).trim().optional(),
+  lastName: z.string().min(1, "Last name is required").max(100).trim().optional(),
+  email: z.string().email("Invalid email address").trim().toLowerCase().optional(),
+});
+
+// Change password schema
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(8, "New password must be at least 8 characters"),
+  confirmPassword: z.string().min(1, "Password confirmation is required"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});

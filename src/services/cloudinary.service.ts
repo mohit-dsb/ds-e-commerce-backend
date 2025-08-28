@@ -85,7 +85,7 @@ export const uploadImage = async (imageBuffer: Buffer, options: ImageUploadOptio
   }
 
   try {
-    const folder = options.folder ?? env.CLOUDINARY_FOLDER;
+    const folder = options.folder ?? "misc";
 
     // Convert buffer to base64 data URI
     const base64Image = `data:image/auto;base64,${imageBuffer.toString("base64")}`;

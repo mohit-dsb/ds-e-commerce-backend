@@ -196,6 +196,193 @@ GET /api/products?search=laptop&categoryId=uuid-here&page=1&limit=10
 GET /api/products?tags=featured,bestseller&inStock=true
 ```
 
+### User & Cart Management API
+
+The API provides comprehensive user profile and shopping cart functionality with proper authentication and validation.
+
+#### Cart Operations
+
+All cart endpoints require authentication and work with the authenticated user's cart.
+
+**GET /api/users/cart**
+
+Get the current user's cart with all items and product details.
+
+```bash
+curl -X GET \
+  -H "Authorization: Bearer your_jwt_token" \
+  http://localhost:3000/api/users/cart
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Cart retrieved successfully",
+  "data": {
+    "cart": {
+      "id": "cart-uuid",
+      "totalItems": 3,
+      "totalAmount": "299.97",
+      "createdAt": "2025-01-15T10:30:00.000Z",
+      "updatedAt": "2025-01-15T12:45:00.000Z",
+      "items": [
+        {
+          "id": "item-uuid",
+          "quantity": 2,
+          "addedAt": "2025-01-15T10:30:00.000Z",
+          "product": {
+            "id": "product-uuid",
+            "name": "Wireless Headphones",
+            "price": "99.99",
+            "images": ["https://cdn.example.com/image.jpg"],
+            "inventoryQuantity": 50,
+            "status": "active"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+**POST /api/users/cart/items**
+
+Add a product to the cart or update quantity if it already exists.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer your_jwt_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "productId": "product-uuid",
+    "quantity": 2
+  }' \
+  http://localhost:3000/api/users/cart/items
+```
+
+**PATCH /api/users/cart/items/:itemId**
+
+Update the quantity of a specific cart item.
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer your_jwt_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quantity": 3
+  }' \
+  http://localhost:3000/api/users/cart/items/item-uuid
+```
+
+**DELETE /api/users/cart/items/:itemId**
+
+Remove a specific item from the cart.
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer your_jwt_token" \
+  http://localhost:3000/api/users/cart/items/item-uuid
+```
+
+**DELETE /api/users/cart**
+
+Clear all items from the cart.
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer your_jwt_token" \
+  http://localhost:3000/api/users/cart
+```
+
+#### User Profile Management
+
+**GET /api/users/profile**
+
+Get the current user's profile information.
+
+```bash
+curl -X GET \
+  -H "Authorization: Bearer your_jwt_token" \
+  http://localhost:3000/api/users/profile
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Profile retrieved successfully",
+  "data": {
+    "user": {
+      "id": "user-uuid",
+      "email": "user@example.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "role": "customer",
+      "isEmailVerified": true,
+      "createdAt": "2025-01-10T08:00:00.000Z",
+      "updatedAt": "2025-01-15T10:30:00.000Z"
+    }
+  }
+}
+```
+
+**PATCH /api/users/profile**
+
+Update user profile information.
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer your_jwt_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Jane",
+    "lastName": "Smith"
+  }' \
+  http://localhost:3000/api/users/profile
+```
+
+**PATCH /api/users/password**
+
+Change user password.
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer your_jwt_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentPassword": "oldpassword123",
+    "newPassword": "newpassword456"
+  }' \
+  http://localhost:3000/api/users/password
+```
+
+#### Cart Business Logic
+
+- **Automatic Cart Creation**: Carts are automatically created when users first add items
+- **Inventory Validation**: Items can only be added if sufficient inventory is available
+- **Quantity Limits**: Maximum quantity per item is limited by available inventory
+- **Product Status Check**: Only active products can be added to cart
+- **Price Calculation**: Cart totals are calculated server-side for security
+- **Concurrent Updates**: Proper handling of concurrent cart modifications
+
+#### Validation Rules
+
+**Add to Cart:**
+- `productId`: Required UUID of an active product
+- `quantity`: Required positive integer, max limited by inventory
+
+**Update Cart Item:**
+- `quantity`: Required positive integer, max limited by inventory
+
+**Update Profile:**
+- `firstName`: Optional string, 1-50 characters
+- `lastName`: Optional string, 1-50 characters
+
+**Change Password:**
+- `currentPassword`: Required string matching current password
+- `newPassword`: Required string, 8-128 characters with complexity requirements
+
 ### Image Upload API
 
 The API provides comprehensive image upload functionality using Cloudinary for storage and CDN delivery.
@@ -208,7 +395,6 @@ Set up the following environment variables for Cloudinary integration:
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
-CLOUDINARY_FOLDER=ecommerce
 ```
 
 #### Single Image Upload

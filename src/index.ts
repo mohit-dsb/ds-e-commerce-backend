@@ -8,6 +8,7 @@ import { categoryRoutes } from "@/routes/category.routes";
 import productRoutes from "@/routes/product.routes";
 import orderRoutes from "@/routes/order.routes";
 import shippingAddressRoutes from "@/routes/shipping-address.routes";
+import userRoutes from "@/routes/user.routes";
 import { errorHandlerMiddleware } from "@/middleware/error-handler.middleware";
 
 const app = new Hono();
@@ -59,6 +60,7 @@ app.route("/api/categories", categoryRoutes);
 app.route("/api/products", productRoutes);
 app.route("/api/orders", orderRoutes);
 app.route("/api/shipping-addresses", shippingAddressRoutes);
+app.route("/api/users", userRoutes);
 
 // Global error handler
 app.onError(errorHandlerMiddleware);
