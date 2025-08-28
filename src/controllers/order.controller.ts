@@ -4,7 +4,7 @@ import * as orderService from "@/services/order.service";
 import { createSuccessResponse } from "@/utils/response";
 import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
-import type { createOrderSchema, updateOrderStatusSchema } from "@/db/validators";
+import type { createOrderSchema, updateOrderStatusSchema, cancelOrderSchema } from "@/db/validators";
 import { createNotFoundError, createValidationError, createAuthError } from "@/utils/errors";
 import type { CreateOrderRequest, UpdateOrderStatusRequest, OrderFilters, CreateOrderItem } from "@/types/order.types";
 
@@ -14,6 +14,7 @@ import type { CreateOrderRequest, UpdateOrderStatusRequest, OrderFilters, Create
 
 type CreateOrderData = typeof createOrderSchema._type;
 type UpdateOrderStatusData = typeof updateOrderStatusSchema._type;
+type CancelOrderData = typeof cancelOrderSchema._type;
 
 // ============================================================================
 // Order Management Controller Functions
@@ -32,7 +33,6 @@ export const createOrder = async (c: Context<{ Variables: AuthContext }>) => {
   const orderData: CreateOrderRequest = {
     userId: user.id,
     shippingAddressId: validatedData.shippingAddressId,
-    billingAddress: validatedData.billingAddress,
     orderItems: validatedData.orderItems,
     shippingMethod: validatedData.shippingMethod,
     customerNotes: validatedData.customerNotes,
@@ -218,15 +218,11 @@ export const updateOrderStatus = async (c: Context<{ Variables: AuthContext }>) 
 export const cancelOrder = async (c: Context<{ Variables: AuthContext }>) => {
   const orderId = c.req.param("id");
   const user = c.get("user");
-  const body: { reason?: string } = await c.req.json();
-  const { reason } = body;
+  const validatedData = getValidatedData<CancelOrderData>(c, "json");
+  const { reason } = validatedData;
 
   if (!orderId) {
     throw createValidationError([{ field: "id", message: "Order ID is required" }]);
-  }
-
-  if (!reason?.trim()) {
-    throw createValidationError([{ field: "reason", message: "Cancellation reason is required" }]);
   }
 
   // Get order to check ownership and status
@@ -307,7 +303,6 @@ export const validateOrder = async (c: Context<{ Variables: AuthContext }>) => {
   const orderData: CreateOrderRequest = {
     userId: user.id,
     shippingAddressId: validatedData.shippingAddressId,
-    billingAddress: validatedData.billingAddress,
     orderItems: validatedData.orderItems,
     shippingMethod: validatedData.shippingMethod,
     customerNotes: validatedData.customerNotes,

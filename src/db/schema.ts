@@ -135,22 +135,6 @@ export const orders = pgTable("orders", {
     .references(() => shippingAddresses.id, { onDelete: "restrict" })
     .notNull(),
 
-  // Billing details (stored as JSONB for flexibility)
-  billingAddress: jsonb("billing_address")
-    .$type<{
-      firstName: string;
-      lastName: string;
-      company?: string;
-      addressLine1: string;
-      addressLine2?: string;
-      city: string;
-      state: string;
-      postalCode: string;
-      country: string;
-      phoneNumber?: string;
-    }>()
-    .notNull(),
-
   // Tracking and notes
   trackingNumber: varchar("tracking_number", { length: 100 }),
   notes: text("notes"),

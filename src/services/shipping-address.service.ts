@@ -56,11 +56,7 @@ export const createShippingAddress = async (
  */
 export const getShippingAddressById = async (addressId: string): Promise<ShippingAddress | null> => {
   try {
-    const address = await db
-      .select()
-      .from(shippingAddresses)
-      .where(eq(shippingAddresses.id, addressId))
-      .limit(1);
+    const address = await db.select().from(shippingAddresses).where(eq(shippingAddresses.id, addressId)).limit(1);
 
     return address[0] || null;
   } catch (error) {
@@ -113,7 +109,7 @@ export const updateShippingAddress = async (
         .set({ isDefault: false, updatedAt: new Date() })
         .where(
           and(
-            eq(shippingAddresses.userId, existingAddress.userId),
+            eq(shippingAddresses.userId, existingAddress.userId)
             // Don't update the current address - we'll do that separately
             // ne(shippingAddresses.id, addressId)
           )

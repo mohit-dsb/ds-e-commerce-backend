@@ -3,10 +3,7 @@ import type { ApiSuccessResponse } from "../types/api.types";
 /**
  * Create a standardized success response
  */
-export function createSuccessResponse<T = unknown>(
-  message: string,
-  data?: T
-): ApiSuccessResponse<T> {
+export function createSuccessResponse<T = unknown>(message: string, data?: T): ApiSuccessResponse<T> {
   return {
     success: true,
     message,

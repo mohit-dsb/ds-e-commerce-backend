@@ -93,13 +93,13 @@ productRoutes.post(
 );
 
 /**
- * @route PUT /api/products/:id
+ * @route PATCH /api/products/:id
  * @desc Update a product
  * @access Private (Admin)
  * @param {string} id - Product UUID
  * @body {UpdateProductRequest} Updated product data
  */
-productRoutes.put(
+productRoutes.patch(
   "/:id",
   authMiddleware,
   adminMiddleware,

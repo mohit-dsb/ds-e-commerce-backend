@@ -15,44 +15,28 @@ const authRoutes = new Hono<{ Variables: AuthContext }>();
  * @desc    Register a new user
  * @access  Public
  */
-authRoutes.post(
-  "/register", 
-  compatibleZValidator("json", registerSchema), 
-  authController.register
-);
+authRoutes.post("/register", compatibleZValidator("json", registerSchema), authController.register);
 
 /**
  * @route   POST /login
  * @desc    Login user with email and password
  * @access  Public
  */
-authRoutes.post(
-  "/login", 
-  compatibleZValidator("json", loginSchema), 
-  authController.login
-);
+authRoutes.post("/login", compatibleZValidator("json", loginSchema), authController.login);
 
 /**
  * @route   GET /me
  * @desc    Get current authenticated user profile
  * @access  Private
  */
-authRoutes.get(
-  "/me", 
-  authMiddleware, 
-  authController.getProfile
-);
+authRoutes.get("/me", authMiddleware, authController.getProfile);
 
 /**
  * @route   POST /logout
  * @desc    Logout current user by revoking session
  * @access  Private
  */
-authRoutes.post(
-  "/logout", 
-  authMiddleware, 
-  authController.logout
-);
+authRoutes.post("/logout", authMiddleware, authController.logout);
 
 /**
  * @route   POST /forgot-password
@@ -60,8 +44,8 @@ authRoutes.post(
  * @access  Public
  */
 authRoutes.post(
-  "/forgot-password", 
-  compatibleZValidator("json", loginSchema.pick({ email: true })), 
+  "/forgot-password",
+  compatibleZValidator("json", loginSchema.pick({ email: true })),
   authController.forgotPassword
 );
 
@@ -70,10 +54,6 @@ authRoutes.post(
  * @desc    Reset password using token
  * @access  Public
  */
-authRoutes.post(
-  "/reset-password", 
-  compatibleZValidator("json", resetPasswordSchema), 
-  authController.resetPassword
-);
+authRoutes.post("/reset-password", compatibleZValidator("json", resetPasswordSchema), authController.resetPassword);
 
 export { authRoutes };

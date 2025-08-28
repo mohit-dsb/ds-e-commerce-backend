@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import * as orderController from "@/controllers/order.controller";
 import { compatibleZValidator } from "@/middleware/validation.middleware";
 import { authMiddleware, type AuthContext } from "@/middleware/auth.middleware";
-import { createOrderSchema, updateOrderStatusSchema } from "@/db/validators";
+import { createOrderSchema, updateOrderStatusSchema, cancelOrderSchema } from "@/db/validators";
 
 const orderRoutes = new Hono<{ Variables: AuthContext }>();
 
@@ -69,7 +69,12 @@ orderRoutes.patch(
  * @desc    Cancel an order
  * @access  Private (Customer can cancel own orders, Admin can cancel any)
  */
-orderRoutes.post("/:id/cancel", authMiddleware, orderController.cancelOrder);
+orderRoutes.post(
+  "/:id/cancel",
+  authMiddleware,
+  compatibleZValidator("json", cancelOrderSchema),
+  orderController.cancelOrder
+);
 
 // ============================================================================
 // Order Validation and Utility Routes

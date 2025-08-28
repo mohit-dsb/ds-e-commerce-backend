@@ -100,34 +100,6 @@ export const validateOrderRequest = async (orderData: CreateOrderRequest): Promi
       }
     }
 
-    // Validate billing address structure
-    if (!orderData.billingAddress) {
-      errors.push({ field: "billingAddress", message: "Billing address is required" });
-    } else {
-      const { billingAddress } = orderData;
-      if (!billingAddress.firstName?.trim()) {
-        errors.push({ field: "billingAddress.firstName", message: "First name is required" });
-      }
-      if (!billingAddress.lastName?.trim()) {
-        errors.push({ field: "billingAddress.lastName", message: "Last name is required" });
-      }
-      if (!billingAddress.addressLine1?.trim()) {
-        errors.push({ field: "billingAddress.addressLine1", message: "Address line 1 is required" });
-      }
-      if (!billingAddress.city?.trim()) {
-        errors.push({ field: "billingAddress.city", message: "City is required" });
-      }
-      if (!billingAddress.state?.trim()) {
-        errors.push({ field: "billingAddress.state", message: "State is required" });
-      }
-      if (!billingAddress.postalCode?.trim()) {
-        errors.push({ field: "billingAddress.postalCode", message: "Postal code is required" });
-      }
-      if (!billingAddress.country?.trim()) {
-        errors.push({ field: "billingAddress.country", message: "Country is required" });
-      }
-    }
-
     return {
       isValid: errors.length === 0,
       errors,
@@ -301,7 +273,7 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<OrderW
     // Generate unique order number
     const orderNumber = await generateOrderNumber();
 
-    return await db.transaction(async (tx) => {
+    const orderIdResult = await db.transaction(async (tx) => {
       // Create the order
       const [newOrder] = await tx
         .insert(orders)
@@ -316,7 +288,6 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<OrderW
           totalAmount: calculations.totalAmount,
           shippingMethod: orderData.shippingMethod ?? "standard",
           shippingAddressId: orderData.shippingAddressId,
-          billingAddress: orderData.billingAddress,
           customerNotes: orderData.customerNotes,
           metadata: orderData.metadata ?? {},
         })
@@ -391,13 +362,16 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<OrderW
         }
       }
 
-      // Return the created order with relations
-      const createdOrder = await getOrderById(newOrder.id);
-      if (!createdOrder) {
-        throw new Error("Failed to retrieve created order");
-      }
-      return createdOrder;
+      // Return the order ID, we'll fetch the full order after the transaction
+      return newOrder.id;
     });
+
+    // After transaction is committed, fetch and return the complete order
+    const createdOrder = await getOrderById(orderIdResult);
+    if (!createdOrder) {
+      throw new Error("Failed to retrieve created order");
+    }
+    return createdOrder;
   });
 };
 

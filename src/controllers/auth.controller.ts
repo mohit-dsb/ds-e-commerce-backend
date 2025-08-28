@@ -28,7 +28,7 @@ type ForgotPasswordData = Pick<LoginData, "email">;
  */
 export const register = async (c: Context<{ Variables: AuthContext }>) => {
   const validatedData = getValidatedData<RegisterData>(c, "json");
-  
+
   // Additional sanitization for extra safety
   const sanitizedData = sanitizeUserData(validatedData);
   const email = sanitizedData.email ?? validatedData.email;

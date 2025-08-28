@@ -52,18 +52,6 @@ export interface CreateOrderItem {
 export interface CreateOrderRequest {
   userId: string;
   shippingAddressId: string;
-  billingAddress: {
-    firstName: string;
-    lastName: string;
-    company?: string;
-    addressLine1: string;
-    addressLine2?: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-    phoneNumber?: string;
-  };
   orderItems: CreateOrderItem[];
   shippingMethod?: "standard" | "express" | "free_shipping";
   customerNotes?: string;

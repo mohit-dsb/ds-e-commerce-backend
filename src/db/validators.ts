@@ -101,7 +101,7 @@ export const insertShippingAddressSchema = z.object({
   postalCode: z.string().min(1, "Postal code is required").max(20).trim(),
   country: z.string().min(1, "Country is required").max(100).trim(),
   phoneNumber: z.string().max(20).trim().optional(),
-  isDefault: z.boolean().optional()
+  isDefault: z.boolean().optional(),
 });
 
 export const updateShippingAddressSchema = insertShippingAddressSchema.partial();
@@ -110,40 +110,29 @@ export const updateShippingAddressSchema = insertShippingAddressSchema.partial()
 export const createOrderItemSchema = z.object({
   productId: z.string().uuid("Invalid product ID"),
   quantity: z.number().int().min(1, "Quantity must be at least 1").max(100, "Quantity cannot exceed 100"),
-  productVariant: z.object({
-    size: z.string().optional(),
-    color: z.string().optional(),
-    material: z.string().optional()
-  }).catchall(z.unknown()).optional()
-});
-
-export const billingAddressSchema = z.object({
-  firstName: z.string().min(1, "First name is required").max(100).trim(),
-  lastName: z.string().min(1, "Last name is required").max(100).trim(),
-  company: z.string().max(100).trim().optional(),
-  addressLine1: z.string().min(1, "Address line 1 is required").max(255).trim(),
-  addressLine2: z.string().max(255).trim().optional(),
-  city: z.string().min(1, "City is required").max(100).trim(),
-  state: z.string().min(1, "State is required").max(100).trim(),
-  postalCode: z.string().min(1, "Postal code is required").max(20).trim(),
-  country: z.string().min(1, "Country is required").max(100).trim(),
-  phoneNumber: z.string().max(20).trim().optional()
+  productVariant: z
+    .object({
+      size: z.string().optional(),
+      color: z.string().optional(),
+      material: z.string().optional(),
+    })
+    .catchall(z.unknown())
+    .optional(),
 });
 
 export const createOrderSchema = z.object({
   shippingAddressId: z.string().uuid("Invalid shipping address ID"),
-  billingAddress: billingAddressSchema,
   orderItems: z.array(createOrderItemSchema).min(1, "At least one order item is required"),
   shippingMethod: z.enum(["standard", "express", "free_shipping"]).optional(),
   customerNotes: z.string().max(1000).trim().optional(),
-  metadata: z.record(z.unknown()).optional()
+  metadata: z.record(z.unknown()).optional(),
 });
 
 export const updateOrderStatusSchema = z.object({
   status: z.enum(["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "refunded", "returned"]),
   comment: z.string().max(1000).trim().optional(),
   trackingNumber: z.string().max(100).trim().optional(),
-  isCustomerVisible: z.boolean().optional()
+  isCustomerVisible: z.boolean().optional(),
 });
 
 export const orderFiltersSchema = z.object({
@@ -151,13 +140,23 @@ export const orderFiltersSchema = z.object({
   orderNumber: z.string().trim().optional(),
   dateFrom: z.coerce.date().optional(),
   dateTo: z.coerce.date().optional(),
-  minAmount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid minimum amount").optional(),
-  maxAmount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid maximum amount").optional(),
+  minAmount: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/, "Invalid minimum amount")
+    .optional(),
+  maxAmount: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/, "Invalid maximum amount")
+    .optional(),
   shippingMethod: z.enum(["standard", "express", "free_shipping"]).optional(),
   sortBy: z.enum(["createdAt", "updatedAt", "totalAmount", "orderNumber"]).optional(),
   sortOrder: z.enum(["asc", "desc"]).optional(),
   page: z.coerce.number().int().min(1).optional(),
-  limit: z.coerce.number().int().min(1).max(100).optional()
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+
+export const cancelOrderSchema = z.object({
+  reason: z.string().trim().min(1, "Cancellation reason is required").max(500, "Reason must be less than 500 characters"),
 });
 
 // Type exports

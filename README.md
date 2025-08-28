@@ -143,7 +143,7 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
 - `GET /api/categories/:id` - Get category by ID
 - `GET /api/categories/slug/:slug` - Get category by slug
 - `POST /api/categories` - Create category (Admin)
-- `PUT /api/categories/:id` - Update category (Admin)
+- `PATCH /api/categories/:id` - Update category (Admin)
 - `DELETE /api/categories/:id` - Delete category (Admin)
 
 ### Products
@@ -157,7 +157,7 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
 
 #### Admin Endpoints
 - `POST /api/products` - Create new product
-- `PUT /api/products/:id` - Update product
+- `PATCH /api/products/:id` - Update product
 - `DELETE /api/products/:id` - Delete product
 - `GET /api/products/low-stock` - Get low stock products
 - `PATCH /api/products/bulk-status` - Bulk update product status

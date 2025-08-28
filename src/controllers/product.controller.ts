@@ -76,7 +76,7 @@ export const getProductBySlug = async (c: Context) => {
 
 /**
  * Update a product
- * PUT /api/products/:id
+ * PATCH /api/products/:id
  * @param c - Hono context object
  * @returns Updated product response
  */

@@ -61,7 +61,7 @@
 
     // Type Resolution
     "typeRoots": ["./node_modules/@types", "./src/types"],
-    "types": ["bun"],
+    "types": [],
 
     // Skip Lib Check for Performance
     "skipLibCheck": true,

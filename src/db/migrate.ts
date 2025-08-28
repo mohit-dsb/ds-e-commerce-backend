@@ -1,6 +1,6 @@
 import { db } from "./index";
 import { logger } from "../utils/logger";
-import { migrate } from "drizzle-orm/neon-http/migrator";
+import { migrate } from "drizzle-orm/neon-serverless/migrator";
 
 async function runMigration() {
   logger.info("Running database migrations...");

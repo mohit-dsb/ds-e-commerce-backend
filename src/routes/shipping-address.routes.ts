@@ -44,11 +44,11 @@ shippingAddressRoutes.get("/default", authMiddleware, shippingAddressController.
 shippingAddressRoutes.get("/:id", authMiddleware, shippingAddressController.getShippingAddress);
 
 /**
- * @route   PUT /shipping-addresses/:id
+ * @route   PATCH /shipping-addresses/:id
  * @desc    Update shipping address
  * @access  Private (Customer can update own addresses, Admin can update all)
  */
-shippingAddressRoutes.put(
+shippingAddressRoutes.patch(
   "/:id",
   authMiddleware,
   compatibleZValidator("json", updateShippingAddressSchema),
