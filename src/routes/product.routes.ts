@@ -4,6 +4,7 @@ import * as productController from "@/controllers/product.controller";
 import { compatibleZValidator } from "@/middleware/validation.middleware";
 import { insertProductSchema, updateProductSchema } from "@/db/validators";
 import { authMiddleware, adminMiddleware } from "@/middleware/auth.middleware";
+import productImageRoutes from "./product-image.routes";
 
 const productRoutes = new Hono();
 
@@ -134,5 +135,8 @@ productRoutes.patch(
   ),
   productController.bulkUpdateProductStatus
 );
+
+// Mount image upload routes
+productRoutes.route("/", productImageRoutes);
 
 export default productRoutes;

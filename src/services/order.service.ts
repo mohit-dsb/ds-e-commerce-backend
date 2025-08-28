@@ -750,27 +750,6 @@ export const cancelOrder = async (orderId: string, reason: string, cancelledBy?:
 };
 
 // ============================================================================
-// User Order History
-// ============================================================================
-
-/**
- * Get user's order history with pagination
- * @param userId - User ID
- * @param page - Page number (default: 1)
- * @param limit - Items per page (default: 10)
- * @returns Promise resolving to user's orders
- */
-export const getUserOrderHistory = async (userId: string, page: number = 1, limit: number = 10) => {
-  return getOrders({
-    userId,
-    page,
-    limit,
-    sortBy: "createdAt",
-    sortOrder: "desc",
-  });
-};
-
-// ============================================================================
 // Order Analytics (Basic)
 // ============================================================================
 

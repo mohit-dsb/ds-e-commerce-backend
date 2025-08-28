@@ -20,7 +20,7 @@ app.use(
     origin: env.NODE_ENV === "production" ? env.CORS_ORIGIN : "*",
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
+    credentials: env.CORS_CREDENTIALS,
   })
 );
 

@@ -108,3 +108,7 @@ export const createNotFoundError = (resource?: string) => {
 export const createConflictError = (message: string) => {
   return new ConflictError(message);
 };
+
+export const createInternalServerError = (message: string) => {
+  return new AppError(ErrorCode.INTERNAL_SERVER_ERROR, message, 500);
+};

@@ -25,13 +25,6 @@ orderRoutes.post("/", authMiddleware, compatibleZValidator("json", createOrderSc
 orderRoutes.get("/", authMiddleware, orderController.getOrders);
 
 /**
- * @route   GET /orders/my
- * @desc    Get current user's order history
- * @access  Private (Customer only)
- */
-orderRoutes.get("/my", authMiddleware, orderController.getMyOrders);
-
-/**
  * @route   GET /orders/statistics
  * @desc    Get order statistics
  * @access  Private (Admin sees global stats, Customer sees own stats)
@@ -69,12 +62,7 @@ orderRoutes.patch(
  * @desc    Cancel an order
  * @access  Private (Customer can cancel own orders, Admin can cancel any)
  */
-orderRoutes.post(
-  "/:id/cancel",
-  authMiddleware,
-  compatibleZValidator("json", cancelOrderSchema),
-  orderController.cancelOrder
-);
+orderRoutes.post("/:id/cancel", authMiddleware, compatibleZValidator("json", cancelOrderSchema), orderController.cancelOrder);
 
 // ============================================================================
 // Order Validation and Utility Routes

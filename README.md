@@ -7,6 +7,7 @@ A production-ready, enterprise-grade e-commerce backend API built with modern te
 ### ✨ Core Features
 - **Authentication & Authorization**: JWT-based auth with role-based access control
 - **Product Management**: Complete product lifecycle with variants, categories, and inventory
+- **Image Upload & Management**: Cloudinary integration for product photo storage with transformations
 - **Category Management**: Hierarchical product categories with admin-only access
 - **User Management**: Registration, login, password reset, profile management
 - **Session Management**: Secure session handling with automatic cleanup
@@ -162,6 +163,12 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
 - `GET /api/products/low-stock` - Get low stock products
 - `PATCH /api/products/bulk-status` - Bulk update product status
 
+#### Image Upload Endpoints (Admin Only)
+- `POST /api/products/upload-image` - Upload a single product image
+- `POST /api/products/upload-images` - Upload multiple product images (batch)
+- `PATCH /api/products/:id/images` - Update product images (add/remove/replace)
+- `DELETE /api/products/:id/images/:publicId` - Delete a specific product image
+
 #### Product Query Parameters
 
 **GET /api/products** supports the following query parameters:
@@ -188,6 +195,143 @@ GET /api/products?search=laptop&categoryId=uuid-here&page=1&limit=10
 # Get products with specific tags
 GET /api/products?tags=featured,bestseller&inStock=true
 ```
+
+### Image Upload API
+
+The API provides comprehensive image upload functionality using Cloudinary for storage and CDN delivery.
+
+#### Configuration
+
+Set up the following environment variables for Cloudinary integration:
+
+```env
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+CLOUDINARY_FOLDER=ecommerce
+```
+
+#### Single Image Upload
+
+**POST /api/products/upload-image**
+
+Upload a single product image with optional transformations.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer your_jwt_token" \
+  -F "image=@product-photo.jpg" \
+  -F 'transformation={"width":800,"height":600,"crop":"fill","quality":"auto","format":"webp"}' \
+  http://localhost:3000/api/products/upload-image
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Image uploaded successfully",
+  "data": {
+    "image": {
+      "publicId": "products/abc123def456",
+      "url": "http://res.cloudinary.com/your-cloud/image/upload/products/abc123def456.jpg",
+      "secureUrl": "https://res.cloudinary.com/your-cloud/image/upload/products/abc123def456.jpg",
+      "format": "jpg",
+      "width": 800,
+      "height": 600,
+      "bytes": 245760
+    }
+  }
+}
+```
+
+#### Multiple Images Upload
+
+**POST /api/products/upload-images**
+
+Upload multiple product images in a single request.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer your_jwt_token" \
+  -F "images=@photo1.jpg" \
+  -F "images=@photo2.jpg" \
+  -F "images=@photo3.png" \
+  -F "maxFiles=5" \
+  -F 'transformation={"width":1200,"height":800,"crop":"fill","quality":"auto"}' \
+  http://localhost:3000/api/products/upload-images
+```
+
+#### Update Product Images
+
+**PATCH /api/products/:id/images**
+
+Add, remove, or replace product images.
+
+```bash
+# Add new images to existing ones
+curl -X PATCH \
+  -H "Authorization: Bearer your_jwt_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "add",
+    "images": [
+      "https://res.cloudinary.com/your-cloud/image/upload/products/new-image1.jpg",
+      "https://res.cloudinary.com/your-cloud/image/upload/products/new-image2.jpg"
+    ]
+  }' \
+  http://localhost:3000/api/products/product-id/images
+
+# Remove specific images
+curl -X PATCH \
+  -H "Authorization: Bearer your_jwt_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "remove",
+    "imagesToRemove": ["products/old-image1", "products/old-image2"]
+  }' \
+  http://localhost:3000/api/products/product-id/images
+
+# Replace all images
+curl -X PATCH \
+  -H "Authorization: Bearer your_jwt_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "replace",
+    "images": [
+      "https://res.cloudinary.com/your-cloud/image/upload/products/replacement1.jpg"
+    ]
+  }' \
+  http://localhost:3000/api/products/product-id/images
+```
+
+#### Delete Single Image
+
+**DELETE /api/products/:id/images/:publicId**
+
+Remove a specific image from a product and Cloudinary.
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer your_jwt_token" \
+  http://localhost:3000/api/products/product-id/images/products%2Fimage-public-id
+```
+
+#### Image Transformation Options
+
+All upload endpoints support optional transformations:
+
+- `width` - Target width (50-2000px)
+- `height` - Target height (50-2000px)
+- `crop` - Crop mode: `fill`, `fit`, `limit`, `scale`, `pad`, `crop`
+- `quality` - Quality: `auto` or 1-100
+- `format` - Output format: `auto`, `jpg`, `png`, `webp`
+
+#### File Constraints
+
+- **Maximum file size**: 5MB per image
+- **Allowed formats**: JPEG, PNG, WebP
+- **Maximum images per product**: 10
+- **Batch upload limit**: 5 images per request
 
 ## Scripts
 

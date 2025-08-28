@@ -176,3 +176,41 @@ export type Order = typeof orders.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type NewOrderItem = typeof orderItems.$inferInsert;
+
+// ============================================================================
+// Image Upload Validation Schemas
+// ============================================================================
+
+// Single image upload schema
+export const uploadImageSchema = z.object({
+  transformation: z
+    .object({
+      width: z.number().int().min(50).max(2000).optional(),
+      height: z.number().int().min(50).max(2000).optional(),
+      crop: z.enum(["fill", "fit", "limit", "scale", "pad", "crop"]).optional(),
+      quality: z.union([z.literal("auto"), z.number().int().min(1).max(100)]).optional(),
+      format: z.enum(["auto", "jpg", "png", "webp"]).optional(),
+    })
+    .optional(),
+});
+
+// Multiple images upload schema
+export const uploadMultipleImagesSchema = z.object({
+  transformation: z
+    .object({
+      width: z.number().int().min(50).max(2000).optional(),
+      height: z.number().int().min(50).max(2000).optional(),
+      crop: z.enum(["fill", "fit", "limit", "scale", "pad", "crop"]).optional(),
+      quality: z.union([z.literal("auto"), z.number().int().min(1).max(100)]).optional(),
+      format: z.enum(["auto", "jpg", "png", "webp"]).optional(),
+    })
+    .optional(),
+  maxFiles: z.number().int().min(1).max(10).default(5),
+});
+
+// Product images update schema
+export const updateProductImagesSchema = z.object({
+  action: z.enum(["add", "remove", "replace"]),
+  images: z.array(z.string().url()).max(10, "Maximum 10 images allowed").optional(),
+  imagesToRemove: z.array(z.string()).optional(), // Public IDs to remove
+});

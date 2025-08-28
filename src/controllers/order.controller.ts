@@ -147,21 +147,6 @@ export const getOrders = async (c: Context<{ Variables: AuthContext }>) => {
 };
 
 /**
- * Get current user's order history
- * @desc Get paginated order history for the authenticated user
- * @access Private (Customer only)
- */
-export const getMyOrders = async (c: Context<{ Variables: AuthContext }>) => {
-  const user = c.get("user");
-  const page = parseInt(c.req.query("page") ?? "1", 10);
-  const limit = parseInt(c.req.query("limit") ?? "10", 10);
-
-  const result = await orderService.getUserOrderHistory(user.id, page, limit);
-
-  return c.json(createSuccessResponse("Order history retrieved successfully", result));
-};
-
-/**
  * Update order status
  * @desc Update order status with validation and history tracking
  * @access Private (Admin only)

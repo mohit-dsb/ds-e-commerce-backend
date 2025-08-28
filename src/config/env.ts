@@ -22,6 +22,13 @@ const envSchema = z.object({
   // Logging Configuration
   LOG_LEVEL: z.enum(["error", "warn", "info", "debug"]).default("info"),
   LOG_FORMAT: z.enum(["json", "pretty"]).default("json"),
+
+  // Cloudinary Configuration
+  CLOUDINARY_CLOUD_NAME: z.string(),
+  CLOUDINARY_API_KEY: z.string(),
+  CLOUDINARY_API_SECRET: z.string(),
+  CLOUDINARY_UPLOAD_PRESET: z.string(),
+  CLOUDINARY_FOLDER: z.string(),
 });
 
 // Parse and validate environment variables
@@ -47,6 +54,13 @@ if (isProduction) {
     DATABASE_URL: env.DATABASE_URL,
     JWT_SECRET: env.JWT_SECRET,
   };
+
+  // Check Cloudinary configuration in production
+  if (env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET) {
+    // Cloudinary is configured
+  } else {
+    // Cloudinary configuration not found - image upload will be disabled
+  }
 
   const missing = Object.entries(productionRequired)
     .filter(([_, value]) => !value)

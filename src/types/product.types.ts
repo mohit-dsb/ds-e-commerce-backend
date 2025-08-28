@@ -72,3 +72,10 @@ export interface ProductFilters {
   page?: number;
   limit?: number;
 }
+
+// Image upload types
+export interface UpdateProductImagesRequest {
+  action: "add" | "remove" | "replace";
+  images?: string[];
+  imagesToRemove?: string[];
+}
