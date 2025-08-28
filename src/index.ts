@@ -6,6 +6,8 @@ import { logger as honoLogger } from "hono/logger";
 import { authRoutes } from "@/routes/auth.routes";
 import { categoryRoutes } from "@/routes/category.routes";
 import productRoutes from "@/routes/product.routes";
+import orderRoutes from "@/routes/order.routes";
+import shippingAddressRoutes from "@/routes/shipping-address.routes";
 import { errorHandlerMiddleware } from "@/middleware/error-handler.middleware";
 
 const app = new Hono();
@@ -55,6 +57,8 @@ app.get("/health", (c) => {
 app.route("/api/auth", authRoutes);
 app.route("/api/categories", categoryRoutes);
 app.route("/api/products", productRoutes);
+app.route("/api/orders", orderRoutes);
+app.route("/api/shipping-addresses", shippingAddressRoutes);
 
 // Global error handler
 app.onError(errorHandlerMiddleware);

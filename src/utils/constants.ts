@@ -1,8 +1,5 @@
 import { env } from "../config/env";
 
-// Authentication & Security
-export const BCRYPT_ROUNDS = 12; // Default fallback value
-
 // Rate Limiting
 export const RATE_LIMIT = {
   WINDOW_MS: env.RATE_LIMIT_WINDOW_MS,

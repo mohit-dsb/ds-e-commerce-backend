@@ -50,7 +50,6 @@
   "dependencies": {
     "@hono/zod-validator": "^0.2.2",
     "@neondatabase/serverless": "^0.9.4",
-    "bcryptjs": "^2.4.3",
     "drizzle-orm": "^0.44.5",
     "drizzle-zod": "^0.8.3",
     "hono": "^4.6.2",
@@ -58,8 +57,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^3.0.0",
-    "@types/bun": "latest",
+    "@types/bun": "^1.2.21",
     "@typescript-eslint/eslint-plugin": "^8.41.0",
     "@typescript-eslint/parser": "^8.41.0",
     "drizzle-kit": "^0.31.4",

@@ -45,7 +45,7 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
   - Multiple product images and gallery support
   - Product categories (primary and additional)
   - Product options (size, color, etc.)
-  - SKU management and inventory tracking
+  - inventory tracking
   - Product status management (draft, active, inactive, discontinued)
   - Advanced search and filtering
   - Low stock alerts and bulk operations
@@ -171,7 +171,7 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
 - `maxPrice` - Maximum price filter (decimal string)
 - `inStock` - Filter by availability: `true`/`false`
 - `tags` - Comma-separated list of tags
-- `search` - Search in name, description, SKU
+- `search` - Search in name, description
 - `sortBy` - Sort field: `name`, `price`, `createdAt`, `updatedAt`, `inventoryQuantity`
 - `sortOrder` - Sort direction: `asc`, `desc`
 - `page` - Page number (default: 1)

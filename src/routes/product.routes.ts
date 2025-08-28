@@ -17,7 +17,7 @@ const productRoutes = new Hono();
  * @query {string} [maxPrice] - Maximum price filter
  * @query {boolean} [inStock] - Filter by stock availability
  * @query {string} [tags] - Comma-separated list of tags
- * @query {string} [search] - Search term for name, description, or SKU
+ * @query {string} [search] - Search term for name, description
  * @query {string} [sortBy] - Sort by field (name/price/createdAt/updatedAt/inventoryQuantity)
  * @query {string} [sortOrder] - Sort order (asc/desc)
  * @query {number} [page] - Page number for pagination

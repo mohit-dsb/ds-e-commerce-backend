@@ -1,11 +1,11 @@
 import { db } from "@/db";
 import { logger } from "@/utils/logger";
 import type { NewProduct } from "@/db/validators";
+import { products, categories } from "@/db/schema";
 import { dbErrorHandlers } from "@/utils/database-errors";
 import { generateSlug, generateUniqueSlug } from "@/utils/slug";
 import type { ProductFilters, ProductWithRelations } from "@/types/product.types";
 import { createNotFoundError, createConflictError, createValidationError } from "@/utils/errors";
-import { products, categories } from "@/db/schema";
 import { eq, and, or, ilike, gte, lte, inArray, desc, asc, sql, count, type SQL } from "drizzle-orm";
 
 // ============================================================================
@@ -306,10 +306,7 @@ export const getProducts = async (
 
     // Search filter
     if (search) {
-      const searchConditions = [
-        ilike(products.name, `%${search}%`),
-        ilike(products.description, `%${search}%`),
-      ];
+      const searchConditions = [ilike(products.name, `%${search}%`), ilike(products.description, `%${search}%`)];
       conditions.push(or(...searchConditions)!);
     }
 
