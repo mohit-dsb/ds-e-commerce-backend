@@ -5,25 +5,53 @@ import type { ValidationErrorDetail } from "@/types/error.types";
  * Field mapping for user-friendly field names
  */
 const FIELD_DISPLAY_NAMES: Record<string, string> = {
-  email: "Email",
+  // User fields
+  email: "Email Address",
+  firstName: "First Name", 
+  lastName: "Last Name",
+  dateOfBirth: "Date of Birth",
+  profileImageUrl: "Profile Image URL",
+
+  // Authentication fields
   password: "Password",
-  firstName: "First name",
-  lastName: "Last name",
-  token: "Token",
-  confirmPassword: "Confirm password",
-  phoneNumber: "Phone number",
-  dateOfBirth: "Date of birth",
-  address: "Address",
+  confirmPassword: "Confirm Password",
+  currentPassword: "Current Password",
+  newPassword: "New Password",
+  refreshToken: "Refresh Token",
+
+  // Product fields
+  name: "Product Name",
+  description: "Product Description",
+  price: "Product Price",
+  weight: "Product Weight",
+  weightUnit: "Weight Unit",
+  status: "Product Status",
+  inventoryQuantity: "Inventory Quantity",
+  allowBackorder: "Allow Backorder",
+  images: "Product Images",
+  tags: "Product Tags",
+  categoryId: "Product Category",
+
+  // Category fields  
+  categoryName: "Category Name",
+  parentCategoryId: "Parent Category",
+
+  // Order fields
+  orderStatus: "Order Status",
+  totalAmount: "Total Amount",
+  shippingCost: "Shipping Cost",
+  
+  // Address fields
+  street: "Street Address",
   city: "City",
-  state: "State",
-  zipCode: "ZIP code",
+  state: "State/Province", 
+  zipCode: "ZIP/Postal Code",
   country: "Country",
-  // Category fields
-  name: "Name",
-  slug: "Slug",
-  description: "Description",
-  parentId: "Parent category",
-  isActive: "Active status",
+  
+  // Common fields
+  id: "ID",
+  createdAt: "Created Date",
+  updatedAt: "Updated Date",
 };
 
 /**
@@ -184,5 +212,17 @@ export const VALIDATION_CONFIG = {
   // Don't include technical field paths in user-facing messages
   includeFieldPath: false,
   // Maximum message length for security
-  maxMessageLength: 200,
+  maxMessageLength: 500, // Increased for more helpful messages
+} as const;
+
+/**
+ * Enhanced validation configuration for detailed errors (like product creation)
+ */
+export const DETAILED_VALIDATION_CONFIG = {
+  // Return all errors for detailed feedback
+  firstErrorOnly: false,
+  // Include field information for clarity
+  includeFieldPath: true,
+  // Allow longer messages for detailed explanations
+  maxMessageLength: 800,
 } as const;

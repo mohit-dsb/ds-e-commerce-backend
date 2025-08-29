@@ -86,7 +86,10 @@ export class ExternalServiceError extends AppError {
 
 // Helper functions for creating common errors
 export const createValidationError = (errors: ValidationErrorDetail[]) => {
-  return new ValidationError("Validation failed", errors);
+  // Create a more descriptive error message using the first validation error
+  const [firstError] = errors;
+  const errorMessage = firstError?.message ?? "Validation failed";
+  return new ValidationError(errorMessage, errors);
 };
 
 export const createDatabaseError = (message: string, details: DatabaseErrorDetail, originalError?: Error) => {

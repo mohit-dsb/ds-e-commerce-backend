@@ -55,7 +55,7 @@ export const insertProductSchema = z.object({
   allowBackorder: z.boolean().optional(),
   images: z.array(z.string().url()).max(10, "Maximum 10 images allowed").optional(),
   tags: z.array(z.string().trim().min(1)).max(20, "Maximum 20 tags allowed").optional(),
-  categoryId: z.string().uuid("Category is required and must be valid"),
+  categoryId: z.string().uuid("Category ID must be a valid UUID format. Please provide a valid category ID. You can get available categories from GET /api/categories endpoint."),
 });
 
 export const updateProductSchema = insertProductSchema.partial();

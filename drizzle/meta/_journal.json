@@ -8,6 +8,20 @@
       "when": 1756385893996,
       "tag": "0000_married_misty_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1756445014738,
+      "tag": "0001_add_inventory_constraints",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1756445826146,
+      "tag": "0002_fluffy_phantom_reporter",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD CONSTRAINT "inventory_non_negative" CHECK ("products"."inventory_quantity" >= 0 OR "products"."allow_backorder" = true);

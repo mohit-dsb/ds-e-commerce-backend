@@ -37,12 +37,13 @@ export const createProduct = async (
       throw createConflictError("Product with this name already exists");
     }
 
-    // Validate category exists (categoryId is now required)
+    // Validate category exists
     const categoryExists = await db
       .select({ id: categories.id })
       .from(categories)
       .where(eq(categories.id, productData.categoryId))
       .limit(1);
+
     if (categoryExists.length === 0) {
       throw createValidationError([{ field: "categoryId", message: "Primary category does not exist" }]);
     }

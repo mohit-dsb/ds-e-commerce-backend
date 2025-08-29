@@ -1,5 +1,5 @@
-import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, uuid, varchar, boolean, pgEnum, integer, decimal, jsonb } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import { pgTable, text, timestamp, uuid, varchar, boolean, pgEnum, integer, decimal, jsonb, check } from "drizzle-orm/pg-core";
 
 // Define the role enum first
 export const roleEnum = pgEnum("role", ["customer", "admin"]);
@@ -78,28 +78,40 @@ export const passwordResets = pgTable("password_resets", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const products = pgTable("products", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  slug: varchar("slug", { length: 255 }).notNull().unique(),
-  price: decimal("price", { precision: 12, scale: 2 }).notNull(),
-  weight: decimal("weight", { precision: 8, scale: 3 }),
-  weightUnit: varchar("weight_unit", { length: 10 }).default("kg"),
-  status: productStatusEnum("status").default("draft").notNull(),
-  inventoryQuantity: integer("inventory_quantity").default(0),
-  allowBackorder: boolean("allow_backorder").default(false).notNull(),
-  images: jsonb("images").$type<string[]>().default([]),
-  tags: jsonb("tags").$type<string[]>().default([]),
-  categoryId: uuid("category_id")
-    .references(() => categories.id, { onDelete: "restrict" })
-    .notNull(),
-  createdBy: uuid("created_by")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const products = pgTable(
+  "products",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    description: text("description"),
+    slug: varchar("slug", { length: 255 }).notNull().unique(),
+    price: decimal("price", { precision: 12, scale: 2 }).notNull(),
+    weight: decimal("weight", { precision: 8, scale: 3 }),
+    weightUnit: varchar("weight_unit", { length: 10 }).default("kg"),
+    status: productStatusEnum("status").default("draft").notNull(),
+    inventoryQuantity: integer("inventory_quantity").default(0),
+    allowBackorder: boolean("allow_backorder").default(false).notNull(),
+    images: jsonb("images").$type<string[]>().default([]),
+    tags: jsonb("tags").$type<string[]>().default([]),
+    categoryId: uuid("category_id")
+      .references(() => categories.id, { onDelete: "restrict" })
+      .notNull(),
+    createdBy: uuid("created_by")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    {
+      // Constraint to prevent negative inventory (unless backorders are allowed)
+      inventoryNonNegative: check(
+        "inventory_non_negative",
+        sql`${table.inventoryQuantity} >= 0 OR ${table.allowBackorder} = true`
+      ),
+    },
+  ]
+);
 
 // Shipping addresses table for flexible address management
 export const shippingAddresses = pgTable("shipping_addresses", {

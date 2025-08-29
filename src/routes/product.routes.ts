@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import { z } from "zod";
+import productImageRoutes from "./product-image.routes";
 import * as productController from "@/controllers/product.controller";
 import { compatibleZValidator } from "@/middleware/validation.middleware";
 import { insertProductSchema, updateProductSchema } from "@/db/validators";
 import { authMiddleware, adminMiddleware } from "@/middleware/auth.middleware";
-import productImageRoutes from "./product-image.routes";
 
 const productRoutes = new Hono();
 

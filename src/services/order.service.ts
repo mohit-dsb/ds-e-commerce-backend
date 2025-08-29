@@ -17,6 +17,87 @@ import type {
 } from "@/types/order.types";
 
 // ============================================================================
+// Modern Inventory Management Helper Functions
+// ============================================================================
+
+type TransactionType = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Safely update inventory with row-level locking and validation
+ * Modern best practice: Atomic operations with pessimistic locking
+ */
+const updateInventorySafely = async (
+  tx: TransactionType,
+  productId: string,
+  quantityChange: number, // positive to increase, negative to decrease
+  operation: "decrease" | "increase"
+) => {
+  // Get current product state with row-level locking (FOR UPDATE)
+  const [currentProduct] = await tx
+    .select({
+      id: products.id,
+      name: products.name,
+      inventoryQuantity: products.inventoryQuantity,
+      allowBackorder: products.allowBackorder,
+      status: products.status,
+    })
+    .from(products)
+    .where(eq(products.id, productId))
+    .for("update"); // Pessimistic locking to prevent race conditions
+
+  if (!currentProduct) {
+    throw new Error(`Product with ID ${productId} not found`);
+  }
+
+  if (currentProduct.status !== "active") {
+    throw new Error(`Product "${currentProduct.name}" is not active and cannot be processed`);
+  }
+
+  const currentInventory = currentProduct.inventoryQuantity ?? 0;
+  const newInventory = currentInventory + quantityChange;
+
+  // Validate the operation based on business rules
+  if (operation === "decrease" && newInventory < 0 && !currentProduct.allowBackorder) {
+    throw new Error(
+      `Insufficient inventory for product "${currentProduct.name}". ` +
+        `Available: ${currentInventory}, Required: ${Math.abs(quantityChange)}, ` +
+        `Backorder allowed: ${currentProduct.allowBackorder}`
+    );
+  }
+
+  // Perform the inventory update
+  await tx
+    .update(products)
+    .set({
+      inventoryQuantity: newInventory,
+      updatedAt: new Date(),
+    })
+    .where(eq(products.id, productId));
+
+  return {
+    productId,
+    productName: currentProduct.name,
+    previousQuantity: currentInventory,
+    newQuantity: newInventory,
+    quantityChange,
+  };
+};
+
+/**
+ * Determine if order status change should restore inventory
+ * Modern best practice: Explicit status mapping for inventory management
+ */
+const shouldRestoreInventoryForStatusChange = (fromStatus: string, toStatus: string): boolean => {
+  // Statuses that should restore inventory back to available stock
+  const inventoryRestoringStatuses = ["cancelled", "returned", "refunded"];
+
+  // Only restore inventory if:
+  // 1. Moving TO a status that restores inventory
+  // 2. NOT already in a status that has restored inventory
+  return inventoryRestoringStatuses.includes(toStatus) && !inventoryRestoringStatuses.includes(fromStatus);
+};
+
+// ============================================================================
 // Order Number Generation
 // ============================================================================
 
@@ -348,19 +429,36 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<OrderW
         isCustomerVisible: true,
       });
 
-      // Update inventory quantities (for physical products only)
+      // Re-validate inventory availability right before order creation (prevents race conditions)
+      logger.info("Performing final inventory validation before order creation", {
+        metadata: { orderId: newOrder.id },
+      });
+      const finalInventoryCheck = await checkInventoryAvailability(orderData.orderItems);
+      if (!finalInventoryCheck.isValid) {
+        throw new Error(
+          `Final inventory validation failed: ${finalInventoryCheck.insufficientItems
+            .map((item) => `${item.productName} (requested: ${item.requestedQuantity}, available: ${item.availableQuantity})`)
+            .join(", ")}`
+        );
+      }
+
+      // Update inventory quantities using modern safe inventory management
+      const inventoryUpdates = [];
       for (const item of orderData.orderItems) {
         const product = productMap.get(item.productId);
         if (product && product.inventoryQuantity !== null) {
-          await tx
-            .update(products)
-            .set({
-              inventoryQuantity: sql`${products.inventoryQuantity} - ${item.quantity}`,
-              updatedAt: new Date(),
-            })
-            .where(eq(products.id, item.productId));
+          const updateResult = await updateInventorySafely(tx, item.productId, -item.quantity, "decrease");
+          inventoryUpdates.push(updateResult);
         }
       }
+
+      logger.info("Inventory successfully updated for order creation", {
+        metadata: {
+          orderId: newOrder.id,
+          orderNumber: newOrder.orderNumber,
+          inventoryUpdates,
+        },
+      });
 
       // Return the order ID, we'll fetch the full order after the transaction
       return newOrder.id;
@@ -711,19 +809,40 @@ export const updateOrderStatus = async (updateData: UpdateOrderStatusRequest): P
         isCustomerVisible,
       });
 
-      // Handle inventory adjustments for cancellations
-      if (newStatus === "cancelled" && currentOrder.orderItems) {
+      // Handle modern inventory management for status changes
+      const shouldRestoreInventory = shouldRestoreInventoryForStatusChange(currentOrder.status, newStatus);
+
+      if (shouldRestoreInventory && currentOrder.orderItems) {
+        logger.info("Restoring inventory due to status change", {
+          metadata: {
+            orderId,
+            fromStatus: currentOrder.status,
+            toStatus: newStatus,
+            orderNumber: currentOrder.orderNumber,
+          },
+        });
+
+        const inventoryRestorations = [];
         for (const item of currentOrder.orderItems) {
           if (item.product?.inventoryQuantity !== null) {
-            await tx
-              .update(products)
-              .set({
-                inventoryQuantity: sql`${products.inventoryQuantity} + ${item.quantity}`,
-                updatedAt: new Date(),
-              })
-              .where(eq(products.id, item.productId));
+            const restorationResult = await updateInventorySafely(
+              tx,
+              item.productId,
+              item.quantity, // positive number to increase inventory
+              "increase"
+            );
+            inventoryRestorations.push(restorationResult);
           }
         }
+
+        logger.info("Inventory successfully restored due to status change", {
+          metadata: {
+            orderId,
+            orderNumber: currentOrder.orderNumber,
+            statusChange: `${currentOrder.status} → ${newStatus}`,
+            inventoryRestorations,
+          },
+        });
       }
 
       // Return updated order

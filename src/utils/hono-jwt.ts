@@ -1,11 +1,6 @@
-/**
- * JWT utility using Hono's built-in JWT functionality
- * Provides industry-standard JWT operations with better performance and security
- */
-
-import { sign, verify, decode } from "hono/jwt";
 import { env } from "@/config/env";
 import { logger } from "@/utils/logger";
+import { sign, verify, decode } from "hono/jwt";
 
 /**
  * JWT payload interface for type safety
@@ -126,10 +121,6 @@ export class HonoJWTService {
         });
         return null;
       }
-
-      logger.debug("JWT token verified successfully", {
-        metadata: { userId: payload.userId, exp: payload.exp },
-      });
 
       return payload;
     } catch (error) {
