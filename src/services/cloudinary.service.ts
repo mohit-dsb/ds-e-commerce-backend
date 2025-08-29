@@ -1,6 +1,6 @@
-import { v2 as cloudinary } from "cloudinary";
 import { env } from "@/config/env";
 import { logger } from "@/utils/logger";
+import { v2 as cloudinary } from "cloudinary";
 import { createInternalServerError, createValidationError } from "@/utils/errors";
 
 // ============================================================================
@@ -52,7 +52,6 @@ export const initializeCloudinary = (): boolean => {
     });
 
     isCloudinaryConfigured = true;
-    logger.info("Cloudinary configuration initialized successfully");
     return true;
   } catch {
     logger.error("Failed to initialize Cloudinary");

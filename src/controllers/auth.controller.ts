@@ -8,6 +8,7 @@ import { sanitizeUserData, sanitizeEmail } from "@/utils/sanitization";
 import { createSuccessResponse, extractDeviceMetadata } from "@/utils/response";
 import type { registerSchema, loginSchema, resetPasswordSchema } from "@/db/validators";
 import { createConflictError, createAuthError, BusinessRuleError } from "@/utils/errors";
+import { setSecureCookies, extractAuthTokensFromCookies } from "@/utils/cookie";
 
 // ============================================================================
 // Type Definitions
@@ -46,9 +47,6 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
   // Check if user already exists
   const existingUser = await userService.getUserByEmail(email);
   if (existingUser) {
-    logger.warn("Registration attempt with existing email", {
-      metadata: { email },
-    });
     throw createConflictError("User already exists");
   }
 
@@ -69,12 +67,16 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
     authService.createRefreshToken(user.id, deviceMetadata),
   ]);
 
-  logger.info("User registered with tokens", {
-    metadata: {
-      userId: user.id,
-      ipAddress: deviceMetadata.ipAddress,
-      hasDeviceFingerprint: !!deviceMetadata.deviceFingerprint,
-    },
+  // Set secure cookies for authentication
+  const setCookieHeaders: string[] = [];
+  setSecureCookies(setCookieHeaders, {
+    accessToken,
+    refreshToken,
+  });
+
+  // Add Set-Cookie headers to response
+  setCookieHeaders.forEach((cookieHeader) => {
+    c.header("Set-Cookie", cookieHeader);
   });
 
   return c.json(
@@ -87,6 +89,7 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
         role: user.role,
         isVerified: user.isVerified,
       },
+      // Include tokens in response for clients that prefer headers over cookies
       accessToken,
       refreshToken,
     }),
@@ -109,9 +112,6 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
   // Authenticate user
   const user = await authService.authenticateUser(email, password);
   if (!user) {
-    logger.warn("Authentication failed", {
-      metadata: { email },
-    });
     throw createAuthError("Invalid credentials");
   }
 
@@ -124,12 +124,16 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
     authService.createRefreshToken(user.id, deviceMetadata),
   ]);
 
-  logger.info("User logged in with tokens", {
-    metadata: {
-      userId: user.id,
-      ipAddress: deviceMetadata.ipAddress,
-      hasDeviceFingerprint: !!deviceMetadata.deviceFingerprint,
-    },
+  // Set secure cookies for authentication
+  const setCookieHeaders: string[] = [];
+  setSecureCookies(setCookieHeaders, {
+    accessToken,
+    refreshToken,
+  });
+
+  // Add Set-Cookie headers to response
+  setCookieHeaders.forEach((cookieHeader) => {
+    c.header("Set-Cookie", cookieHeader);
   });
 
   return c.json(
@@ -142,6 +146,7 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
         role: user.role,
         isVerified: user.isVerified,
       },
+      // Include tokens in response for clients that prefer headers over cookies
       accessToken,
       refreshToken,
     })
@@ -155,15 +160,27 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
  * @note This endpoint should have rate limiting in production
  */
 export const refreshToken = async (c: Context<{ Variables: AuthContext }>) => {
-  const body = (await c.req.json()) as unknown;
+  let oldRefreshToken: string | null = null;
 
-  // Type guard to ensure body has the expected structure
-  if (!body || typeof body !== "object" || !("refreshToken" in body)) {
-    logger.warn("Refresh token request without valid body structure");
-    throw createAuthError("Invalid request body");
+  // First try to get refresh token from cookies (preferred)
+  const cookieHeader = c.req.header("Cookie");
+  const cookieTokens = extractAuthTokensFromCookies(cookieHeader);
+
+  if (cookieTokens.refreshToken) {
+    oldRefreshToken = cookieTokens.refreshToken;
+  } else {
+    // Fallback to request body for backward compatibility
+    const body = (await c.req.json()) as unknown;
+
+    // Type guard to ensure body has the expected structure
+    if (!body || typeof body !== "object" || !("refreshToken" in body)) {
+      logger.warn("Refresh token request without valid body structure");
+      throw createAuthError("Invalid request body");
+    }
+
+    const { refreshToken: bodyRefreshToken } = body as RefreshTokenData;
+    oldRefreshToken = bodyRefreshToken;
   }
-
-  const { refreshToken: oldRefreshToken } = body as RefreshTokenData;
 
   if (!oldRefreshToken || typeof oldRefreshToken !== "string") {
     logger.warn("Refresh token request without valid token");
@@ -177,12 +194,6 @@ export const refreshToken = async (c: Context<{ Variables: AuthContext }>) => {
   const newRefreshToken = await authService.rotateRefreshToken(oldRefreshToken, deviceMetadata);
 
   if (!newRefreshToken) {
-    logger.warn("Refresh token rotation failed", {
-      metadata: {
-        ipAddress: deviceMetadata.ipAddress,
-        hasToken: !!oldRefreshToken,
-      },
-    });
     throw createAuthError("Invalid or expired refresh token");
   }
 
@@ -196,15 +207,21 @@ export const refreshToken = async (c: Context<{ Variables: AuthContext }>) => {
   // Generate new access token
   const accessToken = await authService.generateToken(userId);
 
-  logger.info("Tokens refreshed successfully", {
-    metadata: {
-      userId,
-      ipAddress: deviceMetadata.ipAddress,
-    },
+  // Set secure cookies for new tokens
+  const setCookieHeaders: string[] = [];
+  setSecureCookies(setCookieHeaders, {
+    accessToken,
+    refreshToken: newRefreshToken,
+  });
+
+  // Add Set-Cookie headers to response
+  setCookieHeaders.forEach((cookieHeader) => {
+    c.header("Set-Cookie", cookieHeader);
   });
 
   return c.json(
     createSuccessResponse("Tokens refreshed successfully", {
+      // Include tokens in response for clients that prefer headers over cookies
       accessToken,
       refreshToken: newRefreshToken,
     })
@@ -259,9 +276,6 @@ export const resetPassword = async (c: Context<{ Variables: AuthContext }>) => {
   // Validate reset token
   const userId = await authService.validatePasswordResetToken(token);
   if (!userId) {
-    logger.warn("Password reset attempt with invalid token", {
-      metadata: { hasToken: !!token },
-    });
     throw new BusinessRuleError("Invalid or expired reset token");
   }
 

@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { env } from "@/config/env";
-import { logger } from "@/utils/logger";
 import { logger as honoLogger } from "hono/logger";
 import { authRoutes } from "@/routes/auth.routes";
 import { categoryRoutes } from "@/routes/category.routes";
@@ -10,11 +9,13 @@ import orderRoutes from "@/routes/order.routes";
 import shippingAddressRoutes from "@/routes/shipping-address.routes";
 import userRoutes from "@/routes/user.routes";
 import { errorHandlerMiddleware } from "@/middleware/error-handler.middleware";
+import { securityHeadersMiddleware } from "@/middleware/security.middleware";
 
 const app = new Hono();
 
 // Global middleware
 app.use("*", honoLogger());
+app.use("*", securityHeadersMiddleware);
 app.use(
   "*",
   cors({
@@ -67,11 +68,6 @@ app.onError(errorHandlerMiddleware);
 
 // 404 handler
 app.notFound((c) => {
-  logger.warn("Route not found", {
-    endpoint: c.req.path,
-    method: c.req.method,
-  });
-
   return c.json(
     {
       success: false,

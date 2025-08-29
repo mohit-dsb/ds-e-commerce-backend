@@ -10,6 +10,12 @@ const envSchema = z.object({
 
   // JWT Configuration
   JWT_SECRET: z.string().min(32, "JWT secret must be at least 32 characters"),
+  JWT_ACCESS_TOKEN_EXPIRES_IN: z.coerce.number().default(15 * 60), // 15 minutes
+  JWT_REFRESH_TOKEN_EXPIRES_IN: z.coerce.number().default(30 * 24 * 60 * 60), // 30 days
+
+  // Cookie Security Configuration
+  COOKIE_SECRET: z.string().min(32, "Cookie secret must be at least 32 characters").optional(),
+  SECURE_COOKIES: z.coerce.boolean().default(true), // Force HTTPS cookies in production
 
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000), // 15 minutes
