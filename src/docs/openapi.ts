@@ -1,6 +1,5 @@
-import { isProduction } from "@/config/env";
-import allSchemas from "./combined-schemas";
 import allPaths from "./paths";
+import allSchemas from "./combined-schemas";
 
 // Base OpenAPI specification
 export const openAPISpec = {
@@ -50,15 +49,14 @@ All endpoints return consistent error responses with appropriate HTTP status cod
     },
   },
   servers: [
-    isProduction
-      ? {
-          url: "https://ds-e-commerce-backend.onrender.com",
-          description: "Production Server",
-        }
-      : {
-          url: "http://localhost:3000",
-          description: "Development Server",
-        },
+    {
+      url: "https://ds-e-commerce-backend.onrender.com",
+      description: "Production Server",
+    },
+    {
+      url: "http://localhost:3000",
+      description: "Development Server",
+    },
   ],
   tags: [
     {

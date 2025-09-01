@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import { logger } from "@/utils/logger";
 import * as authService from "@/services/auth.service";
 import * as userService from "@/services/user.service";
+import * as emailService from "@/services/email.service";
 import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
 import { sanitizeUserData, sanitizeEmail } from "@/utils/sanitization";
@@ -69,13 +70,21 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
     authService.createRefreshToken(user.id, deviceMetadata),
   ]);
 
-  logger.info("User registered with tokens", {
-    metadata: {
-      userId: user.id,
-      ipAddress: deviceMetadata.ipAddress,
-      hasDeviceFingerprint: !!deviceMetadata.deviceFingerprint,
-    },
-  });
+  // Send welcome email (don't await to avoid blocking response)
+  emailService
+    .sendWelcomeEmail({
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    })
+    .catch((error: unknown) => {
+      logger.error("Failed to send welcome email", error instanceof Error ? error : new Error("Unknown error"), {
+        metadata: {
+          userId: user.id,
+          email: user.email,
+        },
+      });
+    });
 
   return c.json(
     createSuccessResponse("User registered successfully", {
@@ -123,14 +132,6 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
     authService.generateToken(user.id),
     authService.createRefreshToken(user.id, deviceMetadata),
   ]);
-
-  logger.info("User logged in with tokens", {
-    metadata: {
-      userId: user.id,
-      ipAddress: deviceMetadata.ipAddress,
-      hasDeviceFingerprint: !!deviceMetadata.deviceFingerprint,
-    },
-  });
 
   return c.json(
     createSuccessResponse("Login successful", {
@@ -196,13 +197,6 @@ export const refreshToken = async (c: Context<{ Variables: AuthContext }>) => {
   // Generate new access token
   const accessToken = await authService.generateToken(userId);
 
-  logger.info("Tokens refreshed successfully", {
-    metadata: {
-      userId,
-      ipAddress: deviceMetadata.ipAddress,
-    },
-  });
-
   return c.json(
     createSuccessResponse("Tokens refreshed successfully", {
       accessToken,
@@ -228,21 +222,39 @@ export const forgotPassword = async (c: Context<{ Variables: AuthContext }>) => 
     return c.json(createSuccessResponse("If the email exists, a reset link has been sent"));
   }
 
-  const resetToken = await authService.createPasswordResetToken(email);
+  try {
+    // Create password reset token with expiration
+    const resetToken = await authService.createPasswordResetToken(email);
 
-  // TODO: In production, send email with reset link instead of logging
-  logger.info("Password reset token generated - Email would be sent in production", {
-    metadata: {
-      userId: user.id,
+    // Extract device metadata for security tracking
+    const deviceMetadata = extractDeviceMetadata(c);
+
+    // Send password reset email
+    await emailService.sendPasswordResetEmail({
       email: user.email,
-      // Don't log the actual token in production for security
-      tokenGenerated: true,
-    },
-  });
+      firstName: user.firstName,
+      resetToken,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+      ipAddress: deviceMetadata.ipAddress,
+      userAgent: deviceMetadata.userAgent,
+    });
 
-  // For development only - remove in production
-  if (process.env.NODE_ENV === "development") {
-    logger.info(`Password reset token for ${email}: ${resetToken}`);
+    // Send security alert for password reset request
+    await emailService.sendSecurityAlertEmail({
+      email: user.email,
+      firstName: user.firstName,
+      eventType: "password_reset",
+      timestamp: new Date(),
+      ipAddress: deviceMetadata.ipAddress,
+    });
+  } catch (error) {
+    logger.error("Password reset process failed", error instanceof Error ? error : new Error("Unknown error"), {
+      metadata: {
+        userId: user.id,
+        email: user.email,
+      },
+    });
+    // Don't throw error to maintain security - user shouldn't know about internal failures
   }
 
   return c.json(createSuccessResponse("If the email exists, a reset link has been sent"));
@@ -265,9 +277,36 @@ export const resetPassword = async (c: Context<{ Variables: AuthContext }>) => {
     throw new BusinessRuleError("Invalid or expired reset token");
   }
 
+  // Get user data for email notification
+  const user = await userService.getUserById(userId);
+  if (!user) {
+    throw new BusinessRuleError("User not found");
+  }
+
+  // Extract device metadata for security tracking
+  const deviceMetadata = extractDeviceMetadata(c);
+
   // Update password and mark token as used
-  await userService.updatePassword(userId, password);
-  await authService.usePasswordResetToken(token);
+  await Promise.all([userService.updatePassword(userId, password), authService.usePasswordResetToken(token)]);
+
+  // Send security alert for password change
+  try {
+    await emailService.sendSecurityAlertEmail({
+      email: user.email,
+      firstName: user.firstName,
+      eventType: "password_changed",
+      timestamp: new Date(),
+      ipAddress: deviceMetadata.ipAddress,
+    });
+  } catch (error) {
+    logger.error("Failed to send password change alert", error instanceof Error ? error : new Error("Unknown error"), {
+      metadata: {
+        userId: user.id,
+        email: user.email,
+      },
+    });
+    // Don't throw error as password was already changed successfully
+  }
 
   return c.json(createSuccessResponse("Password reset successful"));
 };

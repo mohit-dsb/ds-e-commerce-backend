@@ -27,6 +27,15 @@ const envSchema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string(),
   CLOUDINARY_API_KEY: z.string(),
   CLOUDINARY_API_SECRET: z.string(),
+
+  // Email Configuration
+  EMAIL_USER: z.string().email("Email user must be a valid email"),
+  EMAIL_PASS: z.string().min(1, "Email password is required"),
+  EMAIL_FROM: z.string().email("From email must be a valid email"),
+  EMAIL_FROM_NAME: z.string().default("DS E-commerce"),
+
+  // Frontend URL for reset links
+  FRONTEND_URL: z.string().url("Frontend URL must be a valid URL").default("http://localhost:3000"),
 });
 
 // Parse and validate environment variables
@@ -51,6 +60,10 @@ if (isProduction) {
   const productionRequired = {
     DATABASE_URL: env.DATABASE_URL,
     JWT_SECRET: env.JWT_SECRET,
+    EMAIL_USER: env.EMAIL_USER,
+    EMAIL_PASS: env.EMAIL_PASS,
+    EMAIL_FROM: env.EMAIL_FROM,
+    FRONTEND_URL: env.FRONTEND_URL,
   };
 
   // Check Cloudinary configuration in production

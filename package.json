@@ -56,12 +56,14 @@
     "drizzle-zod": "^0.8.3",
     "hono": "^4.6.2",
     "nanoid": "^5.0.7",
+    "nodemailer": "^7.0.6",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-dist": "^5.28.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/bun": "^1.2.21",
+    "@types/nodemailer": "^7.0.1",
     "@typescript-eslint/eslint-plugin": "^8.41.0",
     "@typescript-eslint/parser": "^8.41.0",
     "bun-types": "^1.2.21",
