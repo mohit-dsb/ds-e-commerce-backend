@@ -7,23 +7,6 @@ import type { ApiErrorResponse, ErrorCode } from "@/types/error.types";
 import { AppError, ValidationError, createValidationError } from "@/utils/errors";
 import { formatValidationError, createSingleValidationMessage, VALIDATION_CONFIG } from "@/utils/validation-errors";
 
-function sanitizeErrorMessage(message: string, isDevelopment: boolean): string {
-  if (isDevelopment) {
-    return message;
-  }
-
-  // In production, sanitize potentially sensitive information
-  const sensitivePatterns = [/password/i, /token/i, /secret/i, /key/i, /auth/i, /credential/i];
-
-  for (const pattern of sensitivePatterns) {
-    if (pattern.test(message)) {
-      return "An error occurred while processing your request";
-    }
-  }
-
-  return message;
-}
-
 export function createErrorResponse(
   error: AppError | HTTPException | Error,
   context: Context,
@@ -34,7 +17,7 @@ export function createErrorResponse(
       success: false,
       error: {
         code: error.code,
-        message: sanitizeErrorMessage(error.message, isDevelopment),
+        message: error.message,
         timestamp: new Date().toISOString(),
         path: context.req.path,
       },
@@ -57,7 +40,7 @@ export function createErrorResponse(
       success: false,
       error: {
         code: "HTTP_EXCEPTION" as ErrorCode,
-        message: sanitizeErrorMessage(error.message, isDevelopment),
+        message: error.message,
         timestamp: new Date().toISOString(),
         path: context.req.path,
       },

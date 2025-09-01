@@ -48,6 +48,7 @@
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
+    "@hono/swagger-ui": "^0.5.2",
     "@hono/zod-validator": "^0.2.2",
     "@neondatabase/serverless": "^0.9.4",
     "cloudinary": "^2.7.0",
@@ -55,6 +56,8 @@
     "drizzle-zod": "^0.8.3",
     "hono": "^4.6.2",
     "nanoid": "^5.0.7",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-dist": "^5.28.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
