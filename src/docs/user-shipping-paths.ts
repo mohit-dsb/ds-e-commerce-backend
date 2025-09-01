@@ -1,437 +1,437 @@
 // OpenAPI paths for User and Shipping Address endpoints
 
 export const userPaths = {
-  '/api/users/profile': {
+  "/api/users/profile": {
     get: {
-      tags: ['Users'],
-      summary: 'Get user profile',
-      description: 'Retrieve the authenticated user\'s profile information',
-      operationId: 'getUserProfile',
+      tags: ["Users"],
+      summary: "Get user profile",
+      description: "Retrieve the authenticated user's profile information",
+      operationId: "getUserProfile",
       security: [
         {
-          bearerAuth: []
-        }
+          bearerAuth: [],
+        },
       ],
       responses: {
-        '200': {
-          description: 'Profile retrieved successfully',
+        "200": {
+          description: "Profile retrieved successfully",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                type: 'object',
+                type: "object",
                 properties: {
                   success: {
-                    type: 'boolean',
-                    example: true
+                    type: "boolean",
+                    example: true,
                   },
                   data: {
-                    $ref: '#/components/schemas/User'
-                  }
-                }
-              }
-            }
-          }
+                    $ref: "#/components/schemas/User",
+                  },
+                },
+              },
+            },
+          },
         },
-        '401': {
-          $ref: '#/components/responses/UnauthorizedError'
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
         },
-        '500': {
-          $ref: '#/components/responses/InternalServerError'
-        }
-      }
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
     },
     patch: {
-      tags: ['Users'],
-      summary: 'Update user profile',
-      description: 'Update the authenticated user\'s profile information',
-      operationId: 'updateUserProfile',
+      tags: ["Users"],
+      summary: "Update user profile",
+      description: "Update the authenticated user's profile information",
+      operationId: "updateUserProfile",
       security: [
         {
-          bearerAuth: []
-        }
+          bearerAuth: [],
+        },
       ],
       requestBody: {
         required: true,
         content: {
-          'application/json': {
+          "application/json": {
             schema: {
-              $ref: '#/components/schemas/UpdateUserProfileRequest'
-            }
-          }
-        }
+              $ref: "#/components/schemas/UpdateUserProfileRequest",
+            },
+          },
+        },
       },
       responses: {
-        '200': {
-          description: 'Profile updated successfully',
+        "200": {
+          description: "Profile updated successfully",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                type: 'object',
+                type: "object",
                 properties: {
                   success: {
-                    type: 'boolean',
-                    example: true
+                    type: "boolean",
+                    example: true,
                   },
                   message: {
-                    type: 'string',
-                    example: 'Profile updated successfully'
+                    type: "string",
+                    example: "Profile updated successfully",
                   },
                   data: {
-                    $ref: '#/components/schemas/User'
-                  }
-                }
-              }
-            }
-          }
+                    $ref: "#/components/schemas/User",
+                  },
+                },
+              },
+            },
+          },
         },
-        '400': {
-          $ref: '#/components/responses/ValidationError'
+        "400": {
+          $ref: "#/components/responses/ValidationError",
         },
-        '401': {
-          $ref: '#/components/responses/UnauthorizedError'
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
         },
-        '500': {
-          $ref: '#/components/responses/InternalServerError'
-        }
-      }
-    }
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
   },
 
-  '/api/users/change-password': {
+  "/api/users/change-password": {
     patch: {
-      tags: ['Users'],
-      summary: 'Change password',
-      description: 'Change the authenticated user\'s password',
-      operationId: 'changePassword',
+      tags: ["Users"],
+      summary: "Change password",
+      description: "Change the authenticated user's password",
+      operationId: "changePassword",
       security: [
         {
-          bearerAuth: []
-        }
+          bearerAuth: [],
+        },
       ],
       requestBody: {
         required: true,
         content: {
-          'application/json': {
+          "application/json": {
             schema: {
-              $ref: '#/components/schemas/ChangePasswordRequest'
-            }
-          }
-        }
+              $ref: "#/components/schemas/ChangePasswordRequest",
+            },
+          },
+        },
       },
       responses: {
-        '200': {
-          description: 'Password changed successfully',
+        "200": {
+          description: "Password changed successfully",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                type: 'object',
+                type: "object",
                 properties: {
                   success: {
-                    type: 'boolean',
-                    example: true
+                    type: "boolean",
+                    example: true,
                   },
                   message: {
-                    type: 'string',
-                    example: 'Password changed successfully'
-                  }
-                }
-              }
-            }
-          }
+                    type: "string",
+                    example: "Password changed successfully",
+                  },
+                },
+              },
+            },
+          },
         },
-        '400': {
-          $ref: '#/components/responses/ValidationError'
+        "400": {
+          $ref: "#/components/responses/ValidationError",
         },
-        '401': {
-          $ref: '#/components/responses/UnauthorizedError'
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
         },
-        '500': {
-          $ref: '#/components/responses/InternalServerError'
-        }
-      }
-    }
-  }
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
 } as const;
 
 export const shippingPaths = {
-  '/api/shipping-addresses': {
+  "/api/shipping-addresses": {
     get: {
-      tags: ['Shipping'],
-      summary: 'Get user shipping addresses',
-      description: 'Retrieve all shipping addresses for the authenticated user',
-      operationId: 'getUserShippingAddresses',
+      tags: ["Shipping"],
+      summary: "Get user shipping addresses",
+      description: "Retrieve all shipping addresses for the authenticated user",
+      operationId: "getUserShippingAddresses",
       security: [
         {
-          bearerAuth: []
-        }
+          bearerAuth: [],
+        },
       ],
       responses: {
-        '200': {
-          description: 'Shipping addresses retrieved successfully',
+        "200": {
+          description: "Shipping addresses retrieved successfully",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                type: 'object',
+                type: "object",
                 properties: {
                   success: {
-                    type: 'boolean',
-                    example: true
+                    type: "boolean",
+                    example: true,
                   },
                   data: {
-                    type: 'array',
+                    type: "array",
                     items: {
-                      $ref: '#/components/schemas/ShippingAddress'
-                    }
-                  }
-                }
-              }
-            }
-          }
+                      $ref: "#/components/schemas/ShippingAddress",
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
-        '401': {
-          $ref: '#/components/responses/UnauthorizedError'
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
         },
-        '500': {
-          $ref: '#/components/responses/InternalServerError'
-        }
-      }
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
     },
     post: {
-      tags: ['Shipping'],
-      summary: 'Create shipping address',
-      description: 'Create a new shipping address for the authenticated user',
-      operationId: 'createShippingAddress',
+      tags: ["Shipping"],
+      summary: "Create shipping address",
+      description: "Create a new shipping address for the authenticated user",
+      operationId: "createShippingAddress",
       security: [
         {
-          bearerAuth: []
-        }
+          bearerAuth: [],
+        },
       ],
       requestBody: {
         required: true,
         content: {
-          'application/json': {
+          "application/json": {
             schema: {
-              $ref: '#/components/schemas/CreateShippingAddressRequest'
-            }
-          }
-        }
+              $ref: "#/components/schemas/CreateShippingAddressRequest",
+            },
+          },
+        },
       },
       responses: {
-        '201': {
-          description: 'Shipping address created successfully',
+        "201": {
+          description: "Shipping address created successfully",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                type: 'object',
+                type: "object",
                 properties: {
                   success: {
-                    type: 'boolean',
-                    example: true
+                    type: "boolean",
+                    example: true,
                   },
                   message: {
-                    type: 'string',
-                    example: 'Shipping address created successfully'
+                    type: "string",
+                    example: "Shipping address created successfully",
                   },
                   data: {
-                    $ref: '#/components/schemas/ShippingAddress'
-                  }
-                }
-              }
-            }
-          }
+                    $ref: "#/components/schemas/ShippingAddress",
+                  },
+                },
+              },
+            },
+          },
         },
-        '400': {
-          $ref: '#/components/responses/ValidationError'
+        "400": {
+          $ref: "#/components/responses/ValidationError",
         },
-        '401': {
-          $ref: '#/components/responses/UnauthorizedError'
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
         },
-        '500': {
-          $ref: '#/components/responses/InternalServerError'
-        }
-      }
-    }
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
   },
 
-  '/api/shipping-addresses/{id}': {
+  "/api/shipping-addresses/{id}": {
     get: {
-      tags: ['Shipping'],
-      summary: 'Get shipping address by ID',
-      description: 'Retrieve a specific shipping address by its ID',
-      operationId: 'getShippingAddressById',
+      tags: ["Shipping"],
+      summary: "Get shipping address by ID",
+      description: "Retrieve a specific shipping address by its ID",
+      operationId: "getShippingAddressById",
       security: [
         {
-          bearerAuth: []
-        }
+          bearerAuth: [],
+        },
       ],
       parameters: [
         {
-          name: 'id',
-          in: 'path',
-          description: 'Shipping address ID',
+          name: "id",
+          in: "path",
+          description: "Shipping address ID",
           required: true,
           schema: {
-            type: 'string',
-            format: 'uuid'
-          }
-        }
+            type: "string",
+            format: "uuid",
+          },
+        },
       ],
       responses: {
-        '200': {
-          description: 'Shipping address retrieved successfully',
+        "200": {
+          description: "Shipping address retrieved successfully",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                type: 'object',
+                type: "object",
                 properties: {
                   success: {
-                    type: 'boolean',
-                    example: true
+                    type: "boolean",
+                    example: true,
                   },
                   data: {
-                    $ref: '#/components/schemas/ShippingAddress'
-                  }
-                }
-              }
-            }
-          }
+                    $ref: "#/components/schemas/ShippingAddress",
+                  },
+                },
+              },
+            },
+          },
         },
-        '401': {
-          $ref: '#/components/responses/UnauthorizedError'
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
         },
-        '404': {
-          $ref: '#/components/responses/NotFoundError'
+        "404": {
+          $ref: "#/components/responses/NotFoundError",
         },
-        '500': {
-          $ref: '#/components/responses/InternalServerError'
-        }
-      }
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
     },
     patch: {
-      tags: ['Shipping'],
-      summary: 'Update shipping address',
-      description: 'Update an existing shipping address',
-      operationId: 'updateShippingAddress',
+      tags: ["Shipping"],
+      summary: "Update shipping address",
+      description: "Update an existing shipping address",
+      operationId: "updateShippingAddress",
       security: [
         {
-          bearerAuth: []
-        }
+          bearerAuth: [],
+        },
       ],
       parameters: [
         {
-          name: 'id',
-          in: 'path',
-          description: 'Shipping address ID',
+          name: "id",
+          in: "path",
+          description: "Shipping address ID",
           required: true,
           schema: {
-            type: 'string',
-            format: 'uuid'
-          }
-        }
+            type: "string",
+            format: "uuid",
+          },
+        },
       ],
       requestBody: {
         required: true,
         content: {
-          'application/json': {
+          "application/json": {
             schema: {
-              $ref: '#/components/schemas/UpdateShippingAddressRequest'
-            }
-          }
-        }
+              $ref: "#/components/schemas/UpdateShippingAddressRequest",
+            },
+          },
+        },
       },
       responses: {
-        '200': {
-          description: 'Shipping address updated successfully',
+        "200": {
+          description: "Shipping address updated successfully",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                type: 'object',
+                type: "object",
                 properties: {
                   success: {
-                    type: 'boolean',
-                    example: true
+                    type: "boolean",
+                    example: true,
                   },
                   message: {
-                    type: 'string',
-                    example: 'Shipping address updated successfully'
+                    type: "string",
+                    example: "Shipping address updated successfully",
                   },
                   data: {
-                    $ref: '#/components/schemas/ShippingAddress'
-                  }
-                }
-              }
-            }
-          }
+                    $ref: "#/components/schemas/ShippingAddress",
+                  },
+                },
+              },
+            },
+          },
         },
-        '400': {
-          $ref: '#/components/responses/ValidationError'
+        "400": {
+          $ref: "#/components/responses/ValidationError",
         },
-        '401': {
-          $ref: '#/components/responses/UnauthorizedError'
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
         },
-        '404': {
-          $ref: '#/components/responses/NotFoundError'
+        "404": {
+          $ref: "#/components/responses/NotFoundError",
         },
-        '500': {
-          $ref: '#/components/responses/InternalServerError'
-        }
-      }
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
     },
     delete: {
-      tags: ['Shipping'],
-      summary: 'Delete shipping address',
-      description: 'Delete an existing shipping address',
-      operationId: 'deleteShippingAddress',
+      tags: ["Shipping"],
+      summary: "Delete shipping address",
+      description: "Delete an existing shipping address",
+      operationId: "deleteShippingAddress",
       security: [
         {
-          bearerAuth: []
-        }
+          bearerAuth: [],
+        },
       ],
       parameters: [
         {
-          name: 'id',
-          in: 'path',
-          description: 'Shipping address ID',
+          name: "id",
+          in: "path",
+          description: "Shipping address ID",
           required: true,
           schema: {
-            type: 'string',
-            format: 'uuid'
-          }
-        }
+            type: "string",
+            format: "uuid",
+          },
+        },
       ],
       responses: {
-        '200': {
-          description: 'Shipping address deleted successfully',
+        "200": {
+          description: "Shipping address deleted successfully",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                type: 'object',
+                type: "object",
                 properties: {
                   success: {
-                    type: 'boolean',
-                    example: true
+                    type: "boolean",
+                    example: true,
                   },
                   message: {
-                    type: 'string',
-                    example: 'Shipping address deleted successfully'
-                  }
-                }
-              }
-            }
-          }
+                    type: "string",
+                    example: "Shipping address deleted successfully",
+                  },
+                },
+              },
+            },
+          },
         },
-        '401': {
-          $ref: '#/components/responses/UnauthorizedError'
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
         },
-        '404': {
-          $ref: '#/components/responses/NotFoundError'
+        "404": {
+          $ref: "#/components/responses/NotFoundError",
         },
-        '500': {
-          $ref: '#/components/responses/InternalServerError'
-        }
-      }
-    }
-  }
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
 } as const;
 
 export default { ...userPaths, ...shippingPaths };

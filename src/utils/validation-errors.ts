@@ -7,7 +7,7 @@ import type { ValidationErrorDetail } from "@/types/error.types";
 const FIELD_DISPLAY_NAMES: Record<string, string> = {
   // User fields
   email: "Email Address",
-  firstName: "First Name", 
+  firstName: "First Name",
   lastName: "Last Name",
   dateOfBirth: "Date of Birth",
   profileImageUrl: "Profile Image URL",
@@ -32,7 +32,7 @@ const FIELD_DISPLAY_NAMES: Record<string, string> = {
   tags: "Product Tags",
   categoryId: "Product Category",
 
-  // Category fields  
+  // Category fields
   categoryName: "Category Name",
   parentCategoryId: "Parent Category",
 
@@ -40,14 +40,14 @@ const FIELD_DISPLAY_NAMES: Record<string, string> = {
   orderStatus: "Order Status",
   totalAmount: "Total Amount",
   shippingCost: "Shipping Cost",
-  
+
   // Address fields
   street: "Street Address",
   city: "City",
-  state: "State/Province", 
+  state: "State/Province",
   zipCode: "ZIP/Postal Code",
   country: "Country",
-  
+
   // Common fields
   id: "ID",
   createdAt: "Created Date",

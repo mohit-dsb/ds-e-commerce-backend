@@ -1,13 +1,13 @@
-// OpenAPI 3.0 specification for DS E-commerce API
-import allSchemas from './combined-schemas';
-import allPaths from './paths';
+import { isProduction } from "@/config/env";
+import allSchemas from "./combined-schemas";
+import allPaths from "./paths";
 
 // Base OpenAPI specification
 export const openAPISpec = {
-  openapi: '3.0.3',
+  openapi: "3.0.3",
   info: {
-    title: 'DS E-commerce API',
-    version: '1.0.0',
+    title: "DS E-commerce API",
+    version: "1.0.0",
     description: `
 # DS E-commerce Backend API
 
@@ -40,205 +40,206 @@ API endpoints are rate-limited to ensure fair usage and prevent abuse.
 All endpoints return consistent error responses with appropriate HTTP status codes and error details.
     `,
     contact: {
-      name: 'API Support',
-      url: 'https://github.com/mohit-dsb/ds-e-commerce-backend',
-      email: 'support@example.com'
+      name: "API Support",
+      url: "https://github.com/mohit-dsb/ds-e-commerce-backend",
+      email: "support@example.com",
     },
     license: {
-      name: 'MIT',
-      url: 'https://opensource.org/licenses/MIT'
-    }
+      name: "MIT",
+      url: "https://opensource.org/licenses/MIT",
+    },
   },
   servers: [
-    {
-      url: 'http://localhost:3000',
-      description: 'Development Server'
-    },
-    {
-      url: 'https://ds-e-commerce-backend.onrender.com',
-      description: 'Production Server'
-    }
+    isProduction
+      ? {
+          url: "https://ds-e-commerce-backend.onrender.com",
+          description: "Production Server",
+        }
+      : {
+          url: "http://localhost:3000",
+          description: "Development Server",
+        },
   ],
   tags: [
     {
-      name: 'Authentication',
-      description: 'User authentication and authorization endpoints'
+      name: "Authentication",
+      description: "User authentication and authorization endpoints",
     },
     {
-      name: 'Users',
-      description: 'User profile management'
+      name: "Users",
+      description: "User profile management",
     },
     {
-      name: 'Categories',
-      description: 'Product category management'
+      name: "Categories",
+      description: "Product category management",
     },
     {
-      name: 'Products',
-      description: 'Product catalog management'
+      name: "Products",
+      description: "Product catalog management",
     },
     {
-      name: 'Cart',
-      description: 'Shopping cart operations'
+      name: "Cart",
+      description: "Shopping cart operations",
     },
     {
-      name: 'Orders',
-      description: 'Order management and tracking'
+      name: "Orders",
+      description: "Order management and tracking",
     },
     {
-      name: 'Shipping',
-      description: 'Shipping address management'
+      name: "Shipping",
+      description: "Shipping address management",
     },
     {
-      name: 'Images',
-      description: 'Image upload and management'
+      name: "Images",
+      description: "Image upload and management",
     },
     {
-      name: 'Health',
-      description: 'System health and status'
-    }
+      name: "Health",
+      description: "System health and status",
+    },
   ],
   components: {
     securitySchemes: {
       bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: 'JWT token obtained from login endpoint'
-      }
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+        description: "JWT token obtained from login endpoint",
+      },
     },
     responses: {
       UnauthorizedError: {
-        description: 'Authentication required',
+        description: "Authentication required",
         content: {
-          'application/json': {
+          "application/json": {
             schema: {
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: "#/components/schemas/ErrorResponse",
             },
             example: {
               success: false,
               error: {
-                code: 'UNAUTHORIZED',
-                message: 'Authentication required',
-                timestamp: '2024-01-15T10:30:00Z',
-                path: '/api/protected-endpoint'
-              }
-            }
-          }
-        }
+                code: "UNAUTHORIZED",
+                message: "Authentication required",
+                timestamp: "2024-01-15T10:30:00Z",
+                path: "/api/protected-endpoint",
+              },
+            },
+          },
+        },
       },
       ForbiddenError: {
-        description: 'Insufficient permissions',
+        description: "Insufficient permissions",
         content: {
-          'application/json': {
+          "application/json": {
             schema: {
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: "#/components/schemas/ErrorResponse",
             },
             example: {
               success: false,
               error: {
-                code: 'FORBIDDEN',
-                message: 'Admin access required',
-                timestamp: '2024-01-15T10:30:00Z'
-              }
-            }
-          }
-        }
+                code: "FORBIDDEN",
+                message: "Admin access required",
+                timestamp: "2024-01-15T10:30:00Z",
+              },
+            },
+          },
+        },
       },
       ValidationError: {
-        description: 'Validation error',
+        description: "Validation error",
         content: {
-          'application/json': {
+          "application/json": {
             schema: {
-              $ref: '#/components/schemas/ValidationErrorResponse'
-            }
-          }
-        }
+              $ref: "#/components/schemas/ValidationErrorResponse",
+            },
+          },
+        },
       },
       NotFoundError: {
-        description: 'Resource not found',
+        description: "Resource not found",
         content: {
-          'application/json': {
+          "application/json": {
             schema: {
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: "#/components/schemas/ErrorResponse",
             },
             example: {
               success: false,
               error: {
-                code: 'NOT_FOUND',
-                message: 'Resource not found',
-                timestamp: '2024-01-15T10:30:00Z'
-              }
-            }
-          }
-        }
+                code: "NOT_FOUND",
+                message: "Resource not found",
+                timestamp: "2024-01-15T10:30:00Z",
+              },
+            },
+          },
+        },
       },
       InternalServerError: {
-        description: 'Internal server error',
+        description: "Internal server error",
         content: {
-          'application/json': {
+          "application/json": {
             schema: {
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: "#/components/schemas/ErrorResponse",
             },
             example: {
               success: false,
               error: {
-                code: 'INTERNAL_ERROR',
-                message: 'An unexpected error occurred',
-                timestamp: '2024-01-15T10:30:00Z'
-              }
-            }
-          }
-        }
-      }
+                code: "INTERNAL_ERROR",
+                message: "An unexpected error occurred",
+                timestamp: "2024-01-15T10:30:00Z",
+              },
+            },
+          },
+        },
+      },
     },
     parameters: {
       PageParam: {
-        name: 'page',
-        in: 'query',
-        description: 'Page number for pagination',
+        name: "page",
+        in: "query",
+        description: "Page number for pagination",
         required: false,
         schema: {
-          type: 'integer',
+          type: "integer",
           minimum: 1,
-          default: 1
-        }
+          default: 1,
+        },
       },
       LimitParam: {
-        name: 'limit',
-        in: 'query',
-        description: 'Number of items per page',
+        name: "limit",
+        in: "query",
+        description: "Number of items per page",
         required: false,
         schema: {
-          type: 'integer',
+          type: "integer",
           minimum: 1,
           maximum: 100,
-          default: 20
-        }
+          default: 20,
+        },
       },
       SortByParam: {
-        name: 'sortBy',
-        in: 'query',
-        description: 'Field to sort by',
+        name: "sortBy",
+        in: "query",
+        description: "Field to sort by",
         required: false,
         schema: {
-          type: 'string'
-        }
+          type: "string",
+        },
       },
       SortOrderParam: {
-        name: 'sortOrder',
-        in: 'query',
-        description: 'Sort order',
+        name: "sortOrder",
+        in: "query",
+        description: "Sort order",
         required: false,
         schema: {
-          type: 'string',
-          enum: ['asc', 'desc'],
-          default: 'desc'
-        }
-      }
+          type: "string",
+          enum: ["asc", "desc"],
+          default: "desc",
+        },
+      },
     },
-    schemas: allSchemas // Populated by schema files
+    schemas: allSchemas, // Populated by schema files
   },
-  paths: allPaths // Populated by path files
+  paths: allPaths, // Populated by path files
 } as const;
 
 export default openAPISpec;

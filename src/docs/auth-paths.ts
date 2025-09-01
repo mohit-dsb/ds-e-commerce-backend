@@ -1,287 +1,287 @@
 // OpenAPI paths for Authentication endpoints
 
 export const authPaths = {
-  '/api/auth/register': {
+  "/api/auth/register": {
     post: {
-      tags: ['Authentication'],
-      summary: 'Register a new user',
-      description: 'Create a new user account with email and password',
-      operationId: 'registerUser',
+      tags: ["Authentication"],
+      summary: "Register a new user",
+      description: "Create a new user account with email and password",
+      operationId: "registerUser",
       requestBody: {
         required: true,
         content: {
-          'application/json': {
+          "application/json": {
             schema: {
-              $ref: '#/components/schemas/RegisterRequest'
-            }
-          }
-        }
+              $ref: "#/components/schemas/RegisterRequest",
+            },
+          },
+        },
       },
       responses: {
-        '201': {
-          description: 'User registered successfully',
+        "201": {
+          description: "User registered successfully",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                $ref: '#/components/schemas/AuthResponse'
-              }
-            }
-          }
+                $ref: "#/components/schemas/AuthResponse",
+              },
+            },
+          },
         },
-        '400': {
-          $ref: '#/components/responses/ValidationError'
+        "400": {
+          $ref: "#/components/responses/ValidationError",
         },
-        '409': {
-          description: 'Email already exists',
+        "409": {
+          description: "Email already exists",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse",
               },
               example: {
                 success: false,
                 error: {
-                  code: 'EMAIL_EXISTS',
-                  message: 'Email already exists',
-                  timestamp: '2024-01-15T10:30:00Z'
-                }
-              }
-            }
-          }
+                  code: "EMAIL_EXISTS",
+                  message: "Email already exists",
+                  timestamp: "2024-01-15T10:30:00Z",
+                },
+              },
+            },
+          },
         },
-        '500': {
-          $ref: '#/components/responses/InternalServerError'
-        }
-      }
-    }
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
   },
 
-  '/api/auth/login': {
+  "/api/auth/login": {
     post: {
-      tags: ['Authentication'],
-      summary: 'User login',
-      description: 'Authenticate user with email and password',
-      operationId: 'loginUser',
+      tags: ["Authentication"],
+      summary: "User login",
+      description: "Authenticate user with email and password",
+      operationId: "loginUser",
       requestBody: {
         required: true,
         content: {
-          'application/json': {
+          "application/json": {
             schema: {
-              $ref: '#/components/schemas/LoginRequest'
-            }
-          }
-        }
+              $ref: "#/components/schemas/LoginRequest",
+            },
+          },
+        },
       },
       responses: {
-        '200': {
-          description: 'Login successful',
+        "200": {
+          description: "Login successful",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                $ref: '#/components/schemas/AuthResponse'
-              }
-            }
-          }
+                $ref: "#/components/schemas/AuthResponse",
+              },
+            },
+          },
         },
-        '400': {
-          $ref: '#/components/responses/ValidationError'
+        "400": {
+          $ref: "#/components/responses/ValidationError",
         },
-        '401': {
-          description: 'Invalid credentials',
+        "401": {
+          description: "Invalid credentials",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse",
               },
               example: {
                 success: false,
                 error: {
-                  code: 'INVALID_CREDENTIALS',
-                  message: 'Invalid email or password',
-                  timestamp: '2024-01-15T10:30:00Z'
-                }
-              }
-            }
-          }
+                  code: "INVALID_CREDENTIALS",
+                  message: "Invalid email or password",
+                  timestamp: "2024-01-15T10:30:00Z",
+                },
+              },
+            },
+          },
         },
-        '500': {
-          $ref: '#/components/responses/InternalServerError'
-        }
-      }
-    }
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
   },
 
-  '/api/auth/forgot-password': {
+  "/api/auth/forgot-password": {
     post: {
-      tags: ['Authentication'],
-      summary: 'Request password reset',
-      description: 'Send password reset token to user email',
-      operationId: 'forgotPassword',
+      tags: ["Authentication"],
+      summary: "Request password reset",
+      description: "Send password reset token to user email",
+      operationId: "forgotPassword",
       requestBody: {
         required: true,
         content: {
-          'application/json': {
+          "application/json": {
             schema: {
-              $ref: '#/components/schemas/ForgotPasswordRequest'
-            }
-          }
-        }
+              $ref: "#/components/schemas/ForgotPasswordRequest",
+            },
+          },
+        },
       },
       responses: {
-        '200': {
-          description: 'Password reset email sent',
+        "200": {
+          description: "Password reset email sent",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                type: 'object',
+                type: "object",
                 properties: {
                   success: {
-                    type: 'boolean',
-                    example: true
+                    type: "boolean",
+                    example: true,
                   },
                   message: {
-                    type: 'string',
-                    example: 'Password reset email sent'
-                  }
-                }
-              }
-            }
-          }
+                    type: "string",
+                    example: "Password reset email sent",
+                  },
+                },
+              },
+            },
+          },
         },
-        '400': {
-          $ref: '#/components/responses/ValidationError'
+        "400": {
+          $ref: "#/components/responses/ValidationError",
         },
-        '404': {
-          description: 'User not found',
+        "404": {
+          description: "User not found",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse",
               },
               example: {
                 success: false,
                 error: {
-                  code: 'USER_NOT_FOUND',
-                  message: 'User with this email not found',
-                  timestamp: '2024-01-15T10:30:00Z'
-                }
-              }
-            }
-          }
+                  code: "USER_NOT_FOUND",
+                  message: "User with this email not found",
+                  timestamp: "2024-01-15T10:30:00Z",
+                },
+              },
+            },
+          },
         },
-        '500': {
-          $ref: '#/components/responses/InternalServerError'
-        }
-      }
-    }
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
   },
 
-  '/api/auth/reset-password': {
+  "/api/auth/reset-password": {
     post: {
-      tags: ['Authentication'],
-      summary: 'Reset password',
-      description: 'Reset user password using reset token',
-      operationId: 'resetPassword',
+      tags: ["Authentication"],
+      summary: "Reset password",
+      description: "Reset user password using reset token",
+      operationId: "resetPassword",
       requestBody: {
         required: true,
         content: {
-          'application/json': {
+          "application/json": {
             schema: {
-              $ref: '#/components/schemas/ResetPasswordRequest'
-            }
-          }
-        }
+              $ref: "#/components/schemas/ResetPasswordRequest",
+            },
+          },
+        },
       },
       responses: {
-        '200': {
-          description: 'Password reset successful',
+        "200": {
+          description: "Password reset successful",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                type: 'object',
+                type: "object",
                 properties: {
                   success: {
-                    type: 'boolean',
-                    example: true
+                    type: "boolean",
+                    example: true,
                   },
                   message: {
-                    type: 'string',
-                    example: 'Password reset successful'
-                  }
-                }
-              }
-            }
-          }
+                    type: "string",
+                    example: "Password reset successful",
+                  },
+                },
+              },
+            },
+          },
         },
-        '400': {
-          $ref: '#/components/responses/ValidationError'
+        "400": {
+          $ref: "#/components/responses/ValidationError",
         },
-        '401': {
-          description: 'Invalid or expired token',
+        "401": {
+          description: "Invalid or expired token",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse",
               },
               example: {
                 success: false,
                 error: {
-                  code: 'INVALID_TOKEN',
-                  message: 'Invalid or expired reset token',
-                  timestamp: '2024-01-15T10:30:00Z'
-                }
-              }
-            }
-          }
+                  code: "INVALID_TOKEN",
+                  message: "Invalid or expired reset token",
+                  timestamp: "2024-01-15T10:30:00Z",
+                },
+              },
+            },
+          },
         },
-        '500': {
-          $ref: '#/components/responses/InternalServerError'
-        }
-      }
-    }
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
   },
 
-  '/api/auth/refresh': {
+  "/api/auth/refresh": {
     post: {
-      tags: ['Authentication'],
-      summary: 'Refresh access token',
-      description: 'Refresh access token using refresh token from cookies',
-      operationId: 'refreshToken',
+      tags: ["Authentication"],
+      summary: "Refresh access token",
+      description: "Refresh access token using refresh token from cookies",
+      operationId: "refreshToken",
       responses: {
-        '200': {
-          description: 'Token refreshed successfully',
+        "200": {
+          description: "Token refreshed successfully",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                $ref: '#/components/schemas/AuthResponse'
-              }
-            }
-          }
+                $ref: "#/components/schemas/AuthResponse",
+              },
+            },
+          },
         },
-        '401': {
-          description: 'Invalid or expired refresh token',
+        "401": {
+          description: "Invalid or expired refresh token",
           content: {
-            'application/json': {
+            "application/json": {
               schema: {
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse",
               },
               example: {
                 success: false,
                 error: {
-                  code: 'INVALID_REFRESH_TOKEN',
-                  message: 'Invalid or expired refresh token',
-                  timestamp: '2024-01-15T10:30:00Z'
-                }
-              }
-            }
-          }
+                  code: "INVALID_REFRESH_TOKEN",
+                  message: "Invalid or expired refresh token",
+                  timestamp: "2024-01-15T10:30:00Z",
+                },
+              },
+            },
+          },
         },
-        '500': {
-          $ref: '#/components/responses/InternalServerError'
-        }
-      }
-    }
-  }
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
 } as const;
 
 export default authPaths;
