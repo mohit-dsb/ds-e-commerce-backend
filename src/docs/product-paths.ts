@@ -806,6 +806,486 @@ export const productPaths = {
       },
     },
   },
+
+  // ============================================================================
+  // Product Review Endpoints
+  // ============================================================================
+
+  "/api/products/{productId}/reviews": {
+    get: {
+      tags: ["Product Reviews"],
+      summary: "Get product reviews",
+      description: "Retrieve all reviews for a specific product with filtering and pagination",
+      operationId: "getProductReviews",
+      parameters: [
+        {
+          name: "productId",
+          in: "path",
+          description: "Product ID",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+        {
+          name: "rating",
+          in: "query",
+          description: "Filter by rating (1-5)",
+          required: false,
+          schema: {
+            type: "integer",
+            minimum: 1,
+            maximum: 5,
+          },
+        },
+        {
+          name: "sortBy",
+          in: "query",
+          description: "Sort by field",
+          required: false,
+          schema: {
+            type: "string",
+            enum: ["createdAt", "rating"],
+            default: "createdAt",
+          },
+        },
+        {
+          $ref: "#/components/parameters/SortOrderParam",
+        },
+        {
+          $ref: "#/components/parameters/PageParam",
+        },
+        {
+          $ref: "#/components/parameters/LimitParam",
+        },
+        {
+          name: "includeUser",
+          in: "query",
+          description: "Include user information in response",
+          required: false,
+          schema: {
+            type: "boolean",
+            default: false,
+          },
+        },
+      ],
+      responses: {
+        "200": {
+          description: "Reviews retrieved successfully",
+          content: {
+            "application/json": {
+              schema: {
+                allOf: [
+                  {
+                    $ref: "#/components/schemas/PaginatedResponse",
+                  },
+                  {
+                    type: "object",
+                    properties: {
+                      data: {
+                        type: "object",
+                        properties: {
+                          reviews: {
+                            type: "array",
+                            items: {
+                              $ref: "#/components/schemas/ProductReview",
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+        "404": {
+          $ref: "#/components/responses/NotFoundError",
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+    post: {
+      tags: ["Product Reviews"],
+      summary: "Create product review",
+      description: "Create a new review for a product (Authenticated users only)",
+      operationId: "createProductReview",
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
+      parameters: [
+        {
+          name: "productId",
+          in: "path",
+          description: "Product ID",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/CreateReviewRequest",
+            },
+          },
+        },
+      },
+      responses: {
+        "201": {
+          description: "Review created successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: {
+                    type: "boolean",
+                    example: true,
+                  },
+                  message: {
+                    type: "string",
+                    example: "Review submitted successfully",
+                  },
+                  data: {
+                    type: "object",
+                    properties: {
+                      review: {
+                        $ref: "#/components/schemas/ProductReview",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        "400": {
+          $ref: "#/components/responses/ValidationError",
+        },
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
+        },
+        "404": {
+          $ref: "#/components/responses/NotFoundError",
+        },
+        "409": {
+          $ref: "#/components/responses/ConflictError",
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
+
+  "/api/products/{productId}/reviews/summary": {
+    get: {
+      tags: ["Product Reviews"],
+      summary: "Get product review summary",
+      description: "Get aggregated review statistics for a product",
+      operationId: "getProductReviewSummary",
+      parameters: [
+        {
+          name: "productId",
+          in: "path",
+          description: "Product ID",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+      ],
+      responses: {
+        "200": {
+          description: "Review summary retrieved successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: {
+                    type: "boolean",
+                    example: true,
+                  },
+                  message: {
+                    type: "string",
+                    example: "Product review summary retrieved successfully",
+                  },
+                  data: {
+                    type: "object",
+                    properties: {
+                      summary: {
+                        $ref: "#/components/schemas/ReviewSummary",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        "404": {
+          $ref: "#/components/responses/NotFoundError",
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
+
+  "/api/products/{productId}/reviews/{reviewId}": {
+    get: {
+      tags: ["Product Reviews"],
+      summary: "Get specific review",
+      description: "Retrieve a specific review by ID",
+      operationId: "getProductReviewById",
+      parameters: [
+        {
+          name: "productId",
+          in: "path",
+          description: "Product ID",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+        {
+          name: "reviewId",
+          in: "path",
+          description: "Review ID",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+        {
+          name: "includeUser",
+          in: "query",
+          description: "Include user information in response",
+          required: false,
+          schema: {
+            type: "boolean",
+            default: false,
+          },
+        },
+      ],
+      responses: {
+        "200": {
+          description: "Review retrieved successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: {
+                    type: "boolean",
+                    example: true,
+                  },
+                  message: {
+                    type: "string",
+                    example: "Review retrieved successfully",
+                  },
+                  data: {
+                    type: "object",
+                    properties: {
+                      review: {
+                        $ref: "#/components/schemas/ProductReview",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        "404": {
+          $ref: "#/components/responses/NotFoundError",
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+    patch: {
+      tags: ["Product Reviews"],
+      summary: "Update product review",
+      description: "Update an existing review (Author only)",
+      operationId: "updateProductReview",
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
+      parameters: [
+        {
+          name: "productId",
+          in: "path",
+          description: "Product ID",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+        {
+          name: "reviewId",
+          in: "path",
+          description: "Review ID",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/UpdateReviewRequest",
+            },
+          },
+        },
+      },
+      responses: {
+        "200": {
+          description: "Review updated successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: {
+                    type: "boolean",
+                    example: true,
+                  },
+                  message: {
+                    type: "string",
+                    example: "Review updated successfully",
+                  },
+                  data: {
+                    type: "object",
+                    properties: {
+                      review: {
+                        $ref: "#/components/schemas/ProductReview",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        "400": {
+          $ref: "#/components/responses/ValidationError",
+        },
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
+        },
+        "403": {
+          $ref: "#/components/responses/ForbiddenError",
+        },
+        "404": {
+          $ref: "#/components/responses/NotFoundError",
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+    delete: {
+      tags: ["Product Reviews"],
+      summary: "Delete product review",
+      description: "Delete an existing review (Author only)",
+      operationId: "deleteProductReview",
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
+      parameters: [
+        {
+          name: "productId",
+          in: "path",
+          description: "Product ID",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+        {
+          name: "reviewId",
+          in: "path",
+          description: "Review ID",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+      ],
+      responses: {
+        "200": {
+          description: "Review deleted successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: {
+                    type: "boolean",
+                    example: true,
+                  },
+                  message: {
+                    type: "string",
+                    example: "Review deleted successfully",
+                  },
+                  data: {
+                    type: "object",
+                    properties: {
+                      reviewId: {
+                        type: "string",
+                        format: "uuid",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
+        },
+        "403": {
+          $ref: "#/components/responses/ForbiddenError",
+        },
+        "404": {
+          $ref: "#/components/responses/NotFoundError",
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
 } as const;
 
 export default productPaths;

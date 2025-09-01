@@ -496,6 +496,243 @@ export const productSchemas = {
       },
     },
   },
+
+  // ============================================================================
+  // Product Review Schemas
+  // ============================================================================
+
+  ProductReview: {
+    type: "object",
+    properties: {
+      id: {
+        type: "string",
+        format: "uuid",
+        description: "Review unique identifier",
+        example: "123e4567-e89b-12d3-a456-426614174000",
+      },
+      productId: {
+        type: "string",
+        format: "uuid",
+        description: "Product identifier",
+        example: "123e4567-e89b-12d3-a456-426614174001",
+      },
+      userId: {
+        type: "string",
+        format: "uuid",
+        description: "User identifier",
+        example: "123e4567-e89b-12d3-a456-426614174002",
+      },
+      orderId: {
+        type: "string",
+        format: "uuid",
+        nullable: true,
+        description: "Order identifier (if from verified purchase)",
+        example: "123e4567-e89b-12d3-a456-426614174003",
+      },
+      rating: {
+        type: "integer",
+        minimum: 1,
+        maximum: 5,
+        description: "Review rating from 1 to 5 stars",
+        example: 5,
+      },
+      title: {
+        type: "string",
+        description: "Review title",
+        example: "Excellent sound quality!",
+      },
+      comment: {
+        type: "string",
+        description: "Review comment/description",
+        example: "These headphones exceeded my expectations. The sound quality is crystal clear and the noise cancellation works perfectly.",
+      },
+      isVerifiedPurchase: {
+        type: "boolean",
+        description: "Whether this review is from a verified purchase",
+        example: true,
+      },
+      user: {
+        type: "object",
+        nullable: true,
+        properties: {
+          id: {
+            type: "string",
+            format: "uuid",
+          },
+          firstName: {
+            type: "string",
+            example: "John",
+          },
+          lastName: {
+            type: "string",
+            example: "D.",
+          },
+          email: {
+            type: "string",
+            format: "email",
+            example: "j***@example.com",
+          },
+        },
+        description: "User information (included when requested)",
+      },
+      createdAt: {
+        type: "string",
+        format: "date-time",
+        description: "Review creation timestamp",
+      },
+      updatedAt: {
+        type: "string",
+        format: "date-time",
+        description: "Review last update timestamp",
+      },
+    },
+    required: [
+      "id",
+      "productId", 
+      "userId",
+      "rating",
+      "title",
+      "comment",
+      "isVerifiedPurchase",
+      "createdAt",
+      "updatedAt",
+    ],
+  },
+
+  CreateReviewRequest: {
+    type: "object",
+    properties: {
+      rating: {
+        type: "integer",
+        minimum: 1,
+        maximum: 5,
+        description: "Review rating from 1 to 5 stars",
+        example: 5,
+      },
+      title: {
+        type: "string",
+        minLength: 1,
+        maxLength: 255,
+        description: "Review title",
+        example: "Excellent sound quality!",
+      },
+      comment: {
+        type: "string",
+        minLength: 1,
+        maxLength: 2000,
+        description: "Review comment/description",
+        example: "These headphones exceeded my expectations. The sound quality is crystal clear and the noise cancellation works perfectly.",
+      },
+      orderId: {
+        type: "string",
+        format: "uuid",
+        nullable: true,
+        description: "Order ID for verified purchase (optional)",
+        example: "123e4567-e89b-12d3-a456-426614174003",
+      },
+    },
+    required: ["rating", "title", "comment"],
+  },
+
+  UpdateReviewRequest: {
+    type: "object",
+    properties: {
+      rating: {
+        type: "integer",
+        minimum: 1,
+        maximum: 5,
+        description: "Review rating from 1 to 5 stars",
+        example: 4,
+      },
+      title: {
+        type: "string",
+        minLength: 1,
+        maxLength: 255,
+        description: "Review title",
+        example: "Great headphones with minor issues",
+      },
+      comment: {
+        type: "string",
+        minLength: 1,
+        maxLength: 2000,
+        description: "Review comment/description",
+        example: "Good sound quality but the battery life could be better. Overall satisfied with the purchase.",
+      },
+    },
+  },
+
+  ReviewSummary: {
+    type: "object",
+    properties: {
+      productId: {
+        type: "string",
+        format: "uuid",
+        description: "Product identifier",
+        example: "123e4567-e89b-12d3-a456-426614174001",
+      },
+      totalReviews: {
+        type: "integer",
+        description: "Total number of reviews",
+        example: 127,
+      },
+      averageRating: {
+        type: "number",
+        format: "decimal",
+        description: "Average rating (rounded to 2 decimal places)",
+        example: 4.35,
+      },
+      ratingDistribution: {
+        type: "object",
+        properties: {
+          "1": {
+            type: "integer",
+            description: "Number of 1-star reviews",
+            example: 5,
+          },
+          "2": {
+            type: "integer",
+            description: "Number of 2-star reviews",
+            example: 8,
+          },
+          "3": {
+            type: "integer",
+            description: "Number of 3-star reviews",
+            example: 15,
+          },
+          "4": {
+            type: "integer",
+            description: "Number of 4-star reviews",
+            example: 34,
+          },
+          "5": {
+            type: "integer",
+            description: "Number of 5-star reviews",
+            example: 65,
+          },
+        },
+        description: "Distribution of ratings by star count",
+      },
+      verifiedPurchaseCount: {
+        type: "integer",
+        description: "Number of reviews from verified purchases",
+        example: 98,
+      },
+      verifiedPurchasePercentage: {
+        type: "number",
+        format: "decimal",
+        description: "Percentage of verified purchase reviews",
+        example: 77.17,
+      },
+    },
+    required: [
+      "productId",
+      "totalReviews",
+      "averageRating",
+      "ratingDistribution",
+      "verifiedPurchaseCount",
+      "verifiedPurchasePercentage",
+    ],
+  },
 } as const;
 
 export default productSchemas;

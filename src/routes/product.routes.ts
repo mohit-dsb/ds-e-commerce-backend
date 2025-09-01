@@ -3,8 +3,8 @@ import { z } from "zod";
 import productImageRoutes from "./product-image.routes";
 import * as productController from "@/controllers/product.controller";
 import { compatibleZValidator } from "@/middleware/validation.middleware";
-import { insertProductSchema, updateProductSchema } from "@/db/validators";
 import { authMiddleware, adminMiddleware } from "@/middleware/auth.middleware";
+import { insertProductSchema, updateProductSchema, createReviewSchema, updateReviewSchema } from "@/db/validators";
 
 const productRoutes = new Hono();
 
@@ -138,5 +138,79 @@ productRoutes.patch(
 
 // Mount image upload routes
 productRoutes.route("/", productImageRoutes);
+
+// ============================================================================
+// Product Review Routes
+// ============================================================================
+
+/**
+ * @route GET /api/products/:productId/reviews
+ * @desc Get all reviews for a product
+ * @access Public
+ * @param {string} productId - Product UUID
+ * @query {number} [rating] - Filter by rating (1-5)
+ * @query {string} [sortBy] - Sort by field (createdAt/rating)
+ * @query {string} [sortOrder] - Sort order (asc/desc)
+ * @query {number} [page] - Page number for pagination
+ * @query {number} [limit] - Number of items per page
+ * @query {boolean} [includeUser] - Include user information
+ */
+productRoutes.get("/:productId/reviews", productController.getProductReviews);
+
+/**
+ * @route GET /api/products/:productId/reviews/summary
+ * @desc Get review summary for a product
+ * @access Public
+ * @param {string} productId - Product UUID
+ */
+productRoutes.get("/:productId/reviews/summary", productController.getProductReviewSummary);
+
+/**
+ * @route GET /api/products/:productId/reviews/:reviewId
+ * @desc Get a specific review by ID
+ * @access Public
+ * @param {string} productId - Product UUID
+ * @param {string} reviewId - Review UUID
+ * @query {boolean} [includeUser] - Include user information
+ */
+productRoutes.get("/:productId/reviews/:reviewId", productController.getProductReviewById);
+
+/**
+ * @route POST /api/products/:productId/reviews
+ * @desc Create a new review for a product
+ * @access Private (Authenticated users)
+ * @param {string} productId - Product UUID
+ * @body {CreateReviewRequest} Review data
+ */
+productRoutes.post(
+  "/:productId/reviews",
+  authMiddleware,
+  compatibleZValidator("json", createReviewSchema.omit({ productId: true })),
+  productController.createProductReview
+);
+
+/**
+ * @route PATCH /api/products/:productId/reviews/:reviewId
+ * @desc Update a review (only by author)
+ * @access Private (Authenticated users - Author only)
+ * @param {string} productId - Product UUID
+ * @param {string} reviewId - Review UUID
+ * @body {UpdateReviewRequest} Updated review data
+ */
+productRoutes.patch(
+  "/:productId/reviews/:reviewId",
+  authMiddleware,
+  compatibleZValidator("json", updateReviewSchema),
+  productController.updateProductReview
+);
+
+/**
+ * @route DELETE /api/products/:productId/reviews/:reviewId
+ * @desc Delete a review (only by author)
+ * @access Private (Authenticated users - Author only)
+ * @param {string} productId - Product UUID
+ * @param {string} reviewId - Review UUID
+ */
+productRoutes.delete("/:productId/reviews/:reviewId", authMiddleware, productController.deleteProductReview);
 
 export default productRoutes;

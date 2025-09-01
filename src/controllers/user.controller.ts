@@ -3,12 +3,12 @@ import * as userService from "@/services/user.service";
 import { createSuccessResponse } from "@/utils/response";
 import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
-import type { 
-  UpdateUserProfileRequest, 
+import type {
+  UpdateUserProfileRequest,
   ChangePasswordRequest,
   AddToCartRequest,
   UpdateCartItemRequest,
-  CartQueryRequest
+  CartQueryRequest,
 } from "@/types/user.types";
 
 // ============================================================================

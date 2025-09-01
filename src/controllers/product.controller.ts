@@ -5,7 +5,14 @@ import { createNotFoundError } from "@/utils/errors";
 import * as productService from "@/services/product.service";
 import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
-import type { CreateProductRequest, ProductFilters, UpdateProductRequest } from "@/types/product.types";
+import type {
+  CreateProductRequest,
+  ProductFilters,
+  UpdateProductRequest,
+  ReviewFilters,
+  CreateReviewRequest,
+  UpdateReviewRequest,
+} from "@/types/product.types";
 
 // ============================================================================
 // Product Controller Functions
@@ -244,4 +251,106 @@ export const bulkUpdateProductStatus = async (c: Context) => {
   await productService.bulkUpdateProductStatus(productIds, status);
 
   return c.json(createSuccessResponse("Product statuses updated successfully", { updatedCount: productIds.length }));
+};
+
+// ============================================================================
+// Product Review Controller Functions
+// ============================================================================
+
+/**
+ * Create a new product review
+ * POST /api/products/:productId/reviews
+ */
+export const createProductReview = async (c: Context<{ Variables: AuthContext }>) => {
+  const user = c.get("user");
+  const productId = c.req.param("productId");
+  const reviewData = getValidatedData<Omit<CreateReviewRequest, "productId">>(c, "json");
+
+  const result = await productService.createProductReview(user.id, {
+    ...reviewData,
+    productId,
+  });
+
+  return c.json(createSuccessResponse(result.message, { review: result.review }), 201);
+};
+
+/**
+ * Update a product review
+ * PATCH /api/products/:productId/reviews/:reviewId
+ */
+export const updateProductReview = async (c: Context<{ Variables: AuthContext }>) => {
+  const user = c.get("user");
+  const reviewId = c.req.param("reviewId");
+  const updateData = getValidatedData<UpdateReviewRequest>(c, "json");
+
+  const result = await productService.updateProductReview(reviewId, user.id, updateData);
+
+  return c.json(createSuccessResponse(result.message, { review: result.review }));
+};
+
+/**
+ * Delete a product review
+ * DELETE /api/products/:productId/reviews/:reviewId
+ */
+export const deleteProductReview = async (c: Context<{ Variables: AuthContext }>) => {
+  const user = c.get("user");
+  const reviewId = c.req.param("reviewId");
+
+  await productService.deleteProductReview(reviewId, user.id);
+
+  return c.json(createSuccessResponse("Review deleted successfully", { reviewId }));
+};
+
+/**
+ * Get reviews for a product
+ * GET /api/products/:productId/reviews
+ */
+export const getProductReviews = async (c: Context) => {
+  const productId = c.req.param("productId");
+  const query = c.req.query();
+
+  const filters: ReviewFilters = {
+    rating: query.rating ? parseInt(query.rating, 10) : undefined,
+    sortBy: (query.sortBy as ReviewFilters["sortBy"]) ?? "createdAt",
+    sortOrder: (query.sortOrder as ReviewFilters["sortOrder"]) ?? "desc",
+    page: query.page ? parseInt(query.page, 10) : 1,
+    limit: query.limit ? parseInt(query.limit, 10) : 20,
+    includeUser: query.includeUser === "true",
+  };
+
+  // Remove undefined values
+  Object.keys(filters).forEach((key) => {
+    if (filters[key as keyof ReviewFilters] === undefined) {
+      delete filters[key as keyof ReviewFilters];
+    }
+  });
+
+  const result = await productService.getProductReviews(productId, filters);
+
+  return c.json(createSuccessResponse("Product reviews retrieved successfully", result));
+};
+
+/**
+ * Get review summary for a product
+ * GET /api/products/:productId/reviews/summary
+ */
+export const getProductReviewSummary = async (c: Context) => {
+  const productId = c.req.param("productId");
+
+  const summary = await productService.getProductReviewSummary(productId);
+
+  return c.json(createSuccessResponse("Product review summary retrieved successfully", { summary }));
+};
+
+/**
+ * Get a specific review by ID
+ * GET /api/products/:productId/reviews/:reviewId
+ */
+export const getProductReviewById = async (c: Context) => {
+  const reviewId = c.req.param("reviewId");
+  const includeUser = c.req.query("includeUser") === "true";
+
+  const review = await productService.getProductReviewById(reviewId, includeUser);
+
+  return c.json(createSuccessResponse("Review retrieved successfully", { review }));
 };

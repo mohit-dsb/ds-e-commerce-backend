@@ -4,10 +4,10 @@ import { users, shoppingCarts, shoppingCartItems, products } from "@/db/schema";
 import { logger } from "@/utils/logger";
 import { hashPassword, verifyPassword } from "@/utils/password";
 import { createNotFoundError, createValidationError, createConflictError, createInternalServerError } from "@/utils/errors";
-import type { 
-  UserProfile, 
-  UpdateUserProfileRequest, 
-  ChangePasswordRequest, 
+import type {
+  UserProfile,
+  UpdateUserProfileRequest,
+  ChangePasswordRequest,
   UserOperationResult,
   AddToCartRequest,
   UpdateCartItemRequest,

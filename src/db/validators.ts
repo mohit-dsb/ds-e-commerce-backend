@@ -272,3 +272,53 @@ export const changePasswordSchema = z
     message: "Passwords don't match",
     path: ["confirmPassword"],
   });
+
+// ============================================================================
+// Product Review Schemas
+// ============================================================================
+
+export const createReviewSchema = z.object({
+  productId: z.string().uuid("Invalid product ID"),
+  rating: z.number().int("Rating must be an integer").min(1, "Rating must be at least 1").max(5, "Rating must be at most 5"),
+  title: z.string().min(1, "Title is required").max(255, "Title must be less than 255 characters").trim().optional(),
+  comment: z.string().max(2000, "Comment must be less than 2000 characters").trim().optional(),
+  orderId: z.string().uuid("Invalid order ID").optional(),
+  images: z.array(z.string().url("Invalid image URL")).max(5, "Maximum 5 images allowed").optional(),
+});
+
+export const updateReviewSchema = z.object({
+  rating: z
+    .number()
+    .int("Rating must be an integer")
+    .min(1, "Rating must be at least 1")
+    .max(5, "Rating must be at most 5")
+    .optional(),
+  title: z.string().min(1, "Title is required").max(255, "Title must be less than 255 characters").trim().optional(),
+  comment: z.string().max(2000, "Comment must be less than 2000 characters").trim().optional(),
+  images: z.array(z.string().url("Invalid image URL")).max(5, "Maximum 5 images allowed").optional(),
+});
+
+export const reviewQuerySchema = z.object({
+  rating: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().min(1).max(5))
+    .optional(),
+  sortBy: z.enum(["createdAt", "rating"]).default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  page: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().min(1))
+    .default("1"),
+  limit: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().min(1).max(100))
+    .default("20"),
+  includeUser: z
+    .string()
+    .transform((val) => val === "true")
+    .pipe(z.boolean())
+    .default("false"),
+});

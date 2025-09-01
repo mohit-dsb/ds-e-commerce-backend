@@ -1,12 +1,21 @@
 import { db } from "@/db";
 import { logger } from "@/utils/logger";
 import type { NewProduct } from "@/db/validators";
-import { products, categories } from "@/db/schema";
+import { products, categories, productReviews, orders, orderItems, users } from "@/db/schema";
 import { dbErrorHandlers } from "@/utils/database-errors";
 import { generateSlug, generateUniqueSlug } from "@/utils/slug";
-import type { ProductFilters, ProductWithRelations } from "@/types/product.types";
 import { createNotFoundError, createConflictError, createValidationError } from "@/utils/errors";
 import { eq, and, or, ilike, gte, lte, inArray, desc, asc, sql, count, type SQL } from "drizzle-orm";
+import type {
+  CreateReviewRequest,
+  ProductFilters,
+  ProductReview,
+  ProductWithRelations,
+  ReviewFilters,
+  ReviewOperationResult,
+  ReviewSummary,
+  UpdateReviewRequest,
+} from "@/types/product.types";
 
 // ============================================================================
 // Product CRUD Operations
@@ -439,4 +448,377 @@ export const bulkUpdateProductStatus = async (
       },
     });
   });
+};
+
+// ============================================================================
+// Product Review Operations
+// ============================================================================
+
+/**
+ * Create a new product review
+ * @param userId - User creating the review
+ * @param reviewData - Review data
+ * @returns Promise resolving to created review
+ */
+export const createProductReview = async (userId: string, reviewData: CreateReviewRequest): Promise<ReviewOperationResult> => {
+  return dbErrorHandlers.create(async () => {
+    // Check if product exists and is active
+    const product = await db
+      .select({ id: products.id, status: products.status, name: products.name })
+      .from(products)
+      .where(eq(products.id, reviewData.productId))
+      .limit(1);
+
+    if (!product[0]) {
+      throw createNotFoundError("Product");
+    }
+
+    if (product[0].status !== "active") {
+      throw createValidationError([
+        {
+          field: "productId",
+          message: "Cannot review inactive products",
+        },
+      ]);
+    }
+
+    // Check if user already reviewed this product
+    const existingReview = await db
+      .select({ id: productReviews.id })
+      .from(productReviews)
+      .where(and(eq(productReviews.userId, userId), eq(productReviews.productId, reviewData.productId)))
+      .limit(1);
+
+    if (existingReview[0]) {
+      throw createConflictError("You have already reviewed this product");
+    }
+
+    // Check if this is a verified purchase
+    let isVerifiedPurchase = false;
+    let { orderId } = reviewData;
+
+    if (reviewData.orderId) {
+      // Verify the order belongs to the user and contains this product
+      const orderExists = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
+        .where(
+          and(
+            eq(orders.id, reviewData.orderId),
+            eq(orders.userId, userId),
+            eq(orderItems.productId, reviewData.productId),
+            eq(orders.status, "delivered")
+          )
+        )
+        .limit(1);
+
+      if (orderExists[0]) {
+        isVerifiedPurchase = true;
+      } else {
+        orderId = undefined; // Remove invalid order ID
+      }
+    } else {
+      // Check if user has any delivered order with this product
+      const purchaseHistory = await db
+        .select({ orderId: orders.id })
+        .from(orders)
+        .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
+        .where(and(eq(orders.userId, userId), eq(orderItems.productId, reviewData.productId), eq(orders.status, "delivered")))
+        .limit(1);
+
+      if (purchaseHistory[0]) {
+        isVerifiedPurchase = true;
+        [{ orderId }] = purchaseHistory;
+      }
+    }
+
+    // Create the review
+    const [newReview] = await db
+      .insert(productReviews)
+      .values({
+        userId,
+        productId: reviewData.productId,
+        orderId,
+        rating: reviewData.rating,
+        title: reviewData.title,
+        comment: reviewData.comment,
+        isVerifiedPurchase,
+        images: reviewData.images ?? [],
+      })
+      .returning();
+
+    const review = await getProductReviewById(newReview.id, true);
+
+    return {
+      review,
+      message: "Review submitted successfully",
+    };
+  });
+};
+
+/**
+ * Update an existing review (only by the author)
+ * @param reviewId - Review ID to update
+ * @param userId - User updating the review
+ * @param updateData - Updated review data
+ * @returns Promise resolving to updated review
+ */
+export const updateProductReview = async (
+  reviewId: string,
+  userId: string,
+  updateData: UpdateReviewRequest
+): Promise<ReviewOperationResult> => {
+  return dbErrorHandlers.update(async () => {
+    // Get existing review
+    const existingReview = await db
+      .select({
+        id: productReviews.id,
+        userId: productReviews.userId,
+      })
+      .from(productReviews)
+      .where(eq(productReviews.id, reviewId))
+      .limit(1);
+
+    if (!existingReview[0]) {
+      throw createNotFoundError("Review");
+    }
+
+    // Check if user owns this review
+    if (existingReview[0].userId !== userId) {
+      throw createValidationError([
+        {
+          field: "userId",
+          message: "You can only update your own reviews",
+        },
+      ]);
+    }
+
+    // Update the review
+    await db
+      .update(productReviews)
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
+      })
+      .where(eq(productReviews.id, reviewId));
+
+    const review = await getProductReviewById(reviewId, true);
+
+    return {
+      review,
+      message: "Review updated successfully",
+    };
+  });
+};
+
+/**
+ * Delete a review (only by the author)
+ * @param reviewId - Review ID to delete
+ * @param userId - User deleting the review
+ */
+export const deleteProductReview = async (reviewId: string, userId: string): Promise<void> => {
+  return dbErrorHandlers.delete(async () => {
+    // Get existing review
+    const existingReview = await db
+      .select({
+        id: productReviews.id,
+        userId: productReviews.userId,
+      })
+      .from(productReviews)
+      .where(eq(productReviews.id, reviewId))
+      .limit(1);
+
+    if (!existingReview[0]) {
+      throw createNotFoundError("Review");
+    }
+
+    // Check if user owns this review
+    if (existingReview[0].userId !== userId) {
+      throw createValidationError([
+        {
+          field: "userId",
+          message: "You can only delete your own reviews",
+        },
+      ]);
+    }
+
+    // Delete the review
+    await db.delete(productReviews).where(eq(productReviews.id, reviewId));
+  });
+};
+
+/**
+ * Get review by ID with optional relations
+ * @param reviewId - Review ID to retrieve
+ * @param includeUser - Include user information
+ * @returns Promise resolving to review
+ */
+export const getProductReviewById = async (reviewId: string, includeUser = false): Promise<ProductReview> => {
+  const baseQuery = db
+    .select({
+      id: productReviews.id,
+      userId: productReviews.userId,
+      productId: productReviews.productId,
+      orderId: productReviews.orderId,
+      rating: productReviews.rating,
+      title: productReviews.title,
+      comment: productReviews.comment,
+      isVerifiedPurchase: productReviews.isVerifiedPurchase,
+      images: productReviews.images,
+      metadata: productReviews.metadata,
+      createdAt: productReviews.createdAt,
+      updatedAt: productReviews.updatedAt,
+      ...(includeUser && {
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          isVerified: users.isVerified,
+        },
+      }),
+    })
+    .from(productReviews);
+
+  if (includeUser) {
+    baseQuery.leftJoin(users, eq(productReviews.userId, users.id));
+  }
+
+  const [review] = await baseQuery.where(eq(productReviews.id, reviewId)).limit(1);
+
+  if (!review) {
+    throw createNotFoundError("Review");
+  }
+
+  return review as ProductReview;
+};
+
+/**
+ * Get reviews for a product with filtering and pagination
+ * @param productId - Product ID to get reviews for
+ * @param filters - Review filtering options
+ * @returns Promise resolving to paginated reviews
+ */
+export const getProductReviews = async (
+  productId: string,
+  filters: ReviewFilters = {}
+): Promise<{
+  reviews: ProductReview[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}> => {
+  const { rating, sortBy = "createdAt", sortOrder = "desc", page = 1, limit = 20, includeUser = false } = filters;
+
+  const conditions = [eq(productReviews.productId, productId)];
+
+  // Rating filter
+  if (rating) {
+    conditions.push(eq(productReviews.rating, rating));
+  }
+
+  // Count total records
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(productReviews)
+    .where(and(...conditions));
+
+  // Build sort order
+  const sortColumn =
+    {
+      createdAt: productReviews.createdAt,
+      rating: productReviews.rating,
+    }[sortBy] || productReviews.createdAt;
+
+  const orderBy = sortOrder === "asc" ? asc(sortColumn) : desc(sortColumn);
+
+  // Base query
+  const baseQuery = db
+    .select({
+      id: productReviews.id,
+      userId: productReviews.userId,
+      productId: productReviews.productId,
+      orderId: productReviews.orderId,
+      rating: productReviews.rating,
+      title: productReviews.title,
+      comment: productReviews.comment,
+      isVerifiedPurchase: productReviews.isVerifiedPurchase,
+      images: productReviews.images,
+      metadata: productReviews.metadata,
+      createdAt: productReviews.createdAt,
+      updatedAt: productReviews.updatedAt,
+      ...(includeUser && {
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          isVerified: users.isVerified,
+        },
+      }),
+    })
+    .from(productReviews);
+
+  if (includeUser) {
+    baseQuery.leftJoin(users, eq(productReviews.userId, users.id));
+  }
+
+  const reviews = await baseQuery
+    .where(and(...conditions))
+    .orderBy(orderBy)
+    .limit(limit)
+    .offset((page - 1) * limit);
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    reviews: reviews as ProductReview[],
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+    },
+  };
+};
+
+/**
+ * Get reviews summary for a product
+ * @param productId - Product ID to get summary for
+ * @returns Promise resolving to review summary
+ */
+export const getProductReviewSummary = async (productId: string): Promise<ReviewSummary> => {
+  // Get basic statistics
+  const [stats] = await db
+    .select({
+      totalReviews: count(),
+      averageRating: sql<string>`avg(${productReviews.rating})`,
+      verifiedPurchaseCount: count(sql`CASE WHEN ${productReviews.isVerifiedPurchase} = true THEN 1 END`),
+    })
+    .from(productReviews)
+    .where(eq(productReviews.productId, productId));
+
+  // Get rating distribution
+  const ratingDistribution = await db
+    .select({
+      rating: productReviews.rating,
+      count: count(),
+    })
+    .from(productReviews)
+    .where(eq(productReviews.productId, productId))
+    .groupBy(productReviews.rating);
+
+  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  ratingDistribution.forEach((item) => {
+    distribution[item.rating as keyof typeof distribution] = item.count;
+  });
+
+  return {
+    totalReviews: stats.totalReviews,
+    averageRating: parseFloat(stats.averageRating ?? "0"),
+    ratingDistribution: distribution,
+    verifiedPurchaseCount: stats.verifiedPurchaseCount,
+  };
 };

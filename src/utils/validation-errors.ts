@@ -212,7 +212,7 @@ export const VALIDATION_CONFIG = {
   // Don't include technical field paths in user-facing messages
   includeFieldPath: false,
   // Maximum message length for security
-  maxMessageLength: 500, // Increased for more helpful messages
+  maxMessageLength: 500,
 } as const;
 
 /**

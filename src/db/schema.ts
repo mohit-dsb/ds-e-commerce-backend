@@ -254,6 +254,35 @@ export const shoppingCartItems = pgTable("shopping_cart_items", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Product Reviews Table
+export const productReviews = pgTable(
+  "product_reviews",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    productId: uuid("product_id")
+      .references(() => products.id, { onDelete: "cascade" })
+      .notNull(),
+    orderId: uuid("order_id").references(() => orders.id, { onDelete: "set null" }),
+    rating: integer("rating").notNull(),
+    title: varchar("title", { length: 255 }),
+    comment: text("comment"),
+    isVerifiedPurchase: boolean("is_verified_purchase").default(false).notNull(),
+    images: jsonb("images").$type<string[]>().default([]),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    {
+      ratingRange: check("rating_range", sql`${table.rating} >= 1 AND ${table.rating} <= 5`),
+      uniqueUserProductReview: check("unique_user_product_review", sql`(${table.userId}, ${table.productId})`),
+    },
+  ]
+);
+
 // Relations
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
   parent: one(categories, {
@@ -278,6 +307,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   shoppingCarts: many(shoppingCarts),
   orderStatusChanges: many(orderStatusHistory),
   revokedRefreshTokens: many(refreshTokens, { relationName: "revokedBy" }),
+  productReviews: many(productReviews),
 }));
 
 export const refreshTokensRelations = relations(refreshTokens, ({ one, many }) => ({
@@ -316,6 +346,7 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   }),
   orderItems: many(orderItems),
   cartItems: many(shoppingCartItems),
+  reviews: many(productReviews),
 }));
 
 export const shippingAddressesRelations = relations(shippingAddresses, ({ one, many }) => ({
@@ -377,5 +408,20 @@ export const shoppingCartItemsRelations = relations(shoppingCartItems, ({ one })
   product: one(products, {
     fields: [shoppingCartItems.productId],
     references: [products.id],
+  }),
+}));
+
+export const productReviewsRelations = relations(productReviews, ({ one }) => ({
+  user: one(users, {
+    fields: [productReviews.userId],
+    references: [users.id],
+  }),
+  product: one(products, {
+    fields: [productReviews.productId],
+    references: [products.id],
+  }),
+  order: one(orders, {
+    fields: [productReviews.orderId],
+    references: [orders.id],
   }),
 }));

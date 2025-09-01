@@ -2,7 +2,13 @@ import { Hono } from "hono";
 import * as userController from "@/controllers/user.controller";
 import { compatibleZValidator } from "@/middleware/validation.middleware";
 import { authMiddleware } from "@/middleware/auth.middleware";
-import { updateUserProfileSchema, changePasswordSchema, addToCartSchema, updateCartItemSchema, cartQuerySchema } from "@/db/validators";
+import {
+  updateUserProfileSchema,
+  changePasswordSchema,
+  addToCartSchema,
+  updateCartItemSchema,
+  cartQuerySchema,
+} from "@/db/validators";
 
 const userRoutes = new Hono();
 
