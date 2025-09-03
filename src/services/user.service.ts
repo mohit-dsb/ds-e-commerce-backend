@@ -50,10 +50,6 @@ export const createUser = async (data: {
     throw createInternalServerError("Failed to create user account");
   }
 
-  logger.info("User created successfully", {
-    metadata: { userId: user.id, email: data.email },
-  });
-
   return {
     id: user.id,
     email: user.email,
@@ -306,10 +302,6 @@ export const updatePassword = async (userId: string, newPassword: string): Promi
       updatedAt: new Date(),
     })
     .where(eq(users.id, userId));
-
-  logger.info("User password updated", {
-    metadata: { userId },
-  });
 };
 
 // ============================================================================

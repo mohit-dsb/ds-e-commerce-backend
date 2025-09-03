@@ -1,5 +1,4 @@
 import { db } from "@/db";
-import { logger } from "@/utils/logger";
 import { categories } from "@/db/schema";
 import { dbErrorHandlers } from "@/utils/database-errors";
 import type { Category, NewCategory } from "@/db/validators";
@@ -58,15 +57,6 @@ export const createCategory = async (
       .returning();
 
     const [createdCategory] = insertResult;
-
-    logger.info("Category created successfully", {
-      metadata: {
-        categoryId: createdCategory.id,
-        categoryName: createdCategory.name,
-        slug: createdCategory.slug,
-        slugGenerated: true,
-      },
-    });
 
     return createdCategory;
   });
@@ -157,15 +147,6 @@ export const updateCategory = async (
       .where(eq(categories.id, categoryId))
       .returning();
 
-    logger.info("Category updated successfully", {
-      metadata: {
-        categoryId: updatedCategory.id,
-        categoryName: updatedCategory.name,
-        changes: Object.keys(finalUpdateData),
-        slugRegenerated: updateData.name && updateData.name !== existingCategory.name,
-      },
-    });
-
     return updatedCategory as Category;
   });
 };
@@ -195,13 +176,6 @@ export const deleteCategory = async (categoryId: string): Promise<void> => {
         updatedAt: new Date(),
       })
       .where(eq(categories.id, categoryId));
-
-    logger.info("Category deleted (soft delete)", {
-      metadata: {
-        categoryId,
-        categoryName: existingCategory.name,
-      },
-    });
   });
 };
 
@@ -243,14 +217,6 @@ export const getCategories = async (
     } else {
       categoryList = await db.select().from(categories).orderBy(asc(categories.name));
     }
-
-    logger.info("Categories retrieved", {
-      metadata: {
-        count: categoryList.length,
-        filters,
-      },
-    });
-
     return categoryList as Category[];
   });
 };
@@ -265,9 +231,6 @@ export const getCategoryById = async (categoryId: string): Promise<Category | nu
     const [category] = await db.select().from(categories).where(eq(categories.id, categoryId));
 
     if (category) {
-      logger.info("Category retrieved by ID", {
-        metadata: { categoryId, categoryName: category.name },
-      });
       return category as Category;
     }
 
@@ -285,9 +248,6 @@ export const getCategoryBySlug = async (slug: string): Promise<Category | null> 
     const [category] = await db.select().from(categories).where(eq(categories.slug, slug));
 
     if (category) {
-      logger.info("Category retrieved by slug", {
-        metadata: { categoryId: category.id, slug },
-      });
       return category as Category;
     }
 
@@ -318,14 +278,6 @@ export const getCategoryHierarchy = async (): Promise<(Category & { children: Ca
       ...parent,
       children: childCategories.filter((child) => child.parentId === parent.id),
     }));
-
-    logger.info("Category hierarchy retrieved", {
-      metadata: {
-        totalCategories: allCategories.length,
-        parentCategories: parentCategories.length,
-        childCategories: childCategories.length,
-      },
-    });
 
     return hierarchy;
   });

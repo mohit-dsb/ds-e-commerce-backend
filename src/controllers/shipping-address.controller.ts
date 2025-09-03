@@ -35,13 +35,6 @@ export const createShippingAddress = async (c: Context<{ Variables: AuthContext 
   try {
     const address = await shippingAddressService.createShippingAddress(addressData);
 
-    logger.info("Shipping address created successfully", {
-      metadata: {
-        addressId: address.id,
-        userId: user.id,
-      },
-    });
-
     return c.json(createSuccessResponse("Shipping address created successfully", { address }), 201);
   } catch (error) {
     logger.error("Shipping address creation failed", error as Error, {
@@ -117,13 +110,6 @@ export const updateShippingAddress = async (c: Context<{ Variables: AuthContext 
   try {
     const updatedAddress = await shippingAddressService.updateShippingAddress(addressId, validatedData);
 
-    logger.info("Shipping address updated successfully", {
-      metadata: {
-        addressId: updatedAddress.id,
-        userId: user.id,
-      },
-    });
-
     return c.json(createSuccessResponse("Shipping address updated successfully", { address: updatedAddress }));
   } catch (error) {
     logger.error("Shipping address update failed", error as Error, {
@@ -170,13 +156,6 @@ export const deleteShippingAddress = async (c: Context<{ Variables: AuthContext 
   try {
     await shippingAddressService.deleteShippingAddress(addressId);
 
-    logger.info("Shipping address deleted successfully", {
-      metadata: {
-        addressId,
-        userId: user.id,
-      },
-    });
-
     return c.json(createSuccessResponse("Shipping address deleted successfully"));
   } catch (error) {
     logger.error("Shipping address deletion failed", error as Error, {
@@ -211,13 +190,6 @@ export const setDefaultShippingAddress = async (c: Context<{ Variables: AuthCont
 
   try {
     await shippingAddressService.setDefaultAddress(existingAddress.userId, addressId);
-
-    logger.info("Default shipping address set successfully", {
-      metadata: {
-        addressId,
-        userId: existingAddress.userId,
-      },
-    });
 
     return c.json(createSuccessResponse("Default shipping address set successfully"));
   } catch (error) {

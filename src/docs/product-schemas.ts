@@ -544,7 +544,8 @@ export const productSchemas = {
       comment: {
         type: "string",
         description: "Review comment/description",
-        example: "These headphones exceeded my expectations. The sound quality is crystal clear and the noise cancellation works perfectly.",
+        example:
+          "These headphones exceeded my expectations. The sound quality is crystal clear and the noise cancellation works perfectly.",
       },
       isVerifiedPurchase: {
         type: "boolean",
@@ -586,17 +587,7 @@ export const productSchemas = {
         description: "Review last update timestamp",
       },
     },
-    required: [
-      "id",
-      "productId", 
-      "userId",
-      "rating",
-      "title",
-      "comment",
-      "isVerifiedPurchase",
-      "createdAt",
-      "updatedAt",
-    ],
+    required: ["id", "productId", "userId", "rating", "title", "comment", "isVerifiedPurchase", "createdAt", "updatedAt"],
   },
 
   CreateReviewRequest: {
@@ -621,7 +612,8 @@ export const productSchemas = {
         minLength: 1,
         maxLength: 2000,
         description: "Review comment/description",
-        example: "These headphones exceeded my expectations. The sound quality is crystal clear and the noise cancellation works perfectly.",
+        example:
+          "These headphones exceeded my expectations. The sound quality is crystal clear and the noise cancellation works perfectly.",
       },
       orderId: {
         type: "string",

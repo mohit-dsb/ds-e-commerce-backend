@@ -1,5 +1,4 @@
 import { db } from "@/db";
-import { logger } from "@/utils/logger";
 import type { NewProduct } from "@/db/validators";
 import { products, categories, productReviews, orders, orderItems, users } from "@/db/schema";
 import { dbErrorHandlers } from "@/utils/database-errors";
@@ -149,7 +148,7 @@ export const updateProduct = async (
  */
 export const deleteProduct = async (id: string): Promise<void> => {
   return dbErrorHandlers.delete(async () => {
-    const existingProduct = await getProductById(id, true);
+    await getProductById(id, true);
 
     await db
       .update(products)
@@ -158,13 +157,6 @@ export const deleteProduct = async (id: string): Promise<void> => {
         updatedAt: new Date(),
       })
       .where(eq(products.id, id));
-
-    logger.info("Product deleted successfully", {
-      metadata: {
-        productId: id,
-        productName: existingProduct.name,
-      },
-    });
   });
 };
 
@@ -352,16 +344,6 @@ export const getProducts = async (
 
     const totalPages = Math.ceil(total / limit);
 
-    logger.info("Products retrieved", {
-      metadata: {
-        count: productList.length,
-        total,
-        page,
-        limit,
-        filters,
-      },
-    });
-
     return {
       products: productsWithRelations,
       pagination: {
@@ -439,14 +421,6 @@ export const bulkUpdateProductStatus = async (
         updatedAt: new Date(),
       })
       .where(inArray(products.id, productIds));
-
-    logger.info("Products status updated", {
-      metadata: {
-        productIds,
-        newStatus: status,
-        updatedCount: productIds.length,
-      },
-    });
   });
 };
 

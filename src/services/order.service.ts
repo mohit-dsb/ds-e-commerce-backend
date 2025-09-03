@@ -430,9 +430,6 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<OrderW
       });
 
       // Re-validate inventory availability right before order creation (prevents race conditions)
-      logger.info("Performing final inventory validation before order creation", {
-        metadata: { orderId: newOrder.id },
-      });
       const finalInventoryCheck = await checkInventoryAvailability(orderData.orderItems);
       if (!finalInventoryCheck.isValid) {
         throw new Error(
@@ -451,15 +448,6 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<OrderW
           inventoryUpdates.push(updateResult);
         }
       }
-
-      logger.info("Inventory successfully updated for order creation", {
-        metadata: {
-          orderId: newOrder.id,
-          orderNumber: newOrder.orderNumber,
-          inventoryUpdates,
-        },
-      });
-
       // Return the order ID, we'll fetch the full order after the transaction
       return newOrder.id;
     });
@@ -813,15 +801,6 @@ export const updateOrderStatus = async (updateData: UpdateOrderStatusRequest): P
       const shouldRestoreInventory = shouldRestoreInventoryForStatusChange(currentOrder.status, newStatus);
 
       if (shouldRestoreInventory && currentOrder.orderItems) {
-        logger.info("Restoring inventory due to status change", {
-          metadata: {
-            orderId,
-            fromStatus: currentOrder.status,
-            toStatus: newStatus,
-            orderNumber: currentOrder.orderNumber,
-          },
-        });
-
         const inventoryRestorations = [];
         for (const item of currentOrder.orderItems) {
           if (item.product?.inventoryQuantity !== null) {
@@ -834,15 +813,6 @@ export const updateOrderStatus = async (updateData: UpdateOrderStatusRequest): P
             inventoryRestorations.push(restorationResult);
           }
         }
-
-        logger.info("Inventory successfully restored due to status change", {
-          metadata: {
-            orderId,
-            orderNumber: currentOrder.orderNumber,
-            statusChange: `${currentOrder.status} → ${newStatus}`,
-            inventoryRestorations,
-          },
-        });
       }
 
       // Return updated order

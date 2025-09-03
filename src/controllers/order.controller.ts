@@ -42,15 +42,6 @@ export const createOrder = async (c: Context<{ Variables: AuthContext }>) => {
   try {
     const order = await orderService.createOrder(orderData);
 
-    logger.info("Order created successfully", {
-      metadata: {
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        userId: user.id,
-        totalAmount: order.totalAmount,
-      },
-    });
-
     return c.json(createSuccessResponse("Order created successfully", { order }), 201);
   } catch (error) {
     logger.error("Order creation failed", error as Error, {
@@ -177,15 +168,6 @@ export const updateOrderStatus = async (c: Context<{ Variables: AuthContext }>) 
   try {
     const order = await orderService.updateOrderStatus(updateData);
 
-    logger.info("Order status updated", {
-      metadata: {
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        newStatus: validatedData.status,
-        updatedBy: user.id,
-      },
-    });
-
     return c.json(createSuccessResponse("Order status updated successfully", { order }));
   } catch (error) {
     logger.error("Order status update failed", error as Error, {
@@ -233,15 +215,6 @@ export const cancelOrder = async (c: Context<{ Variables: AuthContext }>) => {
 
   try {
     const cancelledOrder = await orderService.cancelOrder(orderId, reason, user.id);
-
-    logger.info("Order cancelled", {
-      metadata: {
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        reason,
-        cancelledBy: user.id,
-      },
-    });
 
     return c.json(createSuccessResponse("Order cancelled successfully", { order: cancelledOrder }));
   } catch (error) {

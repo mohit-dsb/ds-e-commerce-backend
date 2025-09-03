@@ -63,15 +63,6 @@ export class HonoJWTService {
 
       const token = await sign(payload, env.JWT_SECRET, "HS256");
 
-      logger.debug("JWT token generated successfully", {
-        metadata: {
-          userId,
-          expiresAt: new Date((now + expiresIn) * 1000).toISOString(),
-          audience: payload.aud,
-          issuer: payload.iss,
-        },
-      });
-
       return token;
     } catch (error) {
       logger.error("JWT token generation failed", error as Error);
@@ -230,11 +221,6 @@ export class HonoJWTService {
       logger.warn("Cannot refresh invalid JWT token");
       return null;
     }
-
-    logger.info("Refreshing JWT token", {
-      metadata: { userId: payload.userId },
-    });
-
     return this.generateToken(payload.userId, options);
   }
 }
