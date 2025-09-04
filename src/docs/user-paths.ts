@@ -98,7 +98,7 @@ export const userPaths = {
   },
 
   "/api/users/change-password": {
-    patch: {
+    post: {
       tags: ["Users"],
       summary: "Change password",
       description: "Change the authenticated user's password",
@@ -133,6 +133,9 @@ export const userPaths = {
                   message: {
                     type: "string",
                     example: "Password changed successfully",
+                  },
+                  data: {
+                    $ref: "#/components/schemas/User",
                   },
                 },
               },
@@ -187,8 +190,12 @@ export const userPaths = {
                     type: "boolean",
                     example: true,
                   },
+                  message: {
+                    type: "string",
+                    example: "Cart retrieved successfully",
+                  },
                   data: {
-                    $ref: "#/components/schemas/CartSummary",
+                    $ref: "#/components/schemas/ShoppingCartWithItems",
                   },
                 },
               },
@@ -267,6 +274,10 @@ export const userPaths = {
                     type: "boolean",
                     example: true,
                   },
+                  message: {
+                    type: "string",
+                    example: "Cart summary retrieved successfully",
+                  },
                   data: {
                     $ref: "#/components/schemas/CartSummary",
                   },
@@ -323,7 +334,7 @@ export const userPaths = {
                     example: "Item added to cart successfully",
                   },
                   data: {
-                    $ref: "#/components/schemas/CartItem",
+                    $ref: "#/components/schemas/ShoppingCartWithItems",
                   },
                 },
               },
@@ -393,7 +404,7 @@ export const userPaths = {
                     example: "Cart item updated successfully",
                   },
                   data: {
-                    $ref: "#/components/schemas/CartItem",
+                    $ref: "#/components/schemas/ShoppingCartWithItems",
                   },
                 },
               },

@@ -1,4 +1,4 @@
-// OpenAPI paths for Order and Cart endpoints
+// OpenAPI paths for Order endpoints
 
 export const orderPaths = {
   "/api/orders": {

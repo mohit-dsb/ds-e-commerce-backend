@@ -76,10 +76,6 @@ All endpoints return consistent error responses with appropriate HTTP status cod
       description: "Product catalog management",
     },
     {
-      name: "Cart",
-      description: "Shopping cart operations",
-    },
-    {
       name: "Orders",
       description: "Order management and tracking",
     },

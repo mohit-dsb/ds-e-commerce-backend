@@ -1,8 +1,8 @@
 // Combined OpenAPI paths for all endpoints
 import authPaths from "./auth-paths";
 import productPaths from "./product-paths";
-import orderCartPaths from "./order-cart-paths";
-import userShippingPaths from "./user-shipping-paths";
+import orderPaths from "./order-paths";
+import userPaths from "./user-paths";
 
 // Health check paths
 export const healthPaths = {
@@ -415,8 +415,8 @@ export const allPaths = {
   ...authPaths,
   ...categoryPaths,
   ...productPaths,
-  ...orderCartPaths,
-  ...userShippingPaths,
+  ...orderPaths,
+  ...userPaths,
   // Add other path imports here as needed
 } as const;
 

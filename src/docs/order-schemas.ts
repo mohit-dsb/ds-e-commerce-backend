@@ -419,45 +419,201 @@ export const orderSchemas = {
   CartSummary: {
     type: "object",
     properties: {
+      totalItems: {
+        type: "integer",
+        description: "Total number of items in cart",
+        example: 3,
+      },
+      totalQuantity: {
+        type: "integer",
+        description: "Total quantity of all items",
+        example: 5,
+      },
+      subtotal: {
+        type: "string",
+        pattern: "^\\d+(\\.\\d{1,2})?$",
+        description: "Subtotal of all items",
+        example: "1999.95",
+      },
+      estimatedTax: {
+        type: "string",
+        pattern: "^\\d+(\\.\\d{1,2})?$",
+        description: "Estimated tax amount",
+        example: "159.99",
+      },
+      estimatedTotal: {
+        type: "string",
+        pattern: "^\\d+(\\.\\d{1,2})?$",
+        description: "Estimated total including tax",
+        example: "2159.94",
+      },
+    },
+  },
+
+  ShoppingCartWithItems: {
+    type: "object",
+    properties: {
+      id: {
+        type: "string",
+        format: "uuid",
+        description: "Unique cart identifier",
+        example: "123e4567-e89b-12d3-a456-426614174000",
+      },
+      userId: {
+        type: "string",
+        format: "uuid",
+        description: "User ID who owns this cart",
+      },
+      expiresAt: {
+        type: "string",
+        format: "date-time",
+        nullable: true,
+        description: "Cart expiration timestamp",
+      },
+      createdAt: {
+        type: "string",
+        format: "date-time",
+        description: "Cart creation timestamp",
+      },
+      updatedAt: {
+        type: "string",
+        format: "date-time",
+        description: "Last cart update timestamp",
+      },
       items: {
         type: "array",
         items: {
-          $ref: "#/components/schemas/CartItem",
+          $ref: "#/components/schemas/CartItemWithProduct",
         },
         description: "Items in the cart",
       },
       summary: {
+        $ref: "#/components/schemas/CartSummary",
+        description: "Cart summary with totals",
+      },
+    },
+  },
+
+  CartItemWithProduct: {
+    type: "object",
+    properties: {
+      id: {
+        type: "string",
+        format: "uuid",
+        description: "Unique cart item identifier",
+        example: "123e4567-e89b-12d3-a456-426614174000",
+      },
+      cartId: {
+        type: "string",
+        format: "uuid",
+        description: "Cart ID this item belongs to",
+      },
+      productId: {
+        type: "string",
+        format: "uuid",
+        description: "Product ID",
+        example: "123e4567-e89b-12d3-a456-426614174001",
+      },
+      quantity: {
+        type: "integer",
+        minimum: 1,
+        maximum: 99,
+        description: "Quantity in cart",
+        example: 2,
+      },
+      productVariant: {
         type: "object",
+        nullable: true,
         properties: {
-          itemCount: {
-            type: "integer",
-            description: "Total number of items in cart",
-            example: 3,
-          },
-          totalQuantity: {
-            type: "integer",
-            description: "Total quantity of all items",
-            example: 5,
-          },
-          subtotal: {
+          size: {
             type: "string",
-            pattern: "^\\d+(\\.\\d{1,2})?$",
-            description: "Subtotal of all items",
-            example: "1999.95",
+            example: "Large",
           },
-          estimatedTax: {
+          color: {
             type: "string",
-            pattern: "^\\d+(\\.\\d{1,2})?$",
-            description: "Estimated tax amount",
-            example: "159.99",
+            example: "Blue",
           },
-          estimatedTotal: {
+          material: {
             type: "string",
-            pattern: "^\\d+(\\.\\d{1,2})?$",
-            description: "Estimated total including tax",
-            example: "2159.94",
+            example: "Cotton",
           },
         },
+        additionalProperties: true,
+        description: "Selected product variant options",
+      },
+      addedAt: {
+        type: "string",
+        format: "date-time",
+        description: "When item was added to cart",
+      },
+      updatedAt: {
+        type: "string",
+        format: "date-time",
+        description: "When item was last updated",
+      },
+      product: {
+        type: "object",
+        nullable: true,
+        properties: {
+          id: {
+            type: "string",
+            format: "uuid",
+            description: "Product ID",
+          },
+          name: {
+            type: "string",
+            description: "Product name",
+            example: "iPhone 15 Pro",
+          },
+          slug: {
+            type: "string",
+            description: "Product slug",
+            example: "iphone-15-pro",
+          },
+          price: {
+            type: "string",
+            pattern: "^\\d+(\\.\\d{1,2})?$",
+            description: "Product price",
+            example: "999.99",
+          },
+          images: {
+            type: "array",
+            items: {
+              type: "string",
+              format: "uri",
+            },
+            description: "Product images",
+          },
+          status: {
+            type: "string",
+            enum: ["draft", "active", "inactive", "discontinued"],
+            description: "Product status",
+            example: "active",
+          },
+          inventoryQuantity: {
+            type: "integer",
+            description: "Available inventory",
+            example: 50,
+          },
+          allowBackorder: {
+            type: "boolean",
+            description: "Whether backorders are allowed",
+            example: false,
+          },
+          weight: {
+            type: "number",
+            nullable: true,
+            description: "Product weight",
+            example: 0.5,
+          },
+          weightUnit: {
+            type: "string",
+            enum: ["kg", "lb", "g", "oz"],
+            description: "Weight unit",
+            example: "kg",
+          },
+        },
+        description: "Product details (when included)",
       },
     },
   },
