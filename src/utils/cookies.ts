@@ -12,7 +12,7 @@ const COOKIE_CONFIG = {
     name: "ds-e-commerce-access-token",
     maxAge: 15 * 60, // 15 minutes
     httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
+    secure: false,
     sameSite: "lax" as const,
     path: "/",
   },
@@ -20,7 +20,7 @@ const COOKIE_CONFIG = {
   refreshToken: {
     name: "ds-e-commerce-refresh-token",
     maxAge: 30 * 24 * 60 * 60, // 30 days
-    httpOnly: true,
+    httpOnly: false,
     secure: false,
     sameSite: "lax" as const,
     path: "/api/auth/refresh",
