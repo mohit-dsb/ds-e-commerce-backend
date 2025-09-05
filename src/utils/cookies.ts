@@ -13,7 +13,7 @@ const COOKIE_CONFIG = {
     maxAge: 15 * 60, // 15 minutes
     httpOnly: false,
     secure: false,
-    sameSite: "lax" as const,
+    sameSite: "none" as const,
     path: "/",
   },
   // Refresh token: Longer-lived, httpOnly for security
@@ -22,7 +22,7 @@ const COOKIE_CONFIG = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
     httpOnly: false,
     secure: false,
-    sameSite: "lax" as const,
+    sameSite: "none" as const,
     path: "/api/auth/refresh",
   },
 } as const;
