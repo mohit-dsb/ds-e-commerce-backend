@@ -1,8 +1,8 @@
-import { logger } from "../utils/logger";
 import type { Context, Next } from "hono";
-import * as authService from "../services/auth.service";
-import * as userService from "../services/user.service";
-import { createAuthError, createForbiddenError } from "../utils/errors";
+import * as authService from "@/services/auth.service";
+import * as userService from "@/services/user.service";
+import { getAccessTokenFromCookie } from "@/utils/cookies";
+import { createAuthError, createForbiddenError } from "@/utils/errors";
 
 export interface AuthContext {
   user: {
@@ -16,28 +16,30 @@ export interface AuthContext {
 }
 
 export const authMiddleware = async (c: Context, next: Next) => {
-  const authHeader = c.req.header("Authorization");
+  let token: string | null = null;
 
-  if (!authHeader?.startsWith("Bearer ")) {
-    logger.warn("Missing or invalid authorization header");
-    throw createAuthError("Authorization token required");
+  // 1. Try Authorization header first (most secure and standard)
+  const authHeader = c.req.header("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    token = authHeader.substring(7).trim();
   }
 
-  const token = authHeader.substring(7);
+  // 2. Fallback to httpOnly cookie
+  token ??= getAccessTokenFromCookie(c);
+
+  if (!token) {
+    throw createAuthError("No token provided");
+  }
 
   // Verify JWT token
   const payload = await authService.verifyToken(token);
   if (!payload) {
-    logger.warn("Invalid or expired JWT token");
     throw createAuthError("Invalid or expired token");
   }
 
   // Get user data from database
   const user = await userService.getUserById(payload.userId);
   if (!user) {
-    logger.warn("User not found for valid token", {
-      metadata: { userId: payload.userId },
-    });
     throw createAuthError("User not found");
   }
 
@@ -60,9 +62,6 @@ export const adminMiddleware = async (c: Context, next: Next) => {
   const user = c.get("user") as AuthContext["user"];
 
   if (!user || user.role !== "admin") {
-    logger.warn("Admin access denied", {
-      metadata: { userId: user?.id, role: user?.role },
-    });
     throw createForbiddenError("Admin access required");
   }
 

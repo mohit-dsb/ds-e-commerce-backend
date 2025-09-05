@@ -17,7 +17,6 @@ const envSchema = z.object({
 
   // CORS Configuration
   CORS_ORIGIN: z.string().default("*"),
-  CORS_CREDENTIALS: z.coerce.boolean().default(true),
 
   // Logging Configuration
   LOG_LEVEL: z.enum(["error", "warn", "info", "debug"]).default("info"),

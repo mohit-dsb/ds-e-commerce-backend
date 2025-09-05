@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import * as authController from "@/controllers/auth.controller";
 import { compatibleZValidator } from "@/middleware/validation.middleware";
-import { type AuthContext } from "@/middleware/auth.middleware";
+import { type AuthContext, authMiddleware } from "@/middleware/auth.middleware";
 import { loginSchema, registerSchema, resetPasswordSchema } from "@/db/validators";
 
 const authRoutes = new Hono<{ Variables: AuthContext }>();
@@ -48,10 +48,17 @@ authRoutes.post("/reset-password", compatibleZValidator("json", resetPasswordSch
 
 /**
  * @route   POST /refresh
- * @desc    Refresh access token using refresh token
+ * @desc    Refresh access token using refresh token from header, cookie, or body
  * @access  Public (requires valid refresh token)
- * @note    Should have rate limiting in production
+ * @note    Token can be provided via: 1) Authorization: Bearer <token> header, 2) httpOnly cookie, 3) JSON body (deprecated)
  */
 authRoutes.post("/refresh", authController.refreshToken);
+
+/**
+ * @route   POST /logout
+ * @desc    Logout user by clearing authentication cookies
+ * @access  Private (requires authentication)
+ */
+authRoutes.post("/logout", authMiddleware, authController.logout);
 
 export { authRoutes };

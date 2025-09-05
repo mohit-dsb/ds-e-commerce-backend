@@ -7,6 +7,7 @@ import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
 import { sanitizeUserData, sanitizeEmail } from "@/utils/sanitization";
 import { createSuccessResponse, extractDeviceMetadata } from "@/utils/response";
+import { setAuthCookies, clearAuthCookies, extractRefreshToken } from "@/utils/cookies";
 import type { registerSchema, loginSchema, resetPasswordSchema } from "@/db/validators";
 import { createConflictError, createAuthError, BusinessRuleError } from "@/utils/errors";
 
@@ -18,7 +19,6 @@ type RegisterData = typeof registerSchema._type;
 type LoginData = typeof loginSchema._type;
 type ResetPasswordData = typeof resetPasswordSchema._type;
 type ForgotPasswordData = Pick<LoginData, "email">;
-type RefreshTokenData = { refreshToken: string };
 
 // ============================================================================
 // Authentication Controller Functions
@@ -47,9 +47,6 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
   // Check if user already exists
   const existingUser = await userService.getUserByEmail(email);
   if (existingUser) {
-    logger.warn("Registration attempt with existing email", {
-      metadata: { email },
-    });
     throw createConflictError("User already exists");
   }
 
@@ -69,6 +66,9 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
     authService.generateToken(user.id),
     authService.createRefreshToken(user.id, deviceMetadata),
   ]);
+
+  // Set tokens in httpOnly cookies
+  setAuthCookies(c, accessToken, refreshToken);
 
   // Send welcome email (don't await to avoid blocking response)
   emailService
@@ -118,9 +118,6 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
   // Authenticate user
   const user = await authService.authenticateUser(email, password);
   if (!user) {
-    logger.warn("Authentication failed", {
-      metadata: { email },
-    });
     throw createAuthError("Invalid credentials");
   }
 
@@ -132,6 +129,9 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
     authService.generateToken(user.id),
     authService.createRefreshToken(user.id, deviceMetadata),
   ]);
+
+  // Set tokens in httpOnly cookies
+  setAuthCookies(c, accessToken, refreshToken);
 
   return c.json(
     createSuccessResponse("Login successful", {
@@ -153,21 +153,14 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
  * Refresh access token using refresh token
  * @desc Generate new access token and rotate refresh token
  * @access Public (requires valid refresh token)
- * @note This endpoint should have rate limiting in production
+ * @note Token extracted from: 1) Authorization header, 2) httpOnly cookie
  */
 export const refreshToken = async (c: Context<{ Variables: AuthContext }>) => {
-  const body = (await c.req.json()) as unknown;
+  // Extract refresh token from multiple sources (header, cookie, body)
+  const oldRefreshToken = extractRefreshToken(c);
 
-  // Type guard to ensure body has the expected structure
-  if (!body || typeof body !== "object" || !("refreshToken" in body)) {
-    logger.warn("Refresh token request without valid body structure");
-    throw createAuthError("Invalid request body");
-  }
-
-  const { refreshToken: oldRefreshToken } = body as RefreshTokenData;
-
-  if (!oldRefreshToken || typeof oldRefreshToken !== "string") {
-    logger.warn("Refresh token request without valid token");
+  if (!oldRefreshToken) {
+    logger.warn("Refresh token request without valid token in any source");
     throw createAuthError("Refresh token required");
   }
 
@@ -196,6 +189,9 @@ export const refreshToken = async (c: Context<{ Variables: AuthContext }>) => {
 
   // Generate new access token
   const accessToken = await authService.generateToken(userId);
+
+  // Set updated tokens in httpOnly cookies
+  setAuthCookies(c, accessToken, newRefreshToken);
 
   return c.json(
     createSuccessResponse("Tokens refreshed successfully", {
@@ -271,9 +267,6 @@ export const resetPassword = async (c: Context<{ Variables: AuthContext }>) => {
   // Validate reset token
   const userId = await authService.validatePasswordResetToken(token);
   if (!userId) {
-    logger.warn("Password reset attempt with invalid token", {
-      metadata: { hasToken: !!token },
-    });
     throw new BusinessRuleError("Invalid or expired reset token");
   }
 
@@ -309,4 +302,16 @@ export const resetPassword = async (c: Context<{ Variables: AuthContext }>) => {
   }
 
   return c.json(createSuccessResponse("Password reset successful"));
+};
+
+/**
+ * Logout user by clearing authentication cookies
+ * @desc Clear access and refresh token cookies
+ * @access Private (requires authentication)
+ */
+export const logout = (c: Context<{ Variables: AuthContext }>) => {
+  // Clear authentication cookies
+  clearAuthCookies(c);
+
+  return c.json(createSuccessResponse("Logged out successfully"));
 };
