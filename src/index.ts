@@ -15,9 +15,8 @@ import { createSwaggerRoute } from "@/docs/swagger";
 const app = new Hono();
 
 // Global middleware
-app.use("*", honoLogger());
+app.use(honoLogger());
 app.use(
-  "*",
   cors({
     origin: env.NODE_ENV === "production" ? env.CORS_ORIGIN : "*",
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
