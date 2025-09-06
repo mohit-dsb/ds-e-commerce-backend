@@ -1286,6 +1286,408 @@ export const productPaths = {
       },
     },
   },
+
+  // ============================================================================
+  // Product Image Management Endpoints
+  // ============================================================================
+
+  "/api/products/upload-image": {
+    post: {
+      tags: ["Product Images"],
+      summary: "Upload single product image",
+      description: "Upload a single product image to Cloudinary with optional transformations (Admin only)",
+      operationId: "uploadProductImage",
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "multipart/form-data": {
+            schema: {
+              type: "object",
+              properties: {
+                image: {
+                  type: "string",
+                  format: "binary",
+                  description: "Image file to upload (JPEG, PNG, WebP, max 10MB)",
+                },
+                transformation: {
+                  type: "string",
+                  description: "JSON string of transformation parameters",
+                  example: '{"width": 800, "height": 600, "crop": "fill", "quality": "auto"}',
+                },
+              },
+              required: ["image"],
+            },
+          },
+        },
+      },
+      responses: {
+        "201": {
+          description: "Image uploaded successfully",
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/ImageUploadResponse",
+              },
+            },
+          },
+        },
+        "400": {
+          $ref: "#/components/responses/ValidationError",
+        },
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
+        },
+        "403": {
+          $ref: "#/components/responses/ForbiddenError",
+        },
+        "413": {
+          description: "File too large",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: {
+                    type: "boolean",
+                    example: false,
+                  },
+                  error: {
+                    type: "object",
+                    properties: {
+                      code: {
+                        type: "string",
+                        example: "FILE_TOO_LARGE",
+                      },
+                      message: {
+                        type: "string",
+                        example: "File size exceeds 10MB limit",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        "415": {
+          description: "Unsupported file type",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: {
+                    type: "boolean",
+                    example: false,
+                  },
+                  error: {
+                    type: "object",
+                    properties: {
+                      code: {
+                        type: "string",
+                        example: "UNSUPPORTED_FILE_TYPE",
+                      },
+                      message: {
+                        type: "string",
+                        example: "Only JPEG, PNG, and WebP files are supported",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
+
+  "/api/products/upload-images": {
+    post: {
+      tags: ["Product Images"],
+      summary: "Upload multiple product images",
+      description: "Upload multiple product images to Cloudinary in batch with optional transformations (Admin only)",
+      operationId: "uploadProductImages",
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "multipart/form-data": {
+            schema: {
+              type: "object",
+              properties: {
+                images: {
+                  type: "array",
+                  items: {
+                    type: "string",
+                    format: "binary",
+                  },
+                  description: "Array of image files to upload (JPEG, PNG, WebP, max 10 files, 10MB each)",
+                  maxItems: 10,
+                },
+                transformation: {
+                  type: "string",
+                  description: "JSON string of transformation parameters applied to all images",
+                  example: '{"width": 800, "height": 600, "crop": "fill", "quality": "auto"}',
+                },
+                maxFiles: {
+                  type: "integer",
+                  description: "Maximum number of files to upload",
+                  minimum: 1,
+                  maximum: 10,
+                  default: 5,
+                },
+              },
+              required: ["images"],
+            },
+          },
+        },
+      },
+      responses: {
+        "201": {
+          description: "Images uploaded successfully",
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/MultipleImagesUploadResponse",
+              },
+            },
+          },
+        },
+        "400": {
+          $ref: "#/components/responses/ValidationError",
+        },
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
+        },
+        "403": {
+          $ref: "#/components/responses/ForbiddenError",
+        },
+        "413": {
+          description: "Files too large",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: {
+                    type: "boolean",
+                    example: false,
+                  },
+                  error: {
+                    type: "object",
+                    properties: {
+                      code: {
+                        type: "string",
+                        example: "FILES_TOO_LARGE",
+                      },
+                      message: {
+                        type: "string",
+                        example: "One or more files exceed the 10MB limit",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        "415": {
+          description: "Unsupported file types",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: {
+                    type: "boolean",
+                    example: false,
+                  },
+                  error: {
+                    type: "object",
+                    properties: {
+                      code: {
+                        type: "string",
+                        example: "UNSUPPORTED_FILE_TYPES",
+                      },
+                      message: {
+                        type: "string",
+                        example: "Only JPEG, PNG, and WebP files are supported",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
+
+  "/api/products/{id}/images": {
+    patch: {
+      tags: ["Product Images"],
+      summary: "Update product images",
+      description: "Add, remove, or replace product images (Admin only)",
+      operationId: "updateProductImages",
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          description: "Product ID",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/UpdateProductImagesRequest",
+            },
+          },
+        },
+      },
+      responses: {
+        "200": {
+          description: "Product images updated successfully",
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/UpdateProductImagesResponse",
+              },
+            },
+          },
+        },
+        "400": {
+          $ref: "#/components/responses/ValidationError",
+        },
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
+        },
+        "403": {
+          $ref: "#/components/responses/ForbiddenError",
+        },
+        "404": {
+          $ref: "#/components/responses/NotFoundError",
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
+
+  "/api/products/{id}/images/{publicId}": {
+    delete: {
+      tags: ["Product Images"],
+      summary: "Delete product image",
+      description: "Delete a specific product image by Cloudinary public ID (Admin only)",
+      operationId: "deleteProductImage",
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          description: "Product ID",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+        {
+          name: "publicId",
+          in: "path",
+          description: "Cloudinary public ID of the image to delete",
+          required: true,
+          schema: {
+            type: "string",
+            example: "products/iphone-15-pro-abc123",
+          },
+        },
+      ],
+      responses: {
+        "200": {
+          description: "Product image deleted successfully",
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/DeleteProductImageResponse",
+              },
+            },
+          },
+        },
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
+        },
+        "403": {
+          $ref: "#/components/responses/ForbiddenError",
+        },
+        "404": {
+          description: "Product or image not found",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: {
+                    type: "boolean",
+                    example: false,
+                  },
+                  error: {
+                    type: "object",
+                    properties: {
+                      code: {
+                        type: "string",
+                        example: "NOT_FOUND",
+                      },
+                      message: {
+                        type: "string",
+                        example: "Product not found or image does not belong to this product",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
 } as const;
 
 export default productPaths;

@@ -1,7 +1,6 @@
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "@/db";
 import { users, shoppingCarts, shoppingCartItems, products } from "@/db/schema";
-import { logger } from "@/utils/logger";
 import { hashPassword, verifyPassword } from "@/utils/password";
 import { createNotFoundError, createValidationError, createConflictError, createInternalServerError } from "@/utils/errors";
 import type {
@@ -32,8 +31,6 @@ export const createUser = async (data: {
   firstName: string;
   lastName: string;
 }): Promise<UserProfile> => {
-  logger.info("Creating new user", { metadata: { email: data.email } });
-
   const hashedPassword = await hashPassword(data.password);
 
   const [user] = await db
@@ -131,8 +128,6 @@ export const getUserById = async (id: string): Promise<UserProfile | null> => {
  * Get user profile by ID
  */
 export const getUserProfile = async (userId: string): Promise<UserProfile> => {
-  logger.info("Fetching user profile", { metadata: { userId } });
-
   const user = await getUserById(userId);
   if (!user) {
     throw createNotFoundError("User");
@@ -145,8 +140,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
  * Update user profile
  */
 export const updateUserProfile = async (userId: string, updateData: UpdateUserProfileRequest): Promise<UserOperationResult> => {
-  logger.info("Updating user profile", { metadata: { userId } });
-
   // Check if user exists
   const existingUser = await getUserById(userId);
   if (!existingUser) {
@@ -212,8 +205,6 @@ export const updateUserProfile = async (userId: string, updateData: UpdateUserPr
  * Change user password
  */
 export const changePassword = async (userId: string, passwordData: ChangePasswordRequest): Promise<UserOperationResult> => {
-  logger.info("Changing user password", { metadata: { userId } });
-
   // Get current user with password
   const currentUser = await db
     .select({
@@ -312,8 +303,6 @@ export const updatePassword = async (userId: string, newPassword: string): Promi
  * Get or create user's shopping cart
  */
 export const getOrCreateCart = async (userId: string): Promise<string> => {
-  logger.info("Getting or creating cart", { userId });
-
   // Try to find existing cart
   const existingCart = await db
     .select({ id: shoppingCarts.id })
@@ -339,7 +328,6 @@ export const getOrCreateCart = async (userId: string): Promise<string> => {
     throw createInternalServerError("Failed to create shopping cart");
   }
 
-  logger.info("Created new shopping cart", { userId });
   return newCart[0].id;
 };
 
@@ -374,8 +362,6 @@ export const calculateCartSummary = (items: CartItemWithProduct[]): CartSummary 
  * Get user's shopping cart with items
  */
 export const getUserCart = async (userId: string, includeProduct = true): Promise<ShoppingCartWithItems> => {
-  logger.info("Fetching user cart", { userId });
-
   const cartId = await getOrCreateCart(userId);
 
   // Get cart details
@@ -532,8 +518,6 @@ const validateProductAvailability = async (productId: string, quantity: number, 
  * Add item to cart
  */
 export const addToCart = async (userId: string, cartData: AddToCartRequest): Promise<CartOperationResult> => {
-  logger.info("Adding item to cart", { userId });
-
   await validateProductAvailability(cartData.productId, cartData.quantity);
 
   const cartId = await getOrCreateCart(userId);
@@ -600,8 +584,6 @@ export const updateCartItem = async (
   itemId: string,
   updateData: UpdateCartItemRequest
 ): Promise<CartOperationResult> => {
-  logger.info("Updating cart item", { userId });
-
   const cartId = await getOrCreateCart(userId);
 
   // Get cart item
@@ -647,8 +629,6 @@ export const updateCartItem = async (
  * Remove item from cart
  */
 export const removeFromCart = async (userId: string, itemId: string): Promise<CartOperationResult> => {
-  logger.info("Removing item from cart", { userId });
-
   const cartId = await getOrCreateCart(userId);
 
   // Verify item belongs to user's cart
@@ -680,8 +660,6 @@ export const removeFromCart = async (userId: string, itemId: string): Promise<Ca
  * Clear user's cart
  */
 export const clearCart = async (userId: string): Promise<CartOperationResult> => {
-  logger.info("Clearing user cart", { userId });
-
   const cartId = await getOrCreateCart(userId);
 
   // Remove all items from cart
@@ -702,8 +680,6 @@ export const clearCart = async (userId: string): Promise<CartOperationResult> =>
  * Get cart summary (lightweight)
  */
 export const getCartSummary = async (userId: string): Promise<CartSummary> => {
-  logger.info("Fetching cart summary", { userId });
-
   const cart = await getUserCart(userId, true);
   return cart.summary;
 };

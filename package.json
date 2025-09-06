@@ -79,10 +79,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-username/ds-e-commerce-backend.git"
+    "url": "git+https://github.com/mohit-dsb/ds-e-commerce-backend.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/ds-e-commerce-backend/issues"
+    "url": "https://github.com/mohit-dsb/ds-e-commerce-backend/issues"
   },
-  "homepage": "https://github.com/your-username/ds-e-commerce-backend#readme"
+  "homepage": "https://github.com/mohit-dsb/ds-e-commerce-backend#readme"
 }

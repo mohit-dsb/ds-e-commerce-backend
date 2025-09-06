@@ -18,7 +18,6 @@ A comprehensive RESTful API for a modern e-commerce platform built with Hono, Bu
 - **Product Management**: Complete CRUD operations for products with categories and inventory
 - **Order Management**: Full order lifecycle from cart to delivery
 - **User Management**: User profiles, shipping addresses, and preferences
-- **Image Upload**: Cloudinary integration for product images
 - **Search & Filtering**: Advanced product search with multiple filters
 - **Real-time Inventory**: Stock tracking and low-stock notifications
 
@@ -82,10 +81,6 @@ All endpoints return consistent error responses with appropriate HTTP status cod
     {
       name: "Shipping",
       description: "Shipping address management",
-    },
-    {
-      name: "Images",
-      description: "Image upload and management",
     },
     {
       name: "Health",

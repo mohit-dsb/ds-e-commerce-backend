@@ -83,8 +83,6 @@ const initializeTransporter = async (): Promise<void> => {
       await transporter.verify();
     }
     isInitialized = true;
-
-    logger.info("Email service initialized successfully");
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     logger.error("Failed to initialize email service", error instanceof Error ? error : new Error(errorMessage));
@@ -115,15 +113,7 @@ const sendEmail = async (options: EmailOptions): Promise<boolean> => {
       },
     };
 
-    const result = (await transporter.sendMail(mailOptions)) as { messageId?: string };
-
-    logger.info("Email sent successfully", {
-      metadata: {
-        to: options.to,
-        subject: options.subject,
-        messageId: result.messageId,
-      },
-    });
+    (await transporter.sendMail(mailOptions)) as { messageId?: string };
 
     return true;
   } catch (error) {
@@ -550,7 +540,6 @@ export const testEmailConfiguration = async (): Promise<boolean> => {
       html: "<p>This is a test email to verify email configuration.</p>",
     });
 
-    logger.info("Test email sent successfully");
     return true;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -569,7 +558,6 @@ export const closeEmailService = (): void => {
     transporter.close();
     transporter = null;
     isInitialized = false;
-    logger.info("Email service closed");
   }
 };
 

@@ -52,7 +52,6 @@ export const initializeCloudinary = (): boolean => {
     });
 
     isCloudinaryConfigured = true;
-    logger.info("Cloudinary configuration initialized successfully");
     return true;
   } catch {
     logger.error("Failed to initialize Cloudinary");

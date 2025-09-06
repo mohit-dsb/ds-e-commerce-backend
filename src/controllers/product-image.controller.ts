@@ -119,8 +119,6 @@ export const uploadProductImage = async (c: Context) => {
 
     const result = await cloudinaryService.uploadImage(imageBuffer, uploadOptions);
 
-    logger.info("Product image uploaded successfully");
-
     return c.json(
       createSuccessResponse("Image uploaded successfully", {
         image: {
@@ -224,8 +222,6 @@ export const uploadProductImages = async (c: Context) => {
     };
 
     const results = await cloudinaryService.uploadMultipleImages(imageBuffers, uploadOptions);
-
-    logger.info("Multiple product images uploaded");
 
     return c.json(
       createSuccessResponse("Images uploaded successfully", {
@@ -340,8 +336,6 @@ export const updateProductImages = async (c: Context) => {
     const updatedProduct = await productService.updateProduct(productId, {
       images: updatedImages,
     });
-
-    logger.info("Product images updated successfully");
 
     return c.json(
       createSuccessResponse("Product images updated successfully", {

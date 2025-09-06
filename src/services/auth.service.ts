@@ -58,7 +58,6 @@ export const authenticateUser = async (email: string, password: string): Promise
       return null;
     }
 
-    logger.info("User authenticated successfully", { metadata: { userId: user.id, email } });
     return user;
   });
 };
@@ -101,15 +100,6 @@ export const createRefreshToken = async (
       deviceFingerprint: metadata.deviceFingerprint,
     });
 
-    logger.info("Refresh token created", {
-      metadata: {
-        userId,
-        expiresAt: expiresAt.toISOString(),
-        hasParent: !!parentTokenId,
-        ipAddress: metadata.ipAddress,
-      },
-    });
-
     return token; // Return plain token (not hashed) to client
   });
 };
@@ -139,14 +129,6 @@ export const validateRefreshToken = async (token: string): Promise<string | null
             updatedAt: new Date(),
           })
           .where(eq(refreshTokens.id, storedToken.id));
-
-        logger.info("Refresh token validated", {
-          metadata: {
-            userId: storedToken.userId,
-            tokenId: storedToken.id,
-            lastUsed: new Date().toISOString(),
-          },
-        });
 
         return storedToken.userId;
       }
@@ -205,14 +187,6 @@ export const rotateRefreshToken = async (oldToken: string, metadata: RefreshToke
       })
       .where(eq(refreshTokens.id, oldTokenRecord.id));
 
-    logger.info("Refresh token rotated", {
-      metadata: {
-        userId,
-        oldTokenId: oldTokenRecord.id,
-        parentTokenId: oldTokenRecord.id,
-      },
-    });
-
     return newToken;
   });
 };
@@ -234,13 +208,6 @@ export const cleanupExpiredRefreshTokens = async (olderThanDays: number = 7): Pr
           and(eq(refreshTokens.isRevoked, true), lt(refreshTokens.revokedAt, cutoffDate))
         )
       );
-
-    logger.info("Expired refresh tokens cleaned up", {
-      metadata: {
-        cutoffDate: cutoffDate.toISOString(),
-        deletedCount: deletedTokens,
-      },
-    });
 
     return deletedTokens as unknown as number;
   });
@@ -270,10 +237,6 @@ export const createPasswordResetToken = async (email: string): Promise<string> =
       userId: user.id,
       token,
       expiresAt,
-    });
-
-    logger.info("Password reset token created", {
-      metadata: { userId: user.id, expiresAt: expiresAt.toISOString() },
     });
 
     return token;
@@ -310,9 +273,5 @@ export const validatePasswordResetToken = async (token: string): Promise<string 
 export const usePasswordResetToken = async (token: string): Promise<void> => {
   await dbErrorHandlers.update(async () => {
     await db.update(passwordResets).set({ used: true }).where(eq(passwordResets.token, token));
-
-    logger.info("Password reset token used", {
-      metadata: { tokenProvided: !!token },
-    });
   });
 };

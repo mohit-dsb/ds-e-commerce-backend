@@ -725,6 +725,344 @@ export const productSchemas = {
       "verifiedPurchasePercentage",
     ],
   },
+
+  // ============================================================================
+  // Product Image Schemas
+  // ============================================================================
+
+  ImageTransformation: {
+    type: "object",
+    properties: {
+      width: {
+        type: "integer",
+        minimum: 50,
+        maximum: 2000,
+        description: "Image width in pixels",
+        example: 800,
+      },
+      height: {
+        type: "integer",
+        minimum: 50,
+        maximum: 2000,
+        description: "Image height in pixels",
+        example: 600,
+      },
+      crop: {
+        type: "string",
+        enum: ["fill", "fit", "limit", "scale", "pad", "crop"],
+        description: "Image cropping mode",
+        example: "fill",
+      },
+      quality: {
+        oneOf: [
+          {
+            type: "string",
+            enum: ["auto"],
+          },
+          {
+            type: "integer",
+            minimum: 1,
+            maximum: 100,
+          },
+        ],
+        description: "Image quality (1-100 or 'auto')",
+        example: "auto",
+      },
+      format: {
+        type: "string",
+        enum: ["auto", "jpg", "png", "webp"],
+        description: "Image format",
+        example: "webp",
+      },
+    },
+  },
+
+  UploadImageRequest: {
+    type: "object",
+    properties: {
+      transformation: {
+        $ref: "#/components/schemas/ImageTransformation",
+        description: "Optional image transformation parameters",
+      },
+    },
+  },
+
+  UploadMultipleImagesRequest: {
+    type: "object",
+    properties: {
+      transformation: {
+        $ref: "#/components/schemas/ImageTransformation",
+        description: "Optional image transformation parameters applied to all images",
+      },
+      maxFiles: {
+        type: "integer",
+        minimum: 1,
+        maximum: 10,
+        default: 5,
+        description: "Maximum number of files to upload",
+        example: 5,
+      },
+    },
+  },
+
+  UpdateProductImagesRequest: {
+    type: "object",
+    properties: {
+      action: {
+        type: "string",
+        enum: ["add", "remove", "replace"],
+        description: "Action to perform on product images",
+        example: "add",
+      },
+      images: {
+        type: "array",
+        items: {
+          type: "string",
+          format: "uri",
+        },
+        maxItems: 10,
+        description: "Array of image URLs to add or replace",
+        example: ["https://cloudinary.com/image1.jpg", "https://cloudinary.com/image2.jpg"],
+      },
+      imagesToRemove: {
+        type: "array",
+        items: {
+          type: "string",
+        },
+        description: "Array of Cloudinary public IDs to remove",
+        example: ["products/image1", "products/image2"],
+      },
+    },
+    required: ["action"],
+  },
+
+  ImageUploadResponse: {
+    type: "object",
+    properties: {
+      success: {
+        type: "boolean",
+        example: true,
+      },
+      message: {
+        type: "string",
+        example: "Image uploaded successfully",
+      },
+      data: {
+        type: "object",
+        properties: {
+          publicId: {
+            type: "string",
+            description: "Cloudinary public ID",
+            example: "products/iphone-15-pro-abc123",
+          },
+          url: {
+            type: "string",
+            format: "uri",
+            description: "Image URL",
+            example: "https://res.cloudinary.com/demo/image/upload/v123456789/products/iphone-15-pro-abc123.jpg",
+          },
+          secureUrl: {
+            type: "string",
+            format: "uri",
+            description: "Secure HTTPS image URL",
+            example: "https://res.cloudinary.com/demo/image/upload/v123456789/products/iphone-15-pro-abc123.jpg",
+          },
+          format: {
+            type: "string",
+            description: "Image format",
+            example: "jpg",
+          },
+          width: {
+            type: "integer",
+            description: "Image width in pixels",
+            example: 800,
+          },
+          height: {
+            type: "integer",
+            description: "Image height in pixels",
+            example: 600,
+          },
+          bytes: {
+            type: "integer",
+            description: "Image file size in bytes",
+            example: 245760,
+          },
+          createdAt: {
+            type: "string",
+            format: "date-time",
+            description: "Upload timestamp",
+          },
+        },
+      },
+    },
+  },
+
+  MultipleImagesUploadResponse: {
+    type: "object",
+    properties: {
+      success: {
+        type: "boolean",
+        example: true,
+      },
+      message: {
+        type: "string",
+        example: "Images uploaded successfully",
+      },
+      data: {
+        type: "object",
+        properties: {
+          images: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                publicId: {
+                  type: "string",
+                  description: "Cloudinary public ID",
+                  example: "products/iphone-15-pro-abc123",
+                },
+                url: {
+                  type: "string",
+                  format: "uri",
+                  description: "Image URL",
+                  example: "https://res.cloudinary.com/demo/image/upload/v123456789/products/iphone-15-pro-abc123.jpg",
+                },
+                secureUrl: {
+                  type: "string",
+                  format: "uri",
+                  description: "Secure HTTPS image URL",
+                  example: "https://res.cloudinary.com/demo/image/upload/v123456789/products/iphone-15-pro-abc123.jpg",
+                },
+                format: {
+                  type: "string",
+                  description: "Image format",
+                  example: "jpg",
+                },
+                width: {
+                  type: "integer",
+                  description: "Image width in pixels",
+                  example: 800,
+                },
+                height: {
+                  type: "integer",
+                  description: "Image height in pixels",
+                  example: 600,
+                },
+                bytes: {
+                  type: "integer",
+                  description: "Image file size in bytes",
+                  example: 245760,
+                },
+                createdAt: {
+                  type: "string",
+                  format: "date-time",
+                  description: "Upload timestamp",
+                },
+              },
+            },
+          },
+          uploadedCount: {
+            type: "integer",
+            description: "Number of images uploaded",
+            example: 3,
+          },
+        },
+      },
+    },
+  },
+
+  UpdateProductImagesResponse: {
+    type: "object",
+    properties: {
+      success: {
+        type: "boolean",
+        example: true,
+      },
+      message: {
+        type: "string",
+        example: "Product images updated successfully",
+      },
+      data: {
+        type: "object",
+        properties: {
+          productId: {
+            type: "string",
+            format: "uuid",
+            description: "Product ID",
+            example: "123e4567-e89b-12d3-a456-426614174000",
+          },
+          action: {
+            type: "string",
+            enum: ["add", "remove", "replace"],
+            description: "Action performed",
+            example: "add",
+          },
+          imagesAdded: {
+            type: "integer",
+            description: "Number of images added",
+            example: 2,
+          },
+          imagesRemoved: {
+            type: "integer",
+            description: "Number of images removed",
+            example: 0,
+          },
+          currentImageCount: {
+            type: "integer",
+            description: "Current total number of images",
+            example: 5,
+          },
+          images: {
+            type: "array",
+            items: {
+              type: "string",
+              format: "uri",
+            },
+            description: "Current product image URLs",
+            example: [
+              "https://res.cloudinary.com/demo/image/upload/v123456789/products/iphone-15-pro-abc123.jpg",
+              "https://res.cloudinary.com/demo/image/upload/v123456789/products/iphone-15-pro-def456.jpg",
+            ],
+          },
+        },
+      },
+    },
+  },
+
+  DeleteProductImageResponse: {
+    type: "object",
+    properties: {
+      success: {
+        type: "boolean",
+        example: true,
+      },
+      message: {
+        type: "string",
+        example: "Product image deleted successfully",
+      },
+      data: {
+        type: "object",
+        properties: {
+          productId: {
+            type: "string",
+            format: "uuid",
+            description: "Product ID",
+            example: "123e4567-e89b-12d3-a456-426614174000",
+          },
+          publicId: {
+            type: "string",
+            description: "Cloudinary public ID of deleted image",
+            example: "products/iphone-15-pro-abc123",
+          },
+          deleted: {
+            type: "boolean",
+            description: "Whether the image was successfully deleted",
+            example: true,
+          },
+        },
+      },
+    },
+  },
 } as const;
 
 export default productSchemas;
