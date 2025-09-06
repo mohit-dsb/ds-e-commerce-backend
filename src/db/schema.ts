@@ -142,6 +142,7 @@ export const orders = pgTable("orders", {
     .references(() => users.id, { onDelete: "restrict" })
     .notNull(),
   status: orderStatusEnum("status").default("pending").notNull(),
+  paymentConfirmed: boolean("payment_confirmed").default(false).notNull(),
 
   // Financial details
   subtotal: decimal("subtotal", { precision: 12, scale: 2 }).notNull(),

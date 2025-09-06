@@ -129,6 +129,7 @@ export const createOrderSchema = z.object({
   orderItems: z.array(createOrderItemSchema).min(1, "At least one order item is required"),
   shippingMethod: z.enum(["standard", "express", "free_shipping"]).optional(),
   customerNotes: z.string().max(1000).trim().optional(),
+  paymentConfirmed: z.boolean().default(false),
   metadata: z.record(z.unknown()).optional(),
 });
 

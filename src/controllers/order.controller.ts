@@ -36,6 +36,7 @@ export const createOrder = async (c: Context<{ Variables: AuthContext }>) => {
     orderItems: validatedData.orderItems,
     shippingMethod: validatedData.shippingMethod,
     customerNotes: validatedData.customerNotes,
+    paymentConfirmed: validatedData.paymentConfirmed,
     metadata: validatedData.metadata,
   };
 
@@ -264,6 +265,7 @@ export const validateOrder = async (c: Context<{ Variables: AuthContext }>) => {
     orderItems: validatedData.orderItems,
     shippingMethod: validatedData.shippingMethod,
     customerNotes: validatedData.customerNotes,
+    paymentConfirmed: validatedData.paymentConfirmed,
     metadata: validatedData.metadata,
   };
 

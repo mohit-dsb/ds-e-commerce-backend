@@ -4,13 +4,13 @@ import { env } from "@/config/env";
 import { logger } from "@/utils/logger";
 import { logger as honoLogger } from "hono/logger";
 import { authRoutes } from "@/routes/auth.routes";
-import { categoryRoutes } from "@/routes/category.routes";
-import productRoutes from "@/routes/product.routes";
 import orderRoutes from "@/routes/order.routes";
-import shippingAddressRoutes from "@/routes/shipping-address.routes";
 import userRoutes from "@/routes/user.routes";
-import { errorHandlerMiddleware } from "@/middleware/error-handler.middleware";
+import productRoutes from "@/routes/product.routes";
 import { createSwaggerRoute } from "@/docs/swagger";
+import categoryRoutes from "@/routes/category.routes";
+import shippingAddressRoutes from "@/routes/shipping-address.routes";
+import { errorHandlerMiddleware } from "@/middleware/error-handler.middleware";
 
 const app = new Hono();
 

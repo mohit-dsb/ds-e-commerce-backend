@@ -361,7 +361,8 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<OrderW
         .values({
           orderNumber,
           userId: orderData.userId,
-          status: "pending",
+          status: orderData.paymentConfirmed ? "confirmed" : "pending",
+          paymentConfirmed: orderData.paymentConfirmed,
           subtotal: calculations.subtotal,
           taxAmount: calculations.taxAmount,
           shippingAmount: calculations.shippingAmount,
@@ -423,8 +424,8 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<OrderW
       await tx.insert(orderStatusHistory).values({
         orderId: newOrder.id,
         previousStatus: null,
-        newStatus: "pending",
-        comment: "Order created",
+        newStatus: orderData.paymentConfirmed ? "confirmed" : "pending",
+        comment: orderData.paymentConfirmed ? "Order created with payment confirmed" : "Order created",
         changedBy: orderData.userId,
         isCustomerVisible: true,
       });

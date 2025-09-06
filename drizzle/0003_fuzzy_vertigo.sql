@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "payment_confirmed" boolean DEFAULT false NOT NULL;

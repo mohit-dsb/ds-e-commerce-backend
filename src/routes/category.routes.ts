@@ -80,4 +80,4 @@ categoryRoutes.patch(
  */
 categoryRoutes.delete("/:id", authMiddleware, adminMiddleware, categoryController.deleteCategory);
 
-export { categoryRoutes };
+export default categoryRoutes;

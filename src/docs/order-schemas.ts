@@ -98,6 +98,11 @@ export const orderSchemas = {
         description: "Current order status",
         example: "confirmed",
       },
+      paymentConfirmed: {
+        type: "boolean",
+        description: "Whether payment has been confirmed",
+        example: true,
+      },
       subtotalAmount: {
         type: "string",
         pattern: "^\\d+(\\.\\d{1,2})?$",
@@ -247,13 +252,18 @@ export const orderSchemas = {
         description: "Optional customer notes",
         example: "Please deliver after 5 PM",
       },
+      paymentConfirmed: {
+        type: "boolean",
+        description: "Whether payment has been confirmed by the client",
+        example: true,
+      },
       metadata: {
         type: "object",
         additionalProperties: true,
         description: "Additional order metadata",
       },
     },
-    required: ["shippingAddressId", "orderItems"],
+    required: ["shippingAddressId", "orderItems", "paymentConfirmed"],
   },
 
   UpdateOrderStatusRequest: {

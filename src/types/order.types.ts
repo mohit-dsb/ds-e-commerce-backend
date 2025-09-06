@@ -55,6 +55,7 @@ export interface CreateOrderRequest {
   orderItems: CreateOrderItem[];
   shippingMethod?: "standard" | "express" | "free_shipping";
   customerNotes?: string;
+  paymentConfirmed: boolean;
   metadata?: Record<string, unknown>;
 }
 
