@@ -87,7 +87,7 @@ export const productFiltersSchema = z.object({
   inStock: z.boolean().optional(),
   tags: z.array(z.string()).optional(),
   search: z.string().trim().optional(),
-  sortBy: z.enum(["name", "price", "createdAt", "updatedAt", "inventoryQuantity"]).optional(),
+  sortBy: z.enum(["name", "price", "createdAt", "updatedAt", "inventoryQuantity", "rating"]).optional(),
   sortOrder: z.enum(["asc", "desc"]).optional(),
   page: z.number().int().min(1).optional(),
   limit: z.number().int().min(1).max(100).optional(),

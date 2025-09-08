@@ -191,6 +191,7 @@ export const getProductById = async (id: string, includeInactive = false): Promi
         allowBackorder: products.allowBackorder,
         images: products.images,
         tags: products.tags,
+        rating: products.rating,
         categoryId: products.categoryId,
         createdBy: products.createdBy,
         createdAt: products.createdAt,
@@ -231,8 +232,32 @@ export const getProductBySlug = async (slug: string, includeInactive = false): P
     }
 
     const [product] = await db
-      .select()
+      .select({
+        id: products.id,
+        name: products.name,
+        description: products.description,
+        slug: products.slug,
+        price: products.price,
+        weight: products.weight,
+        weightUnit: products.weightUnit,
+        status: products.status,
+        inventoryQuantity: products.inventoryQuantity,
+        allowBackorder: products.allowBackorder,
+        images: products.images,
+        tags: products.tags,
+        rating: products.rating,
+        categoryId: products.categoryId,
+        createdBy: products.createdBy,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+        category: {
+          id: categories.id,
+          name: categories.name,
+          slug: categories.slug,
+        },
+      })
       .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
       .where(and(...conditions))
       .limit(1);
 
@@ -240,7 +265,35 @@ export const getProductBySlug = async (slug: string, includeInactive = false): P
       throw createNotFoundError("Product not found");
     }
 
-    return await getProductById(product.id, includeInactive);
+    return {
+      ...product,
+      additionalCategories: [], // No additional categories with simplified model
+    };
+  });
+};
+
+/**
+ * Update product rating based on reviews
+ * @param productId - Product ID to update rating for
+ */
+export const updateProductRating = async (productId: string): Promise<void> => {
+  return dbErrorHandlers.update(async () => {
+    // Calculate average rating from all reviews for this product
+    const [ratingResult] = await db
+      .select({
+        averageRating: sql<number>`COALESCE(AVG(${productReviews.rating}), 0)`,
+      })
+      .from(productReviews)
+      .where(eq(productReviews.productId, productId));
+
+    // Update the product's rating
+    await db
+      .update(products)
+      .set({
+        rating: ratingResult.averageRating.toFixed(2),
+        updatedAt: new Date(),
+      })
+      .where(eq(products.id, productId));
   });
 };
 
@@ -326,6 +379,7 @@ export const getProducts = async (
         createdAt: products.createdAt,
         updatedAt: products.updatedAt,
         inventoryQuantity: products.inventoryQuantity,
+        rating: products.rating,
       }[sortBy] || products.createdAt;
 
     const orderBy = sortOrder === "asc" ? asc(sortColumn) : desc(sortColumn);
@@ -524,6 +578,9 @@ export const createProductReview = async (userId: string, reviewData: CreateRevi
 
     const review = await getProductReviewById(newReview.id, true);
 
+    // Update product rating after creating review
+    await updateProductRating(reviewData.productId);
+
     return {
       review,
       message: "Review submitted successfully",
@@ -579,6 +636,9 @@ export const updateProductReview = async (
 
     const review = await getProductReviewById(reviewId, true);
 
+    // Update product rating after updating review
+    await updateProductRating(review.productId);
+
     return {
       review,
       message: "Review updated successfully",
@@ -598,6 +658,7 @@ export const deleteProductReview = async (reviewId: string, userId: string): Pro
       .select({
         id: productReviews.id,
         userId: productReviews.userId,
+        productId: productReviews.productId,
       })
       .from(productReviews)
       .where(eq(productReviews.id, reviewId))
@@ -617,8 +678,14 @@ export const deleteProductReview = async (reviewId: string, userId: string): Pro
       ]);
     }
 
+    const [existingReviewData] = existingReview;
+    const { productId } = existingReviewData;
+
     // Delete the review
     await db.delete(productReviews).where(eq(productReviews.id, reviewId));
+
+    // Update product rating after deleting review
+    await updateProductRating(productId);
   });
 };
 

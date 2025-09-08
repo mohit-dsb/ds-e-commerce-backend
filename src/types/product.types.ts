@@ -9,7 +9,7 @@ export interface ProductFilters {
   inStock?: boolean;
   tags?: string[];
   search?: string;
-  sortBy?: "name" | "price" | "createdAt" | "updatedAt" | "inventoryQuantity";
+  sortBy?: "name" | "price" | "createdAt" | "updatedAt" | "inventoryQuantity" | "rating";
   sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
@@ -68,7 +68,7 @@ export interface ProductFilters {
   inStock?: boolean;
   tags?: string[];
   search?: string;
-  sortBy?: "name" | "price" | "createdAt" | "updatedAt" | "inventoryQuantity";
+  sortBy?: "name" | "price" | "createdAt" | "updatedAt" | "inventoryQuantity" | "rating";
   sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;

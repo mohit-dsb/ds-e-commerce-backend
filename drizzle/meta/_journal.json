@@ -29,6 +29,13 @@
       "when": 1757161625443,
       "tag": "0003_fuzzy_vertigo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1757310328385,
+      "tag": "0004_strong_champions",
+      "breakpoints": true
     }
   ]
 }

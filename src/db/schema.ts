@@ -93,6 +93,7 @@ export const products = pgTable(
     allowBackorder: boolean("allow_backorder").default(false).notNull(),
     images: jsonb("images").$type<string[]>().default([]),
     tags: jsonb("tags").$type<string[]>().default([]),
+    rating: decimal("rating", { precision: 3, scale: 2 }).default("0.00").notNull(),
     categoryId: uuid("category_id")
       .references(() => categories.id, { onDelete: "restrict" })
       .notNull(),
@@ -109,6 +110,8 @@ export const products = pgTable(
         "inventory_non_negative",
         sql`${table.inventoryQuantity} >= 0 OR ${table.allowBackorder} = true`
       ),
+      // Constraint to ensure rating is between 0 and 5
+      ratingRange: check("rating_range", sql`${table.rating} >= 0 AND ${table.rating} <= 5`),
     },
   ]
 );

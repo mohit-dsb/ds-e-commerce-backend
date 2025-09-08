@@ -83,6 +83,14 @@ export const productSchemas = {
         description: "Product tags",
         example: ["smartphone", "apple", "electronics"],
       },
+      rating: {
+        type: "string",
+        pattern: "^\\d+(\\.\\d{1,2})?$",
+        minimum: 0,
+        maximum: 5,
+        description: "Average product rating calculated from reviews",
+        example: "4.50",
+      },
       categoryId: {
         type: "string",
         format: "uuid",

@@ -82,7 +82,7 @@ export const productPaths = {
           required: false,
           schema: {
             type: "string",
-            enum: ["name", "price", "createdAt", "updatedAt", "inventoryQuantity"],
+            enum: ["name", "price", "createdAt", "updatedAt", "inventoryQuantity", "rating"],
             default: "createdAt",
           },
         },
@@ -460,7 +460,7 @@ export const productPaths = {
           required: false,
           schema: {
             type: "string",
-            enum: ["name", "price", "createdAt", "updatedAt", "inventoryQuantity"],
+            enum: ["name", "price", "createdAt", "updatedAt", "inventoryQuantity", "rating"],
             default: "createdAt",
           },
         },
@@ -630,7 +630,7 @@ export const productPaths = {
           required: false,
           schema: {
             type: "string",
-            enum: ["name", "price", "createdAt", "updatedAt", "inventoryQuantity"],
+            enum: ["name", "price", "createdAt", "updatedAt", "inventoryQuantity", "rating"],
             default: "createdAt",
           },
         },
