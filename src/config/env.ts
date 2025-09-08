@@ -16,7 +16,12 @@ const envSchema = z.object({
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
 
   // CORS Configuration
-  CORS_ORIGIN: z.string().default("*"),
+  CORS_ORIGIN: z
+    .string()
+    .default("http://localhost:3000,http://localhost:5173")
+    .transform((val) => {
+      return val.split(",").map((origin) => origin.trim());
+    }),
 
   // Logging Configuration
   LOG_LEVEL: z.enum(["error", "warn", "info", "debug"]).default("info"),

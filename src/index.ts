@@ -18,7 +18,15 @@ const app = new Hono();
 app.use(honoLogger());
 app.use(
   cors({
-    origin: env.NODE_ENV === "production" ? env.CORS_ORIGIN : "*",
+    origin: (origin) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) {
+        return origin;
+      }
+
+      // Check if the origin is in our allowed list
+      return env.CORS_ORIGIN.includes(origin) ? origin : null;
+    },
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
