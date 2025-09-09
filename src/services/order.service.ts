@@ -314,16 +314,12 @@ export const calculateOrderTotals = async (
     const taxRate = 0.085;
     const taxAmount = subtotal * taxRate;
 
-    // No discount for now - will be enhanced with coupon system
-    const discountAmount = 0;
-
-    const totalAmount = subtotal + taxAmount + shippingAmount - discountAmount;
+    const totalAmount = subtotal + taxAmount + shippingAmount;
 
     return {
       subtotal: subtotal.toFixed(2),
       taxAmount: taxAmount.toFixed(2),
       shippingAmount: shippingAmount.toFixed(2),
-      discountAmount: discountAmount.toFixed(2),
       totalAmount: totalAmount.toFixed(2),
     };
   } catch (error) {
@@ -367,7 +363,6 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<OrderW
           subtotal: calculations.subtotal,
           taxAmount: calculations.taxAmount,
           shippingAmount: calculations.shippingAmount,
-          discountAmount: calculations.discountAmount,
           totalAmount: calculations.totalAmount,
           shippingMethod: orderData.shippingMethod ?? "standard",
           shippingAddressId: orderData.shippingAddressId,

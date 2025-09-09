@@ -678,7 +678,6 @@ async function seedOrders(productList?: Product[], addressList?: ShippingAddress
           subtotal: subtotal.toFixed(2),
           taxAmount: taxAmount.toFixed(2),
           shippingAmount: shippingAmount.toFixed(2),
-          discountAmount: "0.00",
           totalAmount: totalAmount.toFixed(2),
           shippingMethod: getRandomElement(["standard", "express", "free_shipping"]),
           confirmedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Within last 30 days

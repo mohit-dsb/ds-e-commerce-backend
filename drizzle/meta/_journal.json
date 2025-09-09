@@ -36,6 +36,13 @@
       "when": 1757310328385,
       "tag": "0004_strong_champions",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1757421668132,
+      "tag": "0005_tough_squirrel_girl",
+      "breakpoints": true
     }
   ]
 }

@@ -151,7 +151,6 @@ export const orders = pgTable("orders", {
   subtotal: decimal("subtotal", { precision: 12, scale: 2 }).notNull(),
   taxAmount: decimal("tax_amount", { precision: 12, scale: 2 }).default("0.00").notNull(),
   shippingAmount: decimal("shipping_amount", { precision: 12, scale: 2 }).default("0.00").notNull(),
-  discountAmount: decimal("discount_amount", { precision: 12, scale: 2 }).default("0.00").notNull(),
   totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull(),
 
   // Shipping details

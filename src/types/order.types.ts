@@ -64,7 +64,6 @@ export interface OrderCalculation {
   subtotal: string;
   taxAmount: string;
   shippingAmount: string;
-  discountAmount: string;
   totalAmount: string;
 }
 
