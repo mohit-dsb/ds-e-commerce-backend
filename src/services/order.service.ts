@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { nanoid } from "nanoid";
 import { logger } from "@/utils/logger";
+import { clearCart } from "@/services/user.service";
 import { dbErrorHandlers } from "@/utils/database-errors";
 import { createNotFoundError, createValidationError } from "@/utils/errors";
 import { eq, and, gte, lte, desc, asc, sql, count, inArray } from "drizzle-orm";
@@ -449,6 +450,9 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<OrderW
           inventoryUpdates.push(updateResult);
         }
       }
+
+      await clearCart(orderData.userId);
+
       // Return the order ID, we'll fetch the full order after the transaction
       return newOrder.id;
     });
