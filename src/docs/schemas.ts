@@ -352,11 +352,6 @@ export const schemas = {
         description: "User role",
         example: "customer",
       },
-      isVerified: {
-        type: "boolean",
-        description: "Whether the user email is verified",
-        example: true,
-      },
       createdAt: {
         type: "string",
         format: "date-time",
@@ -516,6 +511,146 @@ export const schemas = {
         type: "string",
         format: "uuid",
         nullable: true,
+      },
+    },
+  },
+
+  // Wishlist Schemas
+  WishlistItem: {
+    type: "object",
+    properties: {
+      id: {
+        type: "string",
+        format: "uuid",
+        description: "Unique wishlist item identifier",
+        example: "123e4567-e89b-12d3-a456-426614174000",
+      },
+      userId: {
+        type: "string",
+        format: "uuid",
+        description: "User ID who owns the wishlist item",
+        example: "123e4567-e89b-12d3-a456-426614174000",
+      },
+      productId: {
+        type: "string",
+        format: "uuid",
+        description: "Product ID in the wishlist",
+        example: "123e4567-e89b-12d3-a456-426614174000",
+      },
+      addedAt: {
+        type: "string",
+        format: "date-time",
+        description: "When the item was added to wishlist",
+        example: "2025-09-10T14:50:11.539Z",
+      },
+      product: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            format: "uuid",
+            description: "Product ID",
+            example: "123e4567-e89b-12d3-a456-426614174000",
+          },
+          name: {
+            type: "string",
+            description: "Product name",
+            example: "Wireless Headphones",
+          },
+          slug: {
+            type: "string",
+            description: "Product slug",
+            example: "wireless-headphones",
+          },
+          price: {
+            type: "string",
+            description: "Product price",
+            example: "99.99",
+          },
+          images: {
+            type: "array",
+            items: {
+              type: "string",
+            },
+            description: "Product images",
+            example: ["headphones1.jpg", "headphones2.jpg"],
+          },
+          status: {
+            type: "string",
+            enum: ["draft", "active", "inactive", "discontinued"],
+            description: "Product status",
+            example: "active",
+          },
+          rating: {
+            type: "string",
+            description: "Product rating",
+            example: "4.50",
+          },
+        },
+        required: ["id", "name", "slug", "price", "status"],
+      },
+    },
+    required: ["id", "userId", "productId", "addedAt", "product"],
+  },
+
+  AddToWishlistRequest: {
+    type: "object",
+    properties: {
+      productId: {
+        type: "string",
+        format: "uuid",
+        description: "Product ID to add to wishlist",
+        example: "123e4567-e89b-12d3-a456-426614174000",
+      },
+    },
+    required: ["productId"],
+  },
+
+  WishlistResponse: {
+    type: "object",
+    properties: {
+      success: {
+        type: "boolean",
+        example: true,
+      },
+      message: {
+        type: "string",
+        example: "Wishlist retrieved successfully",
+      },
+      data: {
+        type: "object",
+        properties: {
+          wishlist: {
+            type: "array",
+            items: {
+              $ref: "#/components/schemas/WishlistItem",
+            },
+          },
+        },
+      },
+    },
+  },
+
+  WishlistStatusResponse: {
+    type: "object",
+    properties: {
+      success: {
+        type: "boolean",
+        example: true,
+      },
+      message: {
+        type: "string",
+        example: "Wishlist status checked",
+      },
+      data: {
+        type: "object",
+        properties: {
+          isInWishlist: {
+            type: "boolean",
+            description: "Whether the product is in user's wishlist",
+            example: true,
+          },
+        },
       },
     },
   },

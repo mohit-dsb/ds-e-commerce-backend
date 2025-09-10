@@ -94,7 +94,6 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
-        isVerified: user.isVerified,
       },
       accessToken,
       refreshToken,
@@ -141,7 +140,6 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
-        isVerified: user.isVerified,
       },
       accessToken,
       refreshToken,
@@ -167,11 +165,10 @@ export const refreshToken = async (c: Context<{ Variables: AuthContext }>) => {
   // Extract device metadata for new token
   const deviceMetadata = extractDeviceMetadata(c);
 
-  // Rotate refresh token (validates old token and creates new one)
-  const newRefreshToken = await authService.rotateRefreshToken(oldRefreshToken, deviceMetadata);
-
-  if (!newRefreshToken) {
-    logger.warn("Refresh token rotation failed", {
+  // Validate the refresh token
+  const userId = await authService.validateRefreshToken(oldRefreshToken);
+  if (!userId) {
+    logger.warn("Refresh token validation failed", {
       metadata: {
         ipAddress: deviceMetadata.ipAddress,
         hasToken: !!oldRefreshToken,
@@ -180,23 +177,16 @@ export const refreshToken = async (c: Context<{ Variables: AuthContext }>) => {
     throw createAuthError("Invalid or expired refresh token");
   }
 
-  // Get user ID from the validated refresh token
-  const userId = await authService.validateRefreshToken(newRefreshToken);
-  if (!userId) {
-    logger.error("New refresh token validation failed after creation");
-    throw createAuthError("Token generation failed");
-  }
-
   // Generate new access token
   const accessToken = await authService.generateToken(userId);
 
-  // Set updated tokens in httpOnly cookies
-  setAuthCookies(c, accessToken, newRefreshToken);
+  // Set updated tokens in httpOnly cookies (keep same refresh token)
+  setAuthCookies(c, accessToken, oldRefreshToken);
 
   return c.json(
     createSuccessResponse("Tokens refreshed successfully", {
       accessToken,
-      refreshToken: newRefreshToken,
+      refreshToken: oldRefreshToken,
     })
   );
 };

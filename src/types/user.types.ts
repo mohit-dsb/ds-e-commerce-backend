@@ -93,7 +93,6 @@ export interface UserProfile {
   lastName: string;
   phoneNumber?: string | null; // Phone numbers are stored in shipping addresses
   role: string;
-  isVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

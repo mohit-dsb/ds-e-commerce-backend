@@ -3,6 +3,7 @@ import * as userService from "@/services/user.service";
 import { createSuccessResponse } from "@/utils/response";
 import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
+import { BusinessRuleError } from "@/utils/errors";
 import type {
   UpdateUserProfileRequest,
   ChangePasswordRequest,
@@ -123,7 +124,7 @@ export const clearCart = async (c: Context<{ Variables: AuthContext }>) => {
 };
 
 /**
- * Get cart summary (lightweight)
+ * Get cart summary
  * GET /api/cart/summary
  */
 export const getCartSummary = async (c: Context<{ Variables: AuthContext }>) => {
@@ -132,4 +133,63 @@ export const getCartSummary = async (c: Context<{ Variables: AuthContext }>) => 
   const summary = await userService.getCartSummary(user.id);
 
   return c.json(createSuccessResponse("Cart summary retrieved successfully", { summary }), 200);
+};
+
+// ============================================================================
+// Wishlist Controller Functions
+// ============================================================================
+
+/**
+ * Get user's wishlist
+ * GET /api/users/wishlist
+ */
+export const getWishlist = async (c: Context<{ Variables: AuthContext }>) => {
+  const user = c.get("user");
+
+  const wishlist = await userService.getUserWishlist(user.id);
+
+  return c.json(createSuccessResponse("Wishlist retrieved successfully", { wishlist }), 200);
+};
+
+/**
+ * Add product to wishlist
+ * POST /api/users/wishlist
+ */
+export const addToWishlist = async (c: Context<{ Variables: AuthContext }>) => {
+  const user = c.get("user");
+  const { productId } = await c.req.json<{ productId: string }>();
+
+  if (!productId) {
+    throw new BusinessRuleError("Product ID is required");
+  }
+
+  const result = await userService.addToWishlist(user.id, productId);
+
+  return c.json(createSuccessResponse(result.message), 201);
+};
+
+/**
+ * Remove product from wishlist
+ * DELETE /api/users/wishlist/:productId
+ */
+export const removeFromWishlist = async (c: Context<{ Variables: AuthContext }>) => {
+  const user = c.get("user");
+  const productId = c.req.param("productId");
+
+  const result = await userService.removeFromWishlist(user.id, productId);
+
+  return c.json(createSuccessResponse(result.message), 200);
+};
+
+/**
+ * Check if product is in wishlist
+ * GET /api/users/wishlist/check/:productId
+ */
+export const checkWishlistStatus = async (c: Context<{ Variables: AuthContext }>) => {
+  const user = c.get("user");
+  const productId = c.req.param("productId");
+
+  const isInWishlist = await userService.isInWishlist(user.id, productId);
+
+  return c.json(createSuccessResponse("Wishlist status checked", { isInWishlist }), 200);
 };

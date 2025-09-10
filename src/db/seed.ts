@@ -391,7 +391,6 @@ async function seedUsers() {
       firstName: "System",
       lastName: "Administrator",
       role: "admin",
-      isVerified: true,
     })
     .returning();
 
@@ -404,7 +403,6 @@ async function seedUsers() {
         ...customer,
         password: await hashPassword("Customer123!"),
         role: "customer" as const,
-        isVerified: true,
       }))
     );
 

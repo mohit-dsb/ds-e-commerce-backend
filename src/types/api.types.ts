@@ -27,7 +27,6 @@ export interface AuthResponse {
     firstName: string;
     lastName: string;
     role: string;
-    isVerified: boolean;
   };
   token: string;
 }

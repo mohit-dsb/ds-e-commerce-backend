@@ -1,10 +1,8 @@
-import { env } from "../config/env";
-
 // Rate Limiting
 export const RATE_LIMIT = {
-  WINDOW_MS: env.RATE_LIMIT_WINDOW_MS,
-  MAX_REQUESTS: env.RATE_LIMIT_MAX_REQUESTS,
-};
+  WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+  MAX_REQUESTS: 100, // limit each IP to 100 requests per windowMs
+} as const;
 
 // Pagination
 export const PAGINATION = {

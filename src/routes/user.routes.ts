@@ -56,7 +56,7 @@ userRoutes.get("/cart", compatibleZValidator("query", cartQuerySchema.optional()
 
 /**
  * @route GET /api/users/cart/summary
- * @desc Get cart summary (lightweight)
+ * @desc Get cart summary
  * @access Private (Authenticated users)
  */
 userRoutes.get("/cart/summary", userController.getCartSummary);
@@ -92,5 +92,40 @@ userRoutes.delete("/cart/items/:itemId", userController.removeFromCart);
  * @access Private (Authenticated users)
  */
 userRoutes.delete("/cart", userController.clearCart);
+
+// ============================================================================
+// Wishlist Routes
+// ============================================================================
+
+/**
+ * @route GET /api/users/wishlist
+ * @desc Get user's wishlist
+ * @access Private (Authenticated users)
+ */
+userRoutes.get("/wishlist", userController.getWishlist);
+
+/**
+ * @route GET /api/users/wishlist/check/:productId
+ * @desc Check if product is in wishlist
+ * @access Private (Authenticated users)
+ * @param {string} productId - Product ID to check
+ */
+userRoutes.get("/wishlist/check/:productId", userController.checkWishlistStatus);
+
+/**
+ * @route POST /api/users/wishlist
+ * @desc Add product to wishlist
+ * @access Private (Authenticated users)
+ * @body {string} productId - Product ID to add
+ */
+userRoutes.post("/wishlist", userController.addToWishlist);
+
+/**
+ * @route DELETE /api/users/wishlist/:productId
+ * @desc Remove product from wishlist
+ * @access Private (Authenticated users)
+ * @param {string} productId - Product ID to remove
+ */
+userRoutes.delete("/wishlist/:productId", userController.removeFromWishlist);
 
 export default userRoutes;

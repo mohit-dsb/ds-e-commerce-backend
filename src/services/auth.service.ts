@@ -76,13 +76,11 @@ export interface RefreshTokenMetadata {
  * Create a new refresh token for a user
  * @param userId - User ID to create refresh token for
  * @param metadata - Device and request metadata for security tracking
- * @param parentTokenId - Parent token ID for token family rotation
  * @returns Promise resolving to plain refresh token string (not hashed)
  */
 export const createRefreshToken = async (
   userId: string,
   metadata: RefreshTokenMetadata = {},
-  parentTokenId?: string
 ): Promise<string> => {
   return dbErrorHandlers.create(async () => {
     // Generate a secure random token
@@ -94,7 +92,6 @@ export const createRefreshToken = async (
       userId,
       tokenHash,
       expiresAt,
-      parentTokenId,
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
       deviceFingerprint: metadata.deviceFingerprint,
@@ -138,56 +135,6 @@ export const validateRefreshToken = async (token: string): Promise<string | null
       metadata: { hasToken: !!token },
     });
     return null;
-  });
-};
-
-/**
- * Rotate refresh token - create new token and revoke old one
- * @param oldToken - Current refresh token to replace
- * @param metadata - Device and request metadata for new token
- * @returns Promise resolving to new refresh token or null if old token invalid
- */
-export const rotateRefreshToken = async (oldToken: string, metadata: RefreshTokenMetadata = {}): Promise<string | null> => {
-  return dbErrorHandlers.update(async () => {
-    // First validate the old token
-    const userId = await validateRefreshToken(oldToken);
-    if (!userId) {
-      return null;
-    }
-
-    // Find the old token in database
-    const tokens = await db
-      .select()
-      .from(refreshTokens)
-      .where(and(eq(refreshTokens.isRevoked, false), gt(refreshTokens.expiresAt, new Date())));
-
-    let oldTokenRecord = null;
-    for (const storedToken of tokens) {
-      const isMatch = await verifyPassword(oldToken, storedToken.tokenHash);
-      if (isMatch) {
-        oldTokenRecord = storedToken;
-        break;
-      }
-    }
-
-    if (!oldTokenRecord) {
-      return null;
-    }
-
-    // Create new token with old token as parent (token family)
-    const newToken = await createRefreshToken(userId, metadata, oldTokenRecord.id);
-
-    // Revoke the old token
-    await db
-      .update(refreshTokens)
-      .set({
-        isRevoked: true,
-        revokedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(refreshTokens.id, oldTokenRecord.id));
-
-    return newToken;
   });
 };
 

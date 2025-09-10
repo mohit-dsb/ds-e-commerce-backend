@@ -95,7 +95,6 @@ export interface ReviewUser {
   id: string;
   firstName: string;
   lastName: string;
-  isVerified?: boolean;
 }
 
 export interface ReviewProduct {

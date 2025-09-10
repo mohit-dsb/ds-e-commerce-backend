@@ -255,7 +255,7 @@ export const userPaths = {
     get: {
       tags: ["Users"],
       summary: "Get cart summary",
-      description: "Get lightweight cart summary for the authenticated user",
+      description: "Get cart summary for the authenticated user",
       operationId: "getCartSummary",
       security: [
         {
@@ -473,6 +473,208 @@ export const userPaths = {
         },
         "404": {
           $ref: "#/components/responses/NotFoundError",
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
+
+  "/api/users/wishlist": {
+    get: {
+      tags: ["Users"],
+      summary: "Get user wishlist",
+      description: "Retrieve the authenticated user's wishlist with product details",
+      operationId: "getUserWishlist",
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
+      responses: {
+        "200": {
+          description: "Wishlist retrieved successfully",
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/WishlistResponse",
+              },
+            },
+          },
+        },
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+    post: {
+      tags: ["Users"],
+      summary: "Add product to wishlist",
+      description: "Add a product to the authenticated user's wishlist",
+      operationId: "addToWishlist",
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/AddToWishlistRequest",
+            },
+          },
+        },
+      },
+      responses: {
+        "201": {
+          description: "Product added to wishlist successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: {
+                    type: "boolean",
+                    example: true,
+                  },
+                  message: {
+                    type: "string",
+                    example: "Product added to wishlist successfully",
+                  },
+                },
+              },
+            },
+          },
+        },
+        "400": {
+          $ref: "#/components/responses/ValidationError",
+        },
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
+        },
+        "409": {
+          description: "Product already in wishlist",
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/responses/ConflictError",
+              },
+            },
+          },
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
+
+  "/api/users/wishlist/check/{productId}": {
+    get: {
+      tags: ["Users"],
+      summary: "Check if product is in wishlist",
+      description: "Check if a specific product is in the authenticated user's wishlist",
+      operationId: "checkWishlistStatus",
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
+      parameters: [
+        {
+          name: "productId",
+          in: "path",
+          description: "Product ID to check",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+      ],
+      responses: {
+        "200": {
+          description: "Wishlist status checked successfully",
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/WishlistStatusResponse",
+              },
+            },
+          },
+        },
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
+
+  "/api/users/wishlist/{productId}": {
+    delete: {
+      tags: ["Users"],
+      summary: "Remove product from wishlist",
+      description: "Remove a specific product from the authenticated user's wishlist",
+      operationId: "removeFromWishlist",
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
+      parameters: [
+        {
+          name: "productId",
+          in: "path",
+          description: "Product ID to remove from wishlist",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+      ],
+      responses: {
+        "200": {
+          description: "Product removed from wishlist successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: {
+                    type: "boolean",
+                    example: true,
+                  },
+                  message: {
+                    type: "string",
+                    example: "Product removed from wishlist successfully",
+                  },
+                },
+              },
+            },
+          },
+        },
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
+        },
+        "404": {
+          description: "Product not found in wishlist",
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/responses/NotFoundError",
+              },
+            },
+          },
         },
         "500": {
           $ref: "#/components/responses/InternalServerError",

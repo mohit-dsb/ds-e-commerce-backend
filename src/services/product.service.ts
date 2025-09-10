@@ -715,7 +715,6 @@ export const getProductReviewById = async (reviewId: string, includeUser = false
           id: users.id,
           firstName: users.firstName,
           lastName: users.lastName,
-          isVerified: users.isVerified,
         },
       }),
     })
@@ -796,7 +795,6 @@ export const getProductReviews = async (
           id: users.id,
           firstName: users.firstName,
           lastName: users.lastName,
-          isVerified: users.isVerified,
         },
       }),
     })

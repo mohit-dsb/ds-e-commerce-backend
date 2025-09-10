@@ -28,7 +28,6 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),
-  isVerified: boolean("is_verified").default(false).notNull(),
   role: roleEnum("role").default("customer").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -58,7 +57,6 @@ export const refreshTokens = pgTable("refresh_tokens", {
   isRevoked: boolean("is_revoked").default(false).notNull(),
   revokedAt: timestamp("revoked_at"),
   revokedBy: uuid("revoked_by").references(() => users.id, { onDelete: "set null" }), // Admin who revoked it
-  parentTokenId: uuid("parent_token_id"), // Self-reference for token families - will add reference later
   deviceFingerprint: varchar("device_fingerprint", { length: 255 }), // For device tracking
   ipAddress: varchar("ip_address", { length: 45 }), // Supports both IPv4 and IPv6
   userAgent: text("user_agent"),
@@ -286,6 +284,27 @@ export const productReviews = pgTable(
   ]
 );
 
+// Wishlist Table
+export const wishlists = pgTable(
+  "wishlists",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    productId: uuid("product_id")
+      .references(() => products.id, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    {
+      uniqueUserProductWishlist: check("unique_user_product_wishlist", sql`(${table.userId}, ${table.productId})`),
+    },
+  ]
+);
+
 // Relations
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
   parent: one(categories, {
@@ -311,9 +330,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   orderStatusChanges: many(orderStatusHistory),
   revokedRefreshTokens: many(refreshTokens, { relationName: "revokedBy" }),
   productReviews: many(productReviews),
+  wishlists: many(wishlists),
 }));
 
-export const refreshTokensRelations = relations(refreshTokens, ({ one, many }) => ({
+export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
   user: one(users, {
     fields: [refreshTokens.userId],
     references: [users.id],
@@ -323,12 +343,6 @@ export const refreshTokensRelations = relations(refreshTokens, ({ one, many }) =
     references: [users.id],
     relationName: "revokedBy",
   }),
-  parentToken: one(refreshTokens, {
-    fields: [refreshTokens.parentTokenId],
-    references: [refreshTokens.id],
-    relationName: "tokenFamily",
-  }),
-  childTokens: many(refreshTokens, { relationName: "tokenFamily" }),
 }));
 
 export const passwordResetsRelations = relations(passwordResets, ({ one }) => ({
@@ -350,6 +364,7 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   orderItems: many(orderItems),
   cartItems: many(shoppingCartItems),
   reviews: many(productReviews),
+  wishlists: many(wishlists),
 }));
 
 export const shippingAddressesRelations = relations(shippingAddresses, ({ one, many }) => ({
@@ -426,5 +441,16 @@ export const productReviewsRelations = relations(productReviews, ({ one }) => ({
   order: one(orders, {
     fields: [productReviews.orderId],
     references: [orders.id],
+  }),
+}));
+
+export const wishlistsRelations = relations(wishlists, ({ one }) => ({
+  user: one(users, {
+    fields: [wishlists.userId],
+    references: [users.id],
+  }),
+  product: one(products, {
+    fields: [wishlists.productId],
+    references: [products.id],
   }),
 }));

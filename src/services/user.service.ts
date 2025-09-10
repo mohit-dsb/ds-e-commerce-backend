@@ -1,6 +1,6 @@
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "@/db";
-import { users, shoppingCarts, shoppingCartItems, products } from "@/db/schema";
+import { users, shoppingCarts, shoppingCartItems, products, wishlists } from "@/db/schema";
 import { hashPassword, verifyPassword } from "@/utils/password";
 import { createNotFoundError, createValidationError, createConflictError, createInternalServerError } from "@/utils/errors";
 import type {
@@ -53,7 +53,6 @@ export const createUser = async (data: {
     firstName: user.firstName,
     lastName: user.lastName,
     role: user.role,
-    isVerified: user.isVerified,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     phoneNumber: null, // Phone numbers are stored in shipping addresses
@@ -73,7 +72,6 @@ export const getUserByEmail = async (email: string): Promise<UserProfile | null>
       firstName: users.firstName,
       lastName: users.lastName,
       role: users.role,
-      isVerified: users.isVerified,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
     })
@@ -103,7 +101,6 @@ export const getUserById = async (id: string): Promise<UserProfile | null> => {
       firstName: users.firstName,
       lastName: users.lastName,
       role: users.role,
-      isVerified: users.isVerified,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
     })
@@ -183,7 +180,6 @@ export const updateUserProfile = async (userId: string, updateData: UpdateUserPr
       firstName: users.firstName,
       lastName: users.lastName,
       role: users.role,
-      isVerified: users.isVerified,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
     });
@@ -213,7 +209,6 @@ export const changePassword = async (userId: string, passwordData: ChangePasswor
       firstName: users.firstName,
       lastName: users.lastName,
       role: users.role,
-      isVerified: users.isVerified,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
       password: users.password,
@@ -255,7 +250,6 @@ export const changePassword = async (userId: string, passwordData: ChangePasswor
       firstName: users.firstName,
       lastName: users.lastName,
       role: users.role,
-      isVerified: users.isVerified,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
     });
@@ -682,4 +676,153 @@ export const clearCart = async (userId: string): Promise<CartOperationResult> =>
 export const getCartSummary = async (userId: string): Promise<CartSummary> => {
   const cart = await getUserCart(userId, true);
   return cart.summary;
+};
+
+// ============================================================================
+// Wishlist Management Functions
+// ============================================================================
+
+/**
+ * Add product to user's wishlist
+ */
+export const addToWishlist = async (userId: string, productId: string): Promise<{ message: string }> => {
+  // Verify product exists and is active
+  const product = await db
+    .select({
+      id: products.id,
+      name: products.name,
+      status: products.status,
+    })
+    .from(products)
+    .where(eq(products.id, productId))
+    .limit(1);
+
+  if (!product[0]) {
+    throw createNotFoundError("Product");
+  }
+
+  if (product[0].status !== "active") {
+    throw createValidationError([
+      {
+        field: "productId",
+        message: "Product is not available",
+      },
+    ]);
+  }
+
+  // Check if product is already in wishlist
+  const existingWishlistItem = await db
+    .select({ id: wishlists.id })
+    .from(wishlists)
+    .where(and(eq(wishlists.userId, userId), eq(wishlists.productId, productId)))
+    .limit(1);
+
+  if (existingWishlistItem[0]) {
+    throw createConflictError("Product is already in your wishlist");
+  }
+
+  // Add to wishlist
+  await db.insert(wishlists).values({
+    userId,
+    productId,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  return {
+    message: "Product added to wishlist successfully",
+  };
+};
+
+/**
+ * Remove product from user's wishlist
+ */
+export const removeFromWishlist = async (userId: string, productId: string): Promise<{ message: string }> => {
+  // Check if item exists in wishlist
+  const wishlistItem = await db
+    .select({ id: wishlists.id })
+    .from(wishlists)
+    .where(and(eq(wishlists.userId, userId), eq(wishlists.productId, productId)))
+    .limit(1);
+
+  if (!wishlistItem[0]) {
+    throw createNotFoundError("Wishlist item");
+  }
+
+  // Remove from wishlist
+  await db.delete(wishlists).where(eq(wishlists.id, wishlistItem[0].id));
+
+  return {
+    message: "Product removed from wishlist successfully",
+  };
+};
+
+/**
+ * Get user's wishlist with product details
+ */
+export const getUserWishlist = async (userId: string): Promise<{
+  id: string;
+  userId: string;
+  productId: string;
+  addedAt: Date;
+  product: {
+    id: string;
+    name: string;
+    slug: string;
+    price: string;
+    images: string[];
+    status: string;
+    rating: string;
+  };
+}[]> => {
+  const wishlistItems = await db
+    .select({
+      id: wishlists.id,
+      userId: wishlists.userId,
+      productId: wishlists.productId,
+      addedAt: wishlists.createdAt,
+      // Product fields
+      productName: products.name,
+      productSlug: products.slug,
+      productPrice: products.price,
+      productImages: products.images,
+      productStatus: products.status,
+      productRating: products.rating,
+    })
+    .from(wishlists)
+    .leftJoin(products, eq(wishlists.productId, products.id))
+    .where(eq(wishlists.userId, userId))
+    .orderBy(desc(wishlists.createdAt));
+
+  // Filter out items with deleted products and map to proper format
+  return wishlistItems
+    .filter((item) => item.productName) // Only include items with valid products
+    .map((item) => ({
+      id: item.id,
+      userId: item.userId,
+      productId: item.productId,
+      addedAt: item.addedAt,
+      product: {
+        id: item.productId,
+        name: item.productName!,
+        slug: item.productSlug ?? "",
+        price: item.productPrice ?? "0",
+        images: item.productImages ?? [],
+        status: item.productStatus ?? "draft",
+        rating: item.productRating ?? "0.00",
+      },
+    }));
+};
+
+/**
+ * Check if product is in user's wishlist
+ */
+export const isInWishlist = async (userId: string, productId: string): Promise<boolean> => {
+  const wishlistItem = await db
+    .select({ id: wishlists.id })
+    .from(wishlists)
+    .where(and(eq(wishlists.userId, userId), eq(wishlists.productId, productId)))
+    .limit(1);
+
+  return !!wishlistItem[0];
 };

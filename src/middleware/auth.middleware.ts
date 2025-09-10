@@ -11,7 +11,6 @@ export interface AuthContext {
     firstName: string;
     lastName: string;
     role: string;
-    isVerified: boolean;
   };
 }
 
@@ -49,7 +48,6 @@ export const authMiddleware = async (c: Context, next: Next) => {
     firstName: user.firstName,
     lastName: user.lastName,
     role: user.role,
-    isVerified: user.isVerified,
   });
 
   await next();

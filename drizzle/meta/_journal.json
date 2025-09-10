@@ -43,6 +43,13 @@
       "when": 1757421668132,
       "tag": "0005_tough_squirrel_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1757515788936,
+      "tag": "0006_abandoned_sue_storm",
+      "breakpoints": true
     }
   ]
 }
