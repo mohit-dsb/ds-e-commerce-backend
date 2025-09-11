@@ -469,7 +469,7 @@ export const getUserCart = async (userId: string, includeProduct = true): Promis
 /**
  * Validate product availability for cart operations
  */
-const validateProductAvailability = async (productId: string, quantity: number, excludeCurrentQuantity = 0) => {
+const validateProductAvailability = async (productId: string, quantity: number) => {
   const product = await db
     .select({
       id: products.id,
@@ -495,12 +495,13 @@ const validateProductAvailability = async (productId: string, quantity: number, 
     ]);
   }
 
-  const availableQuantity = (product[0].inventoryQuantity ?? 0) + excludeCurrentQuantity;
-  if (availableQuantity < quantity && !product[0].allowBackorder) {
+  // Check against absolute inventory level (don't allow exceeding total available stock)
+  const availableQuantity = product[0].inventoryQuantity ?? 0;
+  if (quantity > availableQuantity && !product[0].allowBackorder) {
     throw createValidationError([
       {
         field: "quantity",
-        message: `Only ${availableQuantity} items available`,
+        message: `Only ${availableQuantity} items available in stock`,
       },
     ]);
   }
@@ -597,7 +598,7 @@ export const updateCartItem = async (
   }
 
   // Validate product availability (excluding current quantity)
-  await validateProductAvailability(cartItem[0].productId, updateData.quantity, cartItem[0].quantity);
+  await validateProductAvailability(cartItem[0].productId, updateData.quantity);
 
   // Update cart item
   await db
