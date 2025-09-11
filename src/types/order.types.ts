@@ -74,7 +74,13 @@ export interface UpdateOrderStatusRequest {
   comment?: string;
   changedBy?: string;
   isCustomerVisible?: boolean;
-  trackingNumber?: string;
+}
+
+export interface ConfirmPaymentRequest {
+  orderId: string;
+  comment?: string;
+  changedBy?: string;
+  isCustomerVisible?: boolean;
 }
 
 // Order filters for querying

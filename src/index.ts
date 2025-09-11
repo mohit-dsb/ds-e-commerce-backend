@@ -1,4 +1,4 @@
-import { type Context, Hono } from "hono";
+import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { env } from "@/config/env";
 import { logger } from "@/utils/logger";
@@ -11,9 +11,6 @@ import { createSwaggerRoute } from "@/docs/swagger";
 import categoryRoutes from "@/routes/category.routes";
 import shippingAddressRoutes from "@/routes/shipping-address.routes";
 import { errorHandlerMiddleware } from "@/middleware/error-handler.middleware";
-import { rateLimiter } from "hono-rate-limiter";
-import { RATE_LIMIT } from "@/utils/constants";
-import { extractDeviceMetadata } from "@/utils/response";
 
 const app = new Hono();
 
@@ -33,32 +30,6 @@ app.use(
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
-  })
-);
-
-// Apply the rate limiting middleware to all requests.
-app.use(
-  rateLimiter({
-    windowMs: RATE_LIMIT.WINDOW_MS,
-    limit: RATE_LIMIT.MAX_REQUESTS,
-    keyGenerator: (c: Context) => {
-      const { ipAddress } = extractDeviceMetadata(c);
-      const key = `rate_limit:${ipAddress ?? "unknown"}`;
-      return key;
-    },
-    handler: (c) => {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: "RATE_LIMIT_EXCEEDED",
-            message: `Too many requests - please try again later.`,
-            timestamp: new Date().toISOString(),
-          },
-        },
-        429
-      );
-    },
   })
 );
 

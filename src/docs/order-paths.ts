@@ -398,6 +398,78 @@ export const orderPaths = {
       },
     },
   },
+  "/orders/{id}/confirm-payment": {
+    patch: {
+      tags: ["Orders"],
+      summary: "Confirm payment for an order",
+      description: "Confirm payment for an order (admin only)",
+      operationId: "confirmPayment",
+      security: [
+        {
+          bearerAuth: [],
+        },
+      ],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          description: "Order ID",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/ConfirmPaymentRequest",
+            },
+          },
+        },
+      },
+      responses: {
+        "200": {
+          description: "Payment confirmed successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: {
+                    type: "boolean",
+                    example: true,
+                  },
+                  message: {
+                    type: "string",
+                    example: "Payment confirmed successfully",
+                  },
+                  data: {
+                    $ref: "#/components/schemas/Order",
+                  },
+                },
+              },
+            },
+          },
+        },
+        "400": {
+          $ref: "#/components/responses/ValidationError",
+        },
+        "401": {
+          $ref: "#/components/responses/UnauthorizedError",
+        },
+        "404": {
+          $ref: "#/components/responses/NotFoundError",
+        },
+        "500": {
+          $ref: "#/components/responses/InternalServerError",
+        },
+      },
+    },
+  },
 } as const;
 
 export default orderPaths;

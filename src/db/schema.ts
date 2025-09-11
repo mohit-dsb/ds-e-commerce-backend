@@ -157,8 +157,7 @@ export const orders = pgTable("orders", {
     .references(() => shippingAddresses.id, { onDelete: "restrict" })
     .notNull(),
 
-  // Tracking and notes
-  trackingNumber: varchar("tracking_number", { length: 100 }),
+  // notes
   notes: text("notes"),
   customerNotes: text("customer_notes"),
 
@@ -203,8 +202,6 @@ export const orderItems = pgTable("order_items", {
   }>(),
 
   // Fulfillment tracking
-  isDigital: boolean("is_digital").default(false).notNull(),
-  requiresShipping: boolean("requires_shipping").default(true).notNull(),
   weight: decimal("weight", { precision: 8, scale: 3 }),
   weightUnit: varchar("weight_unit", { length: 10 }).default("kg"),
 

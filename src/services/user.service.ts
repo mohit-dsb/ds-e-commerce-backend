@@ -760,21 +760,25 @@ export const removeFromWishlist = async (userId: string, productId: string): Pro
 /**
  * Get user's wishlist with product details
  */
-export const getUserWishlist = async (userId: string): Promise<{
-  id: string;
-  userId: string;
-  productId: string;
-  addedAt: Date;
-  product: {
+export const getUserWishlist = async (
+  userId: string
+): Promise<
+  {
     id: string;
-    name: string;
-    slug: string;
-    price: string;
-    images: string[];
-    status: string;
-    rating: string;
-  };
-}[]> => {
+    userId: string;
+    productId: string;
+    addedAt: Date;
+    product: {
+      id: string;
+      name: string;
+      slug: string;
+      price: string;
+      images: string[];
+      status: string;
+      rating: string;
+    };
+  }[]
+> => {
   const wishlistItems = await db
     .select({
       id: wishlists.id,

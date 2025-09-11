@@ -29,10 +29,6 @@ This API uses JWT (JSON Web Tokens) for authentication. Include the token in the
 Authorization: Bearer <your-jwt-token>
 \`\`\`
 
-## Rate Limiting
-
-API endpoints are rate-limited to ensure fair usage and prevent abuse.
-
 ## Error Handling
 
 All endpoints return consistent error responses with appropriate HTTP status codes and error details.

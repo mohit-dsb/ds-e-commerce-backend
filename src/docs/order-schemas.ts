@@ -145,12 +145,6 @@ export const orderSchemas = {
         description: "Customer notes for the order",
         example: "Please deliver after 5 PM",
       },
-      trackingNumber: {
-        type: "string",
-        nullable: true,
-        description: "Shipping tracking number",
-        example: "TRK123456789",
-      },
       metadata: {
         type: "object",
         nullable: true,
@@ -281,12 +275,6 @@ export const orderSchemas = {
         description: "Optional comment about the status change",
         example: "Order shipped via FedEx",
       },
-      trackingNumber: {
-        type: "string",
-        maxLength: 100,
-        description: "Tracking number for shipped orders",
-        example: "TRK123456789",
-      },
       isCustomerVisible: {
         type: "boolean",
         default: true,
@@ -308,6 +296,23 @@ export const orderSchemas = {
       },
     },
     required: ["reason"],
+  },
+
+  ConfirmPaymentRequest: {
+    type: "object",
+    properties: {
+      comment: {
+        type: "string",
+        maxLength: 1000,
+        description: "Optional comment about the payment confirmation",
+        example: "Payment confirmed via bank transfer",
+      },
+      isCustomerVisible: {
+        type: "boolean",
+        default: true,
+        description: "Whether this payment confirmation is visible to the customer",
+      },
+    },
   },
 
   // Cart Schemas

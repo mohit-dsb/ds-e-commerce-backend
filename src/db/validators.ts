@@ -136,7 +136,6 @@ export const createOrderSchema = z.object({
 export const updateOrderStatusSchema = z.object({
   status: z.enum(["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "refunded", "returned"]),
   comment: z.string().max(1000).trim().optional(),
-  trackingNumber: z.string().max(100).trim().optional(),
   isCustomerVisible: z.boolean().optional(),
 });
 
@@ -162,6 +161,11 @@ export const orderFiltersSchema = z.object({
 
 export const cancelOrderSchema = z.object({
   reason: z.string().trim().min(1, "Cancellation reason is required").max(500, "Reason must be less than 500 characters"),
+});
+
+export const confirmPaymentSchema = z.object({
+  comment: z.string().max(1000).trim().optional(),
+  isCustomerVisible: z.boolean().optional(),
 });
 
 // Type exports

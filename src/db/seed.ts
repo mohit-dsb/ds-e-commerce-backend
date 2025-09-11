@@ -656,8 +656,6 @@ async function seedOrders(productList?: Product[], addressList?: ShippingAddress
           quantity,
           unitPrice: unitPrice.toFixed(2),
           totalPrice: totalPrice.toFixed(2),
-          isDigital: false,
-          requiresShipping: true,
         };
       });
 

@@ -11,6 +11,7 @@ import type {
   CreateOrderRequest,
   CreateOrderItem,
   UpdateOrderStatusRequest,
+  ConfirmPaymentRequest,
   OrderFilters,
   OrderCalculation,
   InventoryCheckResult,
@@ -409,8 +410,6 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<OrderW
           productVariant: item.productVariant,
           weight: product.weight,
           weightUnit: product.weightUnit ?? "kg",
-          isDigital: false, // Default - can be enhanced with product type
-          requiresShipping: true, // Default - can be enhanced with product type
         };
       });
 
@@ -720,7 +719,7 @@ export const getOrders = async (filters: OrderFilters = {}) => {
  */
 export const updateOrderStatus = async (updateData: UpdateOrderStatusRequest): Promise<OrderWithRelations> => {
   return dbErrorHandlers.update(async () => {
-    const { orderId, newStatus, comment, changedBy, isCustomerVisible = true, trackingNumber } = updateData;
+    const { orderId, newStatus, comment, changedBy, isCustomerVisible = true } = updateData;
 
     // Get current order
     const currentOrder = await getOrderById(orderId);
@@ -759,7 +758,6 @@ export const updateOrderStatus = async (updateData: UpdateOrderStatusRequest): P
         shippedAt?: Date;
         deliveredAt?: Date;
         cancelledAt?: Date;
-        trackingNumber?: string;
       } = {
         status: newStatus,
         updatedAt: new Date(),
@@ -772,9 +770,6 @@ export const updateOrderStatus = async (updateData: UpdateOrderStatusRequest): P
           break;
         case "shipped":
           updateOrderData.shippedAt = new Date();
-          if (trackingNumber) {
-            updateOrderData.trackingNumber = trackingNumber;
-          }
           break;
         case "delivered":
           updateOrderData.deliveredAt = new Date();
@@ -814,6 +809,58 @@ export const updateOrderStatus = async (updateData: UpdateOrderStatusRequest): P
           }
         }
       }
+
+      // Return updated order
+      return (await getOrderById(orderId)) as OrderWithRelations;
+    });
+  });
+};
+
+/**
+ * Confirm payment for an order (admin only)
+ * @param confirmData - Payment confirmation data
+ * @returns Promise resolving to updated order
+ */
+export const confirmPayment = async (confirmData: ConfirmPaymentRequest): Promise<OrderWithRelations> => {
+  return dbErrorHandlers.update(async () => {
+    const { orderId, comment, changedBy, isCustomerVisible = true } = confirmData;
+
+    // Get current order
+    const currentOrder = await getOrderById(orderId);
+    if (!currentOrder) {
+      throw createNotFoundError("Order");
+    }
+
+    // Check if payment is already confirmed
+    if (currentOrder.paymentConfirmed) {
+      throw createValidationError([
+        {
+          field: "paymentConfirmed",
+          message: "Payment is already confirmed for this order",
+        },
+      ]);
+    }
+
+    return await db.transaction(async (tx) => {
+      // Update order payment confirmation
+      await tx
+        .update(orders)
+        .set({
+          paymentConfirmed: true,
+          updatedAt: new Date(),
+          status: currentOrder.status === "pending" ? "confirmed" : currentOrder.status,
+        })
+        .where(eq(orders.id, orderId));
+
+      // Add status history entry for payment confirmation
+      await tx.insert(orderStatusHistory).values({
+        orderId,
+        previousStatus: currentOrder.status,
+        newStatus: currentOrder.status === "pending" ? "confirmed" : currentOrder.status,
+        comment: comment ?? "Payment confirmed by admin",
+        changedBy,
+        isCustomerVisible,
+      });
 
       // Return updated order
       return (await getOrderById(orderId)) as OrderWithRelations;

@@ -4,9 +4,15 @@ import * as orderService from "@/services/order.service";
 import { createSuccessResponse } from "@/utils/response";
 import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
-import type { createOrderSchema, updateOrderStatusSchema, cancelOrderSchema } from "@/db/validators";
+import type { createOrderSchema, updateOrderStatusSchema, cancelOrderSchema, confirmPaymentSchema } from "@/db/validators";
 import { createNotFoundError, createValidationError, createAuthError } from "@/utils/errors";
-import type { CreateOrderRequest, UpdateOrderStatusRequest, OrderFilters, CreateOrderItem } from "@/types/order.types";
+import type {
+  CreateOrderRequest,
+  UpdateOrderStatusRequest,
+  ConfirmPaymentRequest,
+  OrderFilters,
+  CreateOrderItem,
+} from "@/types/order.types";
 
 // ============================================================================
 // Type Definitions
@@ -15,6 +21,7 @@ import type { CreateOrderRequest, UpdateOrderStatusRequest, OrderFilters, Create
 type CreateOrderData = typeof createOrderSchema._type;
 type UpdateOrderStatusData = typeof updateOrderStatusSchema._type;
 type CancelOrderData = typeof cancelOrderSchema._type;
+type ConfirmPaymentData = typeof confirmPaymentSchema._type;
 
 // ============================================================================
 // Order Management Controller Functions
@@ -163,7 +170,6 @@ export const updateOrderStatus = async (c: Context<{ Variables: AuthContext }>) 
     comment: validatedData.comment,
     changedBy: user.id,
     isCustomerVisible: validatedData.isCustomerVisible ?? true,
-    trackingNumber: validatedData.trackingNumber,
   };
 
   try {
@@ -220,6 +226,48 @@ export const cancelOrder = async (c: Context<{ Variables: AuthContext }>) => {
     return c.json(createSuccessResponse("Order cancelled successfully", { order: cancelledOrder }));
   } catch (error) {
     logger.error("Order cancellation failed", error as Error, {
+      metadata: { orderId, userId: user.id },
+    });
+    throw error;
+  }
+};
+
+// ============================================================================
+// Payment Confirmation
+// ============================================================================
+
+/**
+ * Confirm payment for an order
+ * @desc Confirm payment for an order (admin only)
+ * @access Private (Admin only)
+ */
+export const confirmPayment = async (c: Context<{ Variables: AuthContext }>) => {
+  const orderId = c.req.param("id");
+  const user = c.get("user");
+  const validatedData = getValidatedData<ConfirmPaymentData>(c, "json");
+
+  // Only admins can confirm payments
+  if (user.role !== "admin") {
+    throw createAuthError("You don't have permission to confirm payments");
+  }
+
+  if (!orderId) {
+    throw createValidationError([{ field: "id", message: "Order ID is required" }]);
+  }
+
+  const confirmData: ConfirmPaymentRequest = {
+    orderId,
+    comment: validatedData.comment,
+    changedBy: user.id,
+    isCustomerVisible: validatedData.isCustomerVisible ?? true,
+  };
+
+  try {
+    const order = await orderService.confirmPayment(confirmData);
+
+    return c.json(createSuccessResponse("Payment confirmed successfully", { order }));
+  } catch (error) {
+    logger.error("Payment confirmation failed", error as Error, {
       metadata: { orderId, userId: user.id },
     });
     throw error;

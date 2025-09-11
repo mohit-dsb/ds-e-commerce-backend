@@ -78,10 +78,7 @@ export interface RefreshTokenMetadata {
  * @param metadata - Device and request metadata for security tracking
  * @returns Promise resolving to plain refresh token string (not hashed)
  */
-export const createRefreshToken = async (
-  userId: string,
-  metadata: RefreshTokenMetadata = {},
-): Promise<string> => {
+export const createRefreshToken = async (userId: string, metadata: RefreshTokenMetadata = {}): Promise<string> => {
   return dbErrorHandlers.create(async () => {
     // Generate a secure random token
     const token = nanoid(64); // Longer tokens for refresh tokens
