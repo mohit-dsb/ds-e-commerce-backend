@@ -39,7 +39,6 @@ export interface CreateProductRequest {
   weightUnit?: "kg" | "g" | "lb" | "oz";
   status?: "draft" | "active" | "inactive" | "discontinued";
   inventoryQuantity?: number;
-  allowBackorder?: boolean;
   images?: string[];
   tags?: string[];
   categoryId: string;
@@ -54,7 +53,6 @@ export interface UpdateProductRequest {
   weightUnit?: "kg" | "g" | "lb" | "oz";
   status?: "draft" | "active" | "inactive" | "discontinued";
   inventoryQuantity?: number;
-  allowBackorder?: boolean;
   images?: string[];
   tags?: string[];
   categoryId?: string;

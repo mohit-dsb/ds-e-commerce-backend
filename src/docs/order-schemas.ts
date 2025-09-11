@@ -610,11 +610,6 @@ export const orderSchemas = {
             description: "Available inventory",
             example: 50,
           },
-          allowBackorder: {
-            type: "boolean",
-            description: "Whether backorders are allowed",
-            example: false,
-          },
           weight: {
             type: "number",
             nullable: true,

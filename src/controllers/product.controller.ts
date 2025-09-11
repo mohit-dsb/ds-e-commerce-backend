@@ -35,7 +35,6 @@ export const createProduct = async (c: Context<{ Variables: AuthContext }>) => {
     weightUnit: validatedData.weightUnit ?? "kg",
     status: validatedData.status ?? "draft",
     inventoryQuantity: validatedData.inventoryQuantity ?? 0,
-    allowBackorder: validatedData.allowBackorder ?? false,
     images: validatedData.images ?? [],
     tags: validatedData.tags ?? [],
     categoryId: validatedData.categoryId,

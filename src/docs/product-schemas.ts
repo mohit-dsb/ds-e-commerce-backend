@@ -59,11 +59,6 @@ export const productSchemas = {
         description: "Available inventory quantity",
         example: 50,
       },
-      allowBackorder: {
-        type: "boolean",
-        description: "Whether backorders are allowed",
-        example: false,
-      },
       images: {
         type: "array",
         items: {
@@ -157,11 +152,6 @@ export const productSchemas = {
         description: "Initial inventory quantity",
         example: 50,
       },
-      allowBackorder: {
-        type: "boolean",
-        default: false,
-        description: "Whether backorders are allowed",
-      },
       images: {
         type: "array",
         items: {
@@ -227,9 +217,6 @@ export const productSchemas = {
         type: "integer",
         minimum: 0,
         example: 50,
-      },
-      allowBackorder: {
-        type: "boolean",
       },
       images: {
         type: "array",

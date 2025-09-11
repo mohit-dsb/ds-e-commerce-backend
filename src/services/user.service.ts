@@ -396,7 +396,6 @@ export const getUserCart = async (userId: string, includeProduct = true): Promis
         productImages: products.images,
         productStatus: products.status,
         productInventoryQuantity: products.inventoryQuantity,
-        productAllowBackorder: products.allowBackorder,
         productWeight: products.weight,
         productWeightUnit: products.weightUnit,
       })
@@ -422,7 +421,6 @@ export const getUserCart = async (userId: string, includeProduct = true): Promis
             images: item.productImages ?? [],
             status: item.productStatus ?? "draft",
             inventoryQuantity: item.productInventoryQuantity ?? 0,
-            allowBackorder: item.productAllowBackorder ?? false,
             weight: item.productWeight,
             weightUnit: item.productWeightUnit ?? "kg",
           }
@@ -476,7 +474,6 @@ const validateProductAvailability = async (productId: string, quantity: number) 
       name: products.name,
       status: products.status,
       inventoryQuantity: products.inventoryQuantity,
-      allowBackorder: products.allowBackorder,
     })
     .from(products)
     .where(eq(products.id, productId))
@@ -497,7 +494,7 @@ const validateProductAvailability = async (productId: string, quantity: number) 
 
   // Check against absolute inventory level (don't allow exceeding total available stock)
   const availableQuantity = product[0].inventoryQuantity ?? 0;
-  if (quantity > availableQuantity && !product[0].allowBackorder) {
+  if (quantity > availableQuantity) {
     throw createValidationError([
       {
         field: "quantity",

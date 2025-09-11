@@ -524,7 +524,6 @@ async function seedProducts(categoryMap?: Map<string, string>) {
         createdBy: adminId,
         status: "active" as const,
         price: varyPrice(template.price), // Add price variation
-        allowBackorder: false,
         images: [...template.images], // Convert readonly array to mutable
         tags: [...template.tags], // Convert readonly array to mutable
       };

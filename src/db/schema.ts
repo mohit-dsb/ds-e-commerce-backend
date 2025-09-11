@@ -88,7 +88,6 @@ export const products = pgTable(
     weightUnit: varchar("weight_unit", { length: 10 }).default("kg"),
     status: productStatusEnum("status").default("draft").notNull(),
     inventoryQuantity: integer("inventory_quantity").default(0),
-    allowBackorder: boolean("allow_backorder").default(false).notNull(),
     images: jsonb("images").$type<string[]>().default([]),
     tags: jsonb("tags").$type<string[]>().default([]),
     rating: decimal("rating", { precision: 3, scale: 2 }).default("0.00").notNull(),
@@ -104,10 +103,7 @@ export const products = pgTable(
   (table) => [
     {
       // Constraint to prevent negative inventory (unless backorders are allowed)
-      inventoryNonNegative: check(
-        "inventory_non_negative",
-        sql`${table.inventoryQuantity} >= 0 OR ${table.allowBackorder} = true`
-      ),
+      inventoryNonNegative: check("inventory_non_negative", sql`${table.inventoryQuantity} >= 0  = true`),
       // Constraint to ensure rating is between 0 and 5
       ratingRange: check("rating_range", sql`${table.rating} >= 0 AND ${table.rating} <= 5`),
     },

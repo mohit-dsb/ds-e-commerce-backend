@@ -40,7 +40,6 @@ const updateInventorySafely = async (
       id: products.id,
       name: products.name,
       inventoryQuantity: products.inventoryQuantity,
-      allowBackorder: products.allowBackorder,
       status: products.status,
     })
     .from(products)
@@ -59,11 +58,10 @@ const updateInventorySafely = async (
   const newInventory = currentInventory + quantityChange;
 
   // Validate the operation based on business rules
-  if (operation === "decrease" && newInventory < 0 && !currentProduct.allowBackorder) {
+  if (operation === "decrease" && newInventory < 0) {
     throw new Error(
       `Insufficient inventory for product "${currentProduct.name}". ` +
-        `Available: ${currentInventory}, Required: ${Math.abs(quantityChange)}, ` +
-        `Backorder allowed: ${currentProduct.allowBackorder}`
+        `Available: ${currentInventory}, Required: ${Math.abs(quantityChange)}, `
     );
   }
 
@@ -206,7 +204,6 @@ export const checkInventoryAvailability = async (orderItems: CreateOrderItem[]):
         id: products.id,
         name: products.name,
         inventoryQuantity: products.inventoryQuantity,
-        allowBackorder: products.allowBackorder,
         status: products.status,
       })
       .from(products)
@@ -224,7 +221,6 @@ export const checkInventoryAvailability = async (orderItems: CreateOrderItem[]):
           productName: "Unknown Product",
           requestedQuantity: item.quantity,
           availableQuantity: 0,
-          allowBackorder: false,
         });
         continue;
       }
@@ -236,20 +232,18 @@ export const checkInventoryAvailability = async (orderItems: CreateOrderItem[]):
           productName: product.name,
           requestedQuantity: item.quantity,
           availableQuantity: 0,
-          allowBackorder: false,
         });
         continue;
       }
 
       // Check inventory
       const available = product.inventoryQuantity ?? 0;
-      if (item.quantity > available && !product.allowBackorder) {
+      if (item.quantity > available) {
         insufficientItems.push({
           productId: item.productId,
           productName: product.name,
           requestedQuantity: item.quantity,
           availableQuantity: available,
-          allowBackorder: product.allowBackorder,
         });
       }
     }
@@ -489,7 +483,6 @@ export const getOrderById = async (orderId: string): Promise<OrderWithRelations 
                 price: true,
                 status: true,
                 inventoryQuantity: true,
-                allowBackorder: true,
               },
             },
           },
@@ -546,7 +539,6 @@ export const getOrderByNumber = async (orderNumber: string): Promise<OrderWithRe
                 price: true,
                 status: true,
                 inventoryQuantity: true,
-                allowBackorder: true,
               },
             },
           },

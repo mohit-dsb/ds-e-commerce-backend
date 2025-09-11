@@ -46,7 +46,6 @@ export interface CartItemWithProduct {
     images: string[];
     status: string;
     inventoryQuantity: number;
-    allowBackorder: boolean;
     weight?: string | null;
     weightUnit?: string;
   };

@@ -52,7 +52,6 @@ export const insertProductSchema = z.object({
   weightUnit: z.enum(["kg", "g", "lb", "oz"]).optional(),
   status: z.enum(["draft", "active", "inactive", "discontinued"]).optional(),
   inventoryQuantity: z.number().int().min(0).optional(),
-  allowBackorder: z.boolean().optional(),
   images: z.array(z.string().url()).max(10, "Maximum 10 images allowed").optional(),
   tags: z.array(z.string().trim().min(1)).max(20, "Maximum 20 tags allowed").optional(),
   categoryId: z

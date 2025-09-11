@@ -27,7 +27,6 @@ const FIELD_DISPLAY_NAMES: Record<string, string> = {
   weightUnit: "Weight Unit",
   status: "Product Status",
   inventoryQuantity: "Inventory Quantity",
-  allowBackorder: "Allow Backorder",
   images: "Product Images",
   tags: "Product Tags",
   categoryId: "Product Category",

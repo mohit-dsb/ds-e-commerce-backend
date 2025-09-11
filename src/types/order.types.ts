@@ -17,7 +17,6 @@ export interface OrderWithRelations extends Order {
       price: string;
       status: string;
       inventoryQuantity: number | null;
-      allowBackorder: boolean;
     };
   })[];
   user?: {
@@ -107,7 +106,6 @@ export interface InventoryCheckResult {
     productName: string;
     requestedQuantity: number;
     availableQuantity: number;
-    allowBackorder: boolean;
   }[];
 }
 
