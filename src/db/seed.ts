@@ -655,7 +655,7 @@ async function seedOrders(productList?: Product[], addressList?: ShippingAddress
         };
       });
 
-      const taxAmount = subtotal * 0.08; // 8% tax
+      const taxAmount = subtotal * 0.085; // 8.5% tax
       const shippingAmount = subtotal > 50 ? 0 : 9.99; // Free shipping over $50
       const totalAmount = subtotal + taxAmount + shippingAmount;
 

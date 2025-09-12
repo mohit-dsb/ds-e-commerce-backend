@@ -94,11 +94,4 @@ orderRoutes.post("/validate", authMiddleware, compatibleZValidator("json", creat
  */
 orderRoutes.post("/check-inventory", authMiddleware, orderController.checkInventory);
 
-/**
- * @route   POST /orders/calculate-totals
- * @desc    Calculate order totals for preview
- * @access  Private (Customer/Admin)
- */
-orderRoutes.post("/calculate-totals", authMiddleware, orderController.calculateOrderTotals);
-
 export default orderRoutes;

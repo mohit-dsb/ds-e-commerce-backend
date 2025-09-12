@@ -339,24 +339,3 @@ export const checkInventory = async (c: Context<{ Variables: AuthContext }>) => 
 
   return c.json(createSuccessResponse("Inventory check completed", { inventoryCheck }));
 };
-
-/**
- * Calculate order totals
- * @desc Calculate order totals for preview before creation
- * @access Private (Customer/Admin)
- */
-export const calculateOrderTotals = async (c: Context<{ Variables: AuthContext }>) => {
-  const body: {
-    orderItems: CreateOrderItem[];
-    shippingMethod: "standard" | "express" | "free_shipping";
-  } = await c.req.json();
-  const { orderItems, shippingMethod } = body;
-
-  if (!Array.isArray(orderItems) || orderItems.length === 0) {
-    throw createValidationError([{ field: "orderItems", message: "Order items are required" }]);
-  }
-
-  const calculations = await orderService.calculateOrderTotals(orderItems, shippingMethod);
-
-  return c.json(createSuccessResponse("Order totals calculated", { calculations }));
-};
