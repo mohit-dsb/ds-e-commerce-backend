@@ -558,7 +558,6 @@ async function seedShippingAddresses() {
       lastName: "Address",
       addressLine1: "123 Main Street",
       addressLine2: undefined,
-      company: undefined,
       city: "New York",
       state: "NY",
       postalCode: "10001",
@@ -567,7 +566,6 @@ async function seedShippingAddresses() {
     {
       firstName: "Work",
       lastName: "Address",
-      company: "Tech Corp",
       addressLine1: "456 Business Ave",
       addressLine2: "Suite 100",
       city: "San Francisco",
@@ -588,7 +586,6 @@ async function seedShippingAddresses() {
           userId: customer.id,
           firstName: template.firstName || customer.firstName,
           lastName: template.lastName || customer.lastName,
-          company: template.company,
           addressLine1: template.addressLine1,
           addressLine2: template.addressLine2,
           city: template.city,

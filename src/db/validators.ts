@@ -96,7 +96,6 @@ export const productFiltersSchema = z.object({
 export const insertShippingAddressSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(100).trim(),
   lastName: z.string().min(1, "Last name is required").max(100).trim(),
-  company: z.string().max(100).trim().optional(),
   addressLine1: z.string().min(1, "Address line 1 is required").max(255).trim(),
   addressLine2: z.string().max(255).trim().optional(),
   city: z.string().min(1, "City is required").max(100).trim(),

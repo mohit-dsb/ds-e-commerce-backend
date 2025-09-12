@@ -54,9 +54,6 @@ export const refreshTokens = pgTable("refresh_tokens", {
     .notNull(),
   tokenHash: text("token_hash").notNull().unique(), // Store hashed version for security
   expiresAt: timestamp("expires_at").notNull(),
-  isRevoked: boolean("is_revoked").default(false).notNull(),
-  revokedAt: timestamp("revoked_at"),
-  revokedBy: uuid("revoked_by").references(() => users.id, { onDelete: "set null" }), // Admin who revoked it
   deviceFingerprint: varchar("device_fingerprint", { length: 255 }), // For device tracking
   ipAddress: varchar("ip_address", { length: 45 }), // Supports both IPv4 and IPv6
   userAgent: text("user_agent"),
@@ -118,7 +115,6 @@ export const shippingAddresses = pgTable("shipping_addresses", {
     .notNull(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),
-  company: varchar("company", { length: 100 }),
   addressLine1: varchar("address_line_1", { length: 255 }).notNull(),
   addressLine2: varchar("address_line_2", { length: 255 }),
   city: varchar("city", { length: 100 }).notNull(),
@@ -321,7 +317,6 @@ export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
   shoppingCarts: many(shoppingCarts),
   orderStatusChanges: many(orderStatusHistory),
-  revokedRefreshTokens: many(refreshTokens, { relationName: "revokedBy" }),
   productReviews: many(productReviews),
   wishlists: many(wishlists),
 }));
@@ -330,11 +325,6 @@ export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
   user: one(users, {
     fields: [refreshTokens.userId],
     references: [users.id],
-  }),
-  revokedBy: one(users, {
-    fields: [refreshTokens.revokedBy],
-    references: [users.id],
-    relationName: "revokedBy",
   }),
 }));
 

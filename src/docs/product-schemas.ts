@@ -283,12 +283,6 @@ export const productSchemas = {
         description: "Last name",
         example: "Doe",
       },
-      company: {
-        type: "string",
-        nullable: true,
-        description: "Company name",
-        example: "Acme Corp",
-      },
       addressLine1: {
         type: "string",
         description: "Primary address line",
@@ -364,12 +358,6 @@ export const productSchemas = {
         description: "Last name",
         example: "Doe",
       },
-      company: {
-        type: "string",
-        maxLength: 100,
-        description: "Company name",
-        example: "Acme Corp",
-      },
       addressLine1: {
         type: "string",
         minLength: 1,
@@ -440,11 +428,6 @@ export const productSchemas = {
         minLength: 1,
         maxLength: 100,
         example: "Doe",
-      },
-      company: {
-        type: "string",
-        maxLength: 100,
-        example: "Acme Corp",
       },
       addressLine1: {
         type: "string",

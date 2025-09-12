@@ -50,7 +50,7 @@ authRoutes.post("/reset-password", compatibleZValidator("json", resetPasswordSch
  * @route   POST /refresh
  * @desc    Refresh access token using refresh token from header, cookie, or body
  * @access  Public (requires valid refresh token)
- * @note    Token can be provided via: 1) Authorization: Bearer <token> header, 2) httpOnly cookie, 3) JSON body (deprecated)
+ * @note    Token can be provided via: 1) Authorization: Bearer <token> header, 2) httpOnly cookie
  */
 authRoutes.post("/refresh", authController.refreshToken);
 

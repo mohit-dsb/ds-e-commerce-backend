@@ -6,7 +6,7 @@ import { verifyPassword, hashPassword } from "@/utils/password";
 import { createNotFoundError } from "@/utils/errors";
 import { dbErrorHandlers } from "@/utils/database-errors";
 import { users, refreshTokens, passwordResets } from "@/db/schema";
-import { eq, and, gt, lt, or, type InferSelectModel } from "drizzle-orm";
+import { eq, and, gt, lt, type InferSelectModel } from "drizzle-orm";
 
 export type User = InferSelectModel<typeof users>;
 
@@ -109,7 +109,7 @@ export const validateRefreshToken = async (token: string): Promise<string | null
     const tokens = await db
       .select()
       .from(refreshTokens)
-      .where(and(eq(refreshTokens.isRevoked, false), gt(refreshTokens.expiresAt, new Date())));
+      .where(and(gt(refreshTokens.expiresAt, new Date())));
 
     // Find matching token by comparing hashes
     for (const storedToken of tokens) {
@@ -144,14 +144,7 @@ export const cleanupExpiredRefreshTokens = async (olderThanDays: number = 7): Pr
   return dbErrorHandlers.delete(async () => {
     const cutoffDate = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
 
-    const deletedTokens = await db
-      .delete(refreshTokens)
-      .where(
-        or(
-          lt(refreshTokens.expiresAt, cutoffDate),
-          and(eq(refreshTokens.isRevoked, true), lt(refreshTokens.revokedAt, cutoffDate))
-        )
-      );
+    const deletedTokens = await db.delete(refreshTokens).where(lt(refreshTokens.expiresAt, cutoffDate));
 
     return deletedTokens as unknown as number;
   });
