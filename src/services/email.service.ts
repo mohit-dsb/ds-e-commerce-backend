@@ -20,8 +20,6 @@ export interface PasswordResetEmailData {
   firstName: string;
   resetToken: string;
   expiresAt: Date;
-  ipAddress?: string;
-  userAgent?: string;
 }
 
 export interface WelcomeEmailData {
@@ -35,8 +33,6 @@ export interface SecurityAlertEmailData {
   firstName: string;
   eventType: "password_reset" | "password_changed" | "login_from_new_device";
   timestamp: Date;
-  ipAddress?: string;
-  location?: string;
 }
 
 // ============================================================================
@@ -142,28 +138,6 @@ const stripHtml = (html: string): string => {
     .trim();
 };
 
-/**
- * Parse user agent for display purposes
- */
-const parseUserAgent = (userAgent: string): string => {
-  if (userAgent.includes("Chrome")) {
-    return "Chrome Browser";
-  }
-  if (userAgent.includes("Firefox")) {
-    return "Firefox Browser";
-  }
-  if (userAgent.includes("Safari")) {
-    return "Safari Browser";
-  }
-  if (userAgent.includes("Edge")) {
-    return "Edge Browser";
-  }
-  if (userAgent.includes("Mobile")) {
-    return "Mobile Device";
-  }
-  return "Unknown Device";
-};
-
 // ============================================================================
 // Email Template Generators
 // ============================================================================
@@ -265,8 +239,6 @@ const generatePasswordResetEmail = (data: PasswordResetEmailData): string => {
                 <p><strong>Request Details:</strong></p>
                 <ul>
                     <li>Time: ${new Date().toLocaleString()}</li>
-                    ${data.ipAddress ? `<li>IP Address: ${data.ipAddress}</li>` : ""}
-                    ${data.userAgent ? `<li>Device: ${parseUserAgent(data.userAgent)}</li>` : ""}
                 </ul>
             </div>
             
@@ -458,8 +430,6 @@ const generateSecurityAlertEmail = (data: SecurityAlertEmailData): string => {
         <p><strong>Event Details:</strong></p>
         <ul>
             <li>Time: ${data.timestamp.toLocaleString()}</li>
-            ${data.ipAddress ? `<li>IP Address: ${data.ipAddress}</li>` : ""}
-            ${data.location ? `<li>Location: ${data.location}</li>` : ""}
         </ul>
         
         <p>If this was you, no action is needed. If you didn't perform this action, please:</p>
@@ -604,7 +574,6 @@ export {
   initializeTransporter,
   sendEmail,
   stripHtml,
-  parseUserAgent,
 
   // Template generators
   generatePasswordResetEmail,

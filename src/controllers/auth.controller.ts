@@ -6,7 +6,7 @@ import * as emailService from "@/services/email.service";
 import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
 import { sanitizeUserData, sanitizeEmail } from "@/utils/sanitization";
-import { createSuccessResponse, extractDeviceMetadata } from "@/utils/response";
+import { createSuccessResponse } from "@/utils/response";
 import { setAuthCookies, clearAuthCookies, extractRefreshToken } from "@/utils/cookies";
 import type { registerSchema, loginSchema, resetPasswordSchema } from "@/db/validators";
 import { createConflictError, createAuthError, BusinessRuleError } from "@/utils/errors";
@@ -58,13 +58,10 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
     lastName,
   });
 
-  // Extract device metadata for security tracking
-  const deviceMetadata = extractDeviceMetadata(c);
-
   // Generate JWT access token and refresh token
   const [accessToken, refreshToken] = await Promise.all([
     authService.generateToken(user.id),
-    authService.createRefreshToken(user.id, deviceMetadata),
+    authService.createRefreshToken(user.id),
   ]);
 
   // Set tokens in httpOnly cookies
@@ -120,13 +117,10 @@ export const login = async (c: Context<{ Variables: AuthContext }>) => {
     throw createAuthError("Invalid credentials");
   }
 
-  // Extract device metadata for security tracking
-  const deviceMetadata = extractDeviceMetadata(c);
-
   // Generate JWT access token and refresh token
   const [accessToken, refreshToken] = await Promise.all([
     authService.generateToken(user.id),
-    authService.createRefreshToken(user.id, deviceMetadata),
+    authService.createRefreshToken(user.id),
   ]);
 
   // Set tokens in httpOnly cookies
@@ -162,18 +156,10 @@ export const refreshToken = async (c: Context<{ Variables: AuthContext }>) => {
     throw createAuthError("Refresh token required");
   }
 
-  // Extract device metadata for new token
-  const deviceMetadata = extractDeviceMetadata(c);
-
   // Validate the refresh token
   const userId = await authService.validateRefreshToken(oldRefreshToken);
   if (!userId) {
-    logger.warn("Refresh token validation failed", {
-      metadata: {
-        ipAddress: deviceMetadata.ipAddress,
-        hasToken: !!oldRefreshToken,
-      },
-    });
+    logger.warn("Refresh token validation failed");
     throw createAuthError("Invalid or expired refresh token");
   }
 
@@ -212,17 +198,12 @@ export const forgotPassword = async (c: Context<{ Variables: AuthContext }>) => 
     // Create password reset token with expiration
     const resetToken = await authService.createPasswordResetToken(email);
 
-    // Extract device metadata for security tracking
-    const deviceMetadata = extractDeviceMetadata(c);
-
     // Send password reset email
     await emailService.sendPasswordResetEmail({
       email: user.email,
       firstName: user.firstName,
       resetToken,
       expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
-      ipAddress: deviceMetadata.ipAddress,
-      userAgent: deviceMetadata.userAgent,
     });
 
     // Send security alert for password reset request
@@ -231,15 +212,9 @@ export const forgotPassword = async (c: Context<{ Variables: AuthContext }>) => 
       firstName: user.firstName,
       eventType: "password_reset",
       timestamp: new Date(),
-      ipAddress: deviceMetadata.ipAddress,
     });
   } catch (error) {
-    logger.error("Password reset process failed", error instanceof Error ? error : new Error("Unknown error"), {
-      metadata: {
-        userId: user.id,
-        email: user.email,
-      },
-    });
+    logger.error("Password reset process failed", error instanceof Error ? error : new Error("Unknown error"));
     // Don't throw error to maintain security - user shouldn't know about internal failures
   }
 
@@ -266,9 +241,6 @@ export const resetPassword = async (c: Context<{ Variables: AuthContext }>) => {
     throw new BusinessRuleError("User not found");
   }
 
-  // Extract device metadata for security tracking
-  const deviceMetadata = extractDeviceMetadata(c);
-
   // Update password and mark token as used
   await Promise.all([userService.updatePassword(userId, password), authService.usePasswordResetToken(token)]);
 
@@ -279,15 +251,9 @@ export const resetPassword = async (c: Context<{ Variables: AuthContext }>) => {
       firstName: user.firstName,
       eventType: "password_changed",
       timestamp: new Date(),
-      ipAddress: deviceMetadata.ipAddress,
     });
   } catch (error) {
-    logger.error("Failed to send password change alert", error instanceof Error ? error : new Error("Unknown error"), {
-      metadata: {
-        userId: user.id,
-        email: user.email,
-      },
-    });
+    logger.error("Failed to send password change alert", error instanceof Error ? error : new Error("Unknown error"));
     // Don't throw error as password was already changed successfully
   }
 

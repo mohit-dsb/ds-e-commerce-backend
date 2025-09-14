@@ -54,9 +54,6 @@ export const refreshTokens = pgTable("refresh_tokens", {
     .notNull(),
   tokenHash: text("token_hash").notNull().unique(), // Store hashed version for security
   expiresAt: timestamp("expires_at").notNull(),
-  deviceFingerprint: varchar("device_fingerprint", { length: 255 }), // For device tracking
-  ipAddress: varchar("ip_address", { length: 45 }), // Supports both IPv4 and IPv6
-  userAgent: text("user_agent"),
   lastUsedAt: timestamp("last_used_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
