@@ -314,7 +314,6 @@ export const getProductReviews = async (c: Context) => {
     sortOrder: (query.sortOrder as ReviewFilters["sortOrder"]) ?? "desc",
     page: query.page ? parseInt(query.page, 10) : 1,
     limit: query.limit ? parseInt(query.limit, 10) : 20,
-    includeUser: query.includeUser === "true",
   };
 
   // Remove undefined values
@@ -347,9 +346,8 @@ export const getProductReviewSummary = async (c: Context) => {
  */
 export const getProductReviewById = async (c: Context) => {
   const reviewId = c.req.param("reviewId");
-  const includeUser = c.req.query("includeUser") === "true";
 
-  const review = await productService.getProductReviewById(reviewId, includeUser);
+  const review = await productService.getProductReviewById(reviewId);
 
   return c.json(createSuccessResponse("Review retrieved successfully", { review }));
 };

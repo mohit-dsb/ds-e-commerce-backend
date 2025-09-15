@@ -319,9 +319,4 @@ export const reviewQuerySchema = z.object({
     .transform((val) => parseInt(val, 10))
     .pipe(z.number().int().min(1).max(100))
     .default("20"),
-  includeUser: z
-    .string()
-    .transform((val) => val === "true")
-    .pipe(z.boolean())
-    .default("false"),
 });

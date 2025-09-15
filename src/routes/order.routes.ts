@@ -58,11 +58,11 @@ orderRoutes.patch(
 );
 
 /**
- * @route   POST /orders/:id/cancel
+ * @route   PATCH /orders/:id/cancel
  * @desc    Cancel an order
  * @access  Private (Customer can cancel own orders, Admin can cancel any)
  */
-orderRoutes.post("/:id/cancel", authMiddleware, compatibleZValidator("json", cancelOrderSchema), orderController.cancelOrder);
+orderRoutes.patch("/:id/cancel", authMiddleware, compatibleZValidator("json", cancelOrderSchema), orderController.cancelOrder);
 
 /**
  * @route   PATCH /orders/:id/confirm-payment

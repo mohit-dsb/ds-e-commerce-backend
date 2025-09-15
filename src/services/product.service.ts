@@ -574,7 +574,7 @@ export const createProductReview = async (userId: string, reviewData: CreateRevi
       })
       .returning();
 
-    const review = await getProductReviewById(newReview.id, true);
+    const review = await getProductReviewById(newReview.id);
 
     // Update product rating after creating review
     await updateProductRating(reviewData.productId);
@@ -632,7 +632,7 @@ export const updateProductReview = async (
       })
       .where(eq(productReviews.id, reviewId));
 
-    const review = await getProductReviewById(reviewId, true);
+    const review = await getProductReviewById(reviewId);
 
     // Update product rating after updating review
     await updateProductRating(review.productId);
@@ -690,10 +690,9 @@ export const deleteProductReview = async (reviewId: string, userId: string): Pro
 /**
  * Get review by ID with optional relations
  * @param reviewId - Review ID to retrieve
- * @param includeUser - Include user information
  * @returns Promise resolving to review
  */
-export const getProductReviewById = async (reviewId: string, includeUser = false): Promise<ProductReview> => {
+export const getProductReviewById = async (reviewId: string): Promise<ProductReview> => {
   const baseQuery = db
     .select({
       id: productReviews.id,
@@ -708,19 +707,15 @@ export const getProductReviewById = async (reviewId: string, includeUser = false
       metadata: productReviews.metadata,
       createdAt: productReviews.createdAt,
       updatedAt: productReviews.updatedAt,
-      ...(includeUser && {
-        user: {
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-        },
-      }),
+      user: {
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+      },
     })
     .from(productReviews);
 
-  if (includeUser) {
-    baseQuery.leftJoin(users, eq(productReviews.userId, users.id));
-  }
+  baseQuery.leftJoin(users, eq(productReviews.userId, users.id));
 
   const [review] = await baseQuery.where(eq(productReviews.id, reviewId)).limit(1);
 
@@ -749,7 +744,7 @@ export const getProductReviews = async (
     totalPages: number;
   };
 }> => {
-  const { rating, sortBy = "createdAt", sortOrder = "desc", page = 1, limit = 20, includeUser = false } = filters;
+  const { rating, sortBy = "createdAt", sortOrder = "desc", page = 1, limit = 20 } = filters;
 
   const conditions = [eq(productReviews.productId, productId)];
 
@@ -788,19 +783,15 @@ export const getProductReviews = async (
       metadata: productReviews.metadata,
       createdAt: productReviews.createdAt,
       updatedAt: productReviews.updatedAt,
-      ...(includeUser && {
-        user: {
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-        },
-      }),
+      user: {
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+      },
     })
     .from(productReviews);
 
-  if (includeUser) {
-    baseQuery.leftJoin(users, eq(productReviews.userId, users.id));
-  }
+  baseQuery.leftJoin(users, eq(productReviews.userId, users.id));
 
   const reviews = await baseQuery
     .where(and(...conditions))

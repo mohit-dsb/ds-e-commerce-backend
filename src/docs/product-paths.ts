@@ -859,16 +859,6 @@ export const productPaths = {
         {
           $ref: "#/components/parameters/LimitParam",
         },
-        {
-          name: "includeUser",
-          in: "query",
-          description: "Include user information in response",
-          required: false,
-          schema: {
-            type: "boolean",
-            default: false,
-          },
-        },
       ],
       responses: {
         "200": {
@@ -1071,16 +1061,6 @@ export const productPaths = {
           schema: {
             type: "string",
             format: "uuid",
-          },
-        },
-        {
-          name: "includeUser",
-          in: "query",
-          description: "Include user information in response",
-          required: false,
-          schema: {
-            type: "boolean",
-            default: false,
           },
         },
       ],

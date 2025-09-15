@@ -153,7 +153,6 @@ productRoutes.route("/", productImageRoutes);
  * @query {string} [sortOrder] - Sort order (asc/desc)
  * @query {number} [page] - Page number for pagination
  * @query {number} [limit] - Number of items per page
- * @query {boolean} [includeUser] - Include user information
  */
 productRoutes.get("/:productId/reviews", productController.getProductReviews);
 
@@ -171,7 +170,6 @@ productRoutes.get("/:productId/reviews/summary", productController.getProductRev
  * @access Public
  * @param {string} productId - Product UUID
  * @param {string} reviewId - Review UUID
- * @query {boolean} [includeUser] - Include user information
  */
 productRoutes.get("/:productId/reviews/:reviewId", productController.getProductReviewById);
 

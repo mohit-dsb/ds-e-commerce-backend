@@ -148,5 +148,4 @@ export interface ReviewFilters {
   sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
-  includeUser?: boolean;
 }
