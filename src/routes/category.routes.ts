@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import * as categoryController from "../controllers/category.controller";
 import { compatibleZValidator } from "../middleware/validation.middleware";
 import { insertCategorySchema, updateCategorySchema } from "../db/validators";
-import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
+import { adminMiddleware } from "../middleware/auth.middleware";
 
 const categoryRoutes = new Hono();
 
@@ -51,13 +51,7 @@ categoryRoutes.get("/:id/children", categoryController.getChildCategories);
  * @access Private (Admin)
  * @body {object} category data
  */
-categoryRoutes.post(
-  "/",
-  authMiddleware,
-  adminMiddleware,
-  compatibleZValidator("json", insertCategorySchema),
-  categoryController.createCategory
-);
+categoryRoutes.post("/", adminMiddleware, compatibleZValidator("json", insertCategorySchema), categoryController.createCategory);
 
 /**
  * @route PATCH /api/categories/:id
@@ -67,7 +61,6 @@ categoryRoutes.post(
  */
 categoryRoutes.patch(
   "/:id",
-  authMiddleware,
   adminMiddleware,
   compatibleZValidator("json", updateCategorySchema),
   categoryController.updateCategory
@@ -78,6 +71,6 @@ categoryRoutes.patch(
  * @desc Delete category - soft delete (Admin only)
  * @access Private (Admin)
  */
-categoryRoutes.delete("/:id", authMiddleware, adminMiddleware, categoryController.deleteCategory);
+categoryRoutes.delete("/:id", adminMiddleware, categoryController.deleteCategory);
 
 export default categoryRoutes;

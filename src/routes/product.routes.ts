@@ -50,7 +50,7 @@ productRoutes.get("/search", productController.searchProducts);
  * @access Private (Admin)
  * @query {number} [threshold] - Stock threshold (default: 5)
  */
-productRoutes.get("/low-stock", authMiddleware, adminMiddleware, productController.getLowStockProducts);
+productRoutes.get("/low-stock", adminMiddleware, productController.getLowStockProducts);
 
 /**
  * @route GET /api/products/category/:categoryId
@@ -85,36 +85,24 @@ productRoutes.get("/:id", productController.getProductById);
  * @access Private (Admin)
  * @body {CreateProductRequest} Product data
  */
-productRoutes.post(
-  "/",
-  authMiddleware,
-  adminMiddleware,
-  compatibleZValidator("json", insertProductSchema),
-  productController.createProduct
-);
+productRoutes.post("/", adminMiddleware, compatibleZValidator("json", insertProductSchema), productController.createProduct);
 
 /**
  * @route PATCH /api/products/:id
  * @desc Update a product
  * @access Private (Admin)
- * @param {string} id - Product UUID
+ * @param {string} id - Product Id
  * @body {UpdateProductRequest} Updated product data
  */
-productRoutes.patch(
-  "/:id",
-  authMiddleware,
-  adminMiddleware,
-  compatibleZValidator("json", updateProductSchema),
-  productController.updateProduct
-);
+productRoutes.patch("/:id", adminMiddleware, compatibleZValidator("json", updateProductSchema), productController.updateProduct);
 
 /**
  * @route DELETE /api/products/:id
  * @desc Delete a product
  * @access Private (Admin)
- * @param {string} id - Product UUID
+ * @param {string} id - Product Id
  */
-productRoutes.delete("/:id", authMiddleware, adminMiddleware, productController.deleteProduct);
+productRoutes.delete("/:id", adminMiddleware, productController.deleteProduct);
 
 /**
  * @route PATCH /api/products/bulk-status
@@ -124,7 +112,6 @@ productRoutes.delete("/:id", authMiddleware, adminMiddleware, productController.
  */
 productRoutes.patch(
   "/bulk-status",
-  authMiddleware,
   adminMiddleware,
   compatibleZValidator(
     "json",

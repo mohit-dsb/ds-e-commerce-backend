@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import * as productImageController from "@/controllers/product-image.controller";
 import { compatibleZValidator } from "@/middleware/validation.middleware";
 import { updateProductImagesSchema } from "@/db/validators";
-import { authMiddleware, adminMiddleware } from "@/middleware/auth.middleware";
+import { adminMiddleware } from "@/middleware/auth.middleware";
 
 const productImageRoutes = new Hono();
 
@@ -12,7 +12,7 @@ const productImageRoutes = new Hono();
  * @access Private (Admin)
  * @body FormData with 'image' file and optional 'transformation' JSON string
  */
-productImageRoutes.post("/upload-image", authMiddleware, adminMiddleware, productImageController.uploadProductImage);
+productImageRoutes.post("/upload-image", adminMiddleware, productImageController.uploadProductImage);
 
 /**
  * @route POST /api/products/upload-images
@@ -20,7 +20,7 @@ productImageRoutes.post("/upload-image", authMiddleware, adminMiddleware, produc
  * @access Private (Admin)
  * @body FormData with 'images[]' files and optional configuration
  */
-productImageRoutes.post("/upload-images", authMiddleware, adminMiddleware, productImageController.uploadProductImages);
+productImageRoutes.post("/upload-images", adminMiddleware, productImageController.uploadProductImages);
 
 /**
  * @route PATCH /api/products/:id/images
@@ -31,7 +31,6 @@ productImageRoutes.post("/upload-images", authMiddleware, adminMiddleware, produ
  */
 productImageRoutes.patch(
   "/:id/images",
-  authMiddleware,
   adminMiddleware,
   compatibleZValidator("json", updateProductImagesSchema),
   productImageController.updateProductImages
@@ -44,6 +43,6 @@ productImageRoutes.patch(
  * @param {string} id - Product ID
  * @param {string} publicId - Cloudinary public ID of the image to delete
  */
-productImageRoutes.delete("/:id/images/:publicId", authMiddleware, adminMiddleware, productImageController.deleteProductImage);
+productImageRoutes.delete("/:id/images/:publicId", adminMiddleware, productImageController.deleteProductImage);
 
 export default productImageRoutes;
