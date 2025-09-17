@@ -81,7 +81,7 @@ export const errorHandlerMiddleware = (err: Error, c: Context) => {
     logger.validationError("Request validation failed", {
       metadata: {
         validationErrors: validationDetails,
-        originalZodErrors: isDevelopment ? err.errors : undefined,
+        originalZodErrors: isDevelopment ? err.issues : undefined,
       },
     });
 

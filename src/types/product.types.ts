@@ -2,7 +2,7 @@ import type { z } from "zod";
 import type { Product, createReviewSchema, updateReviewSchema, reviewQuerySchema } from "@/db/validators";
 
 export interface ProductFilters {
-  status?: "draft" | "active" | "inactive" | "discontinued";
+  isActive?: boolean;
   categoryId?: string;
   minPrice?: string;
   maxPrice?: string;
@@ -37,7 +37,7 @@ export interface CreateProductRequest {
   price: string;
   weight?: string;
   weightUnit?: "kg" | "g" | "lb" | "oz";
-  status?: "draft" | "active" | "inactive" | "discontinued";
+  isActive?: boolean;
   inventoryQuantity?: number;
   images?: string[];
   tags?: string[];
@@ -51,25 +51,11 @@ export interface UpdateProductRequest {
   price?: string;
   weight?: string;
   weightUnit?: "kg" | "g" | "lb" | "oz";
-  status?: "draft" | "active" | "inactive" | "discontinued";
+  isActive?: boolean;
   inventoryQuantity?: number;
   images?: string[];
   tags?: string[];
   categoryId?: string;
-}
-
-export interface ProductFilters {
-  status?: "draft" | "active" | "inactive" | "discontinued";
-  categoryId?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  inStock?: boolean;
-  tags?: string[];
-  search?: string;
-  sortBy?: "name" | "price" | "createdAt" | "updatedAt" | "inventoryQuantity" | "rating";
-  sortOrder?: "asc" | "desc";
-  page?: number;
-  limit?: number;
 }
 
 // Image upload types

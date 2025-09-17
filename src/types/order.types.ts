@@ -15,7 +15,7 @@ export interface OrderWithRelations extends Order {
       name: string;
       slug: string;
       price: string;
-      status: string;
+      isActive: boolean;
       inventoryQuantity: number | null;
     };
   })[];

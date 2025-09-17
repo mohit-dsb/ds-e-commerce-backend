@@ -363,7 +363,7 @@ export const getUserCart = async (userId: string, includeProduct = true): Promis
         productSlug: products.slug,
         productPrice: products.price,
         productImages: products.images,
-        productStatus: products.status,
+        productIsActive: products.isActive,
         productInventoryQuantity: products.inventoryQuantity,
         productWeight: products.weight,
         productWeightUnit: products.weightUnit,
@@ -388,7 +388,7 @@ export const getUserCart = async (userId: string, includeProduct = true): Promis
             slug: item.productSlug ?? "",
             price: item.productPrice ?? "0",
             images: item.productImages ?? [],
-            status: item.productStatus ?? "draft",
+            isActive: item.productIsActive ?? true,
             inventoryQuantity: item.productInventoryQuantity ?? 0,
             weight: item.productWeight,
             weightUnit: item.productWeightUnit ?? "kg",
@@ -441,7 +441,7 @@ const validateProductAvailability = async (productId: string, quantity: number) 
     .select({
       id: products.id,
       name: products.name,
-      status: products.status,
+      isActive: products.isActive,
       inventoryQuantity: products.inventoryQuantity,
     })
     .from(products)
@@ -452,7 +452,7 @@ const validateProductAvailability = async (productId: string, quantity: number) 
     throw createNotFoundError("Product");
   }
 
-  if (product[0].status !== "active") {
+  if (!product[0].isActive) {
     throw createValidationError([
       {
         field: "productId",
@@ -658,7 +658,7 @@ export const addToWishlist = async (userId: string, productId: string): Promise<
     .select({
       id: products.id,
       name: products.name,
-      status: products.status,
+      isActive: products.isActive,
     })
     .from(products)
     .where(eq(products.id, productId))
@@ -668,7 +668,7 @@ export const addToWishlist = async (userId: string, productId: string): Promise<
     throw createNotFoundError("Product");
   }
 
-  if (product[0].status !== "active") {
+  if (!product[0].isActive) {
     throw createValidationError([
       {
         field: "productId",
@@ -741,7 +741,7 @@ export const getUserWishlist = async (
       slug: string;
       price: string;
       images: string[];
-      status: string;
+      isActive: boolean;
       rating: string;
     };
   }[]
@@ -757,7 +757,7 @@ export const getUserWishlist = async (
       productSlug: products.slug,
       productPrice: products.price,
       productImages: products.images,
-      productStatus: products.status,
+      productIsActive: products.isActive,
       productRating: products.rating,
     })
     .from(wishlists)
@@ -779,7 +779,7 @@ export const getUserWishlist = async (
         slug: item.productSlug ?? "",
         price: item.productPrice ?? "0",
         images: item.productImages ?? [],
-        status: item.productStatus ?? "draft",
+        isActive: item.productIsActive ?? true,
         rating: item.productRating ?? "0.00",
       },
     }));

@@ -62,11 +62,4 @@ shippingAddressRoutes.patch(
  */
 shippingAddressRoutes.delete("/:id", authMiddleware, shippingAddressController.deleteShippingAddress);
 
-/**
- * @route   POST /shipping-addresses/:id/set-default
- * @desc    Set shipping address as default
- * @access  Private (Customer can set own default, Admin can set for any user)
- */
-shippingAddressRoutes.post("/:id/set-default", authMiddleware, shippingAddressController.setDefaultShippingAddress);
-
 export default shippingAddressRoutes;

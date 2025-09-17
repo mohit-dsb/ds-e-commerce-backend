@@ -40,7 +40,7 @@ const updateInventorySafely = async (
       id: products.id,
       name: products.name,
       inventoryQuantity: products.inventoryQuantity,
-      status: products.status,
+      isActive: products.isActive,
     })
     .from(products)
     .where(eq(products.id, productId))
@@ -50,7 +50,7 @@ const updateInventorySafely = async (
     throw new Error(`Product with ID ${productId} not found`);
   }
 
-  if (currentProduct.status !== "active") {
+  if (!currentProduct.isActive) {
     throw new Error(`Product "${currentProduct.name}" is not active and cannot be processed`);
   }
 
@@ -204,7 +204,7 @@ export const checkInventoryAvailability = async (orderItems: CreateOrderItem[]):
         id: products.id,
         name: products.name,
         inventoryQuantity: products.inventoryQuantity,
-        status: products.status,
+        isActive: products.isActive,
       })
       .from(products)
       .where(inArray(products.id, productIds));
@@ -226,7 +226,7 @@ export const checkInventoryAvailability = async (orderItems: CreateOrderItem[]):
       }
 
       // Check if product is active
-      if (product.status !== "active") {
+      if (!product.isActive) {
         insufficientItems.push({
           productId: item.productId,
           productName: product.name,
@@ -481,7 +481,7 @@ export const getOrderById = async (orderId: string): Promise<OrderWithRelations 
                 name: true,
                 slug: true,
                 price: true,
-                status: true,
+                isActive: true,
                 inventoryQuantity: true,
               },
             },
@@ -537,7 +537,7 @@ export const getOrderByNumber = async (orderNumber: string): Promise<OrderWithRe
                 name: true,
                 slug: true,
                 price: true,
-                status: true,
+                isActive: true,
                 inventoryQuantity: true,
               },
             },
@@ -672,7 +672,7 @@ export const getOrders = async (filters: OrderFilters = {}) => {
                 name: true,
                 slug: true,
                 price: true,
-                status: true,
+                isActive: true,
               },
             },
           },

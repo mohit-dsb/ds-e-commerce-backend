@@ -4,9 +4,6 @@ import { pgTable, text, timestamp, uuid, varchar, boolean, pgEnum, integer, deci
 // Define the role enum first
 export const roleEnum = pgEnum("role", ["customer", "admin"]);
 
-// Define product status enum
-export const productStatusEnum = pgEnum("product_status", ["draft", "active", "inactive", "discontinued"]);
-
 // Define order status enum
 export const orderStatusEnum = pgEnum("order_status", [
   "pending",
@@ -80,7 +77,7 @@ export const products = pgTable(
     price: decimal("price", { precision: 12, scale: 2 }).notNull(),
     weight: decimal("weight", { precision: 8, scale: 3 }),
     weightUnit: varchar("weight_unit", { length: 10 }).default("kg"),
-    status: productStatusEnum("status").default("draft").notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
     inventoryQuantity: integer("inventory_quantity").default(0),
     images: jsonb("images").$type<string[]>().default([]),
     tags: jsonb("tags").$type<string[]>().default([]),

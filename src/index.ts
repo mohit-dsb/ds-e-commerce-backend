@@ -27,7 +27,7 @@ app.use(
       // Check if the origin is in our allowed list
       return env.CORS_ORIGIN.includes(origin) ? origin : null;
     },
-    allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PATCH", "DELETE"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })

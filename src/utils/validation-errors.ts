@@ -1,5 +1,13 @@
-import { ZodError, ZodIssue } from "zod";
+import { ZodError } from "zod";
 import type { ValidationErrorDetail } from "@/types/error.types";
+
+// Type for individual Zod issues
+type ZodIssue = ZodError["issues"][number];
+
+// Type for error objects that have issues (compatible with both ZodError and $ZodError)
+type ZodErrorLike = {
+  issues: ZodIssue[];
+};
 
 /**
  * Field mapping for user-friendly field names
@@ -69,73 +77,73 @@ function generateUserFriendlyMessage(issue: ZodIssue): string {
 
   switch (issue.code) {
     case "invalid_type":
-      if (issue.expected === "string" && issue.received === "undefined") {
-        return `${fieldName} is required`;
-      }
-      if (issue.expected === "number" && issue.received === "undefined") {
-        return `${fieldName} is required`;
-      }
-      if (issue.expected === "boolean" && issue.received === "undefined") {
+      // Check if it's a required field (undefined/null input)
+      if (issue.message?.includes("required") || issue.message?.includes("undefined") || issue.message?.includes("null")) {
         return `${fieldName} is required`;
       }
       return `${fieldName} must be a valid ${issue.expected}`;
 
     case "too_small":
-      if (issue.type === "string") {
-        if (issue.minimum === 1) {
-          return `${fieldName} is required`;
+      if ("minimum" in issue) {
+        if (issue.origin === "string") {
+          if (issue.minimum === 1) {
+            return `${fieldName} is required`;
+          }
+          return `${fieldName} must be at least ${issue.minimum} characters long`;
         }
-        return `${fieldName} must be at least ${issue.minimum} characters long`;
-      }
-      if (issue.type === "number") {
-        return `${fieldName} must be at least ${issue.minimum}`;
-      }
-      if (issue.type === "array") {
-        return `${fieldName} must contain at least ${issue.minimum} item(s)`;
+        if (issue.origin === "number") {
+          return `${fieldName} must be at least ${issue.minimum}`;
+        }
+        if (issue.origin === "array") {
+          return `${fieldName} must contain at least ${issue.minimum} item(s)`;
+        }
       }
       return `${fieldName} is too short`;
 
     case "too_big":
-      if (issue.type === "string") {
-        return `${fieldName} must be no more than ${issue.maximum} characters long`;
-      }
-      if (issue.type === "number") {
-        return `${fieldName} must be no more than ${issue.maximum}`;
-      }
-      if (issue.type === "array") {
-        return `${fieldName} must contain no more than ${issue.maximum} item(s)`;
+      if ("maximum" in issue) {
+        if (issue.origin === "string") {
+          return `${fieldName} must be no more than ${issue.maximum} characters long`;
+        }
+        if (issue.origin === "number") {
+          return `${fieldName} must be no more than ${issue.maximum}`;
+        }
+        if (issue.origin === "array") {
+          return `${fieldName} must contain no more than ${issue.maximum} item(s)`;
+        }
       }
       return `${fieldName} is too long`;
 
-    case "invalid_string":
-      if (issue.validation === "email") {
-        return `${fieldName} must be a valid email address`;
-      }
-      if (issue.validation === "url") {
-        return `${fieldName} must be a valid URL`;
-      }
-      if (issue.validation === "uuid") {
-        return `${fieldName} must be a valid UUID`;
-      }
-      if (issue.validation === "regex") {
-        // Handle specific regex patterns
-        if (field === "password") {
-          return "Password must contain at least one uppercase letter, one lowercase letter, and one number";
+    case "invalid_format":
+      if ("format" in issue) {
+        if (issue.format === "email") {
+          return `${fieldName} must be a valid email address`;
         }
-        if (field === "phoneNumber") {
-          return "Phone number must be in a valid format";
+        if (issue.format === "url") {
+          return `${fieldName} must be a valid URL`;
         }
-        return `${fieldName} format is invalid`;
+        if (issue.format === "uuid") {
+          return `${fieldName} must be a valid UUID`;
+        }
+        if (issue.format === "regex") {
+          // Handle specific regex patterns
+          if (field === "password") {
+            return "Password must contain at least one uppercase letter, one lowercase letter, and one number";
+          }
+          if (field === "phoneNumber") {
+            return "Phone number must be in a valid format";
+          }
+          return `${fieldName} format is invalid`;
+        }
       }
       return `${fieldName} format is invalid`;
 
-    case "invalid_enum_value": {
-      const options = issue.options?.join(", ");
-      return `${fieldName} must be one of: ${options}`;
-    }
-
-    case "invalid_date":
-      return `${fieldName} must be a valid date`;
+    case "invalid_value":
+      if ("values" in issue && Array.isArray(issue.values)) {
+        const options = (issue.values as string[]).join(", ");
+        return `${fieldName} must be one of: ${options}`;
+      }
+      return `${fieldName} has an invalid value`;
 
     case "custom":
       // Handle custom validation messages
@@ -151,7 +159,7 @@ function generateUserFriendlyMessage(issue: ZodIssue): string {
  * and optionally returns only the first error
  */
 export function formatValidationError(
-  zodError: ZodError,
+  zodError: ZodErrorLike,
   options: {
     firstErrorOnly?: boolean;
     includeFieldPath?: boolean;
@@ -160,7 +168,7 @@ export function formatValidationError(
   const { firstErrorOnly = true, includeFieldPath = false } = options;
 
   // Safety check for errors array
-  if (!zodError?.errors || zodError.errors.length === 0) {
+  if (!zodError?.issues || zodError.issues.length === 0) {
     return [
       {
         field: "request",
@@ -171,16 +179,16 @@ export function formatValidationError(
   }
 
   // Get all errors or just the first one
-  const errorsToProcess = firstErrorOnly ? [zodError.errors[0]] : zodError.errors;
+  const errorsToProcess = firstErrorOnly ? [zodError.issues[0]] : zodError.issues;
 
-  return errorsToProcess.filter(Boolean).map((issue) => {
+  return errorsToProcess.filter(Boolean).map((issue: ZodIssue) => {
     const field = issue.path.join(".");
     const userFriendlyMessage = generateUserFriendlyMessage(issue);
 
     return {
       field: includeFieldPath ? field : getFieldDisplayName(field),
       message: userFriendlyMessage,
-      value: issue.code === "invalid_type" ? undefined : "received" in issue ? issue.received : undefined,
+      value: issue.code === "invalid_type" ? undefined : undefined,
     };
   });
 }
@@ -188,13 +196,13 @@ export function formatValidationError(
 /**
  * Create a single, user-friendly validation error message
  */
-export function createSingleValidationMessage(zodError: ZodError): string {
+export function createSingleValidationMessage(zodError: ZodErrorLike): string {
   // Check if we have a valid ZodError with errors
-  if (!zodError?.errors || zodError.errors.length === 0) {
+  if (!zodError?.issues || zodError.issues.length === 0) {
     return "Invalid request data";
   }
 
-  const [firstError] = zodError.errors;
+  const [firstError] = zodError.issues;
   if (!firstError) {
     return "Invalid request data";
   }

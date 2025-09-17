@@ -4,7 +4,6 @@ import * as orderService from "@/services/order.service";
 import { createSuccessResponse } from "@/utils/response";
 import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
-import type { createOrderSchema, updateOrderStatusSchema, cancelOrderSchema, confirmPaymentSchema } from "@/db/validators";
 import { createNotFoundError, createValidationError, createAuthError } from "@/utils/errors";
 import type {
   CreateOrderRequest,
@@ -13,15 +12,7 @@ import type {
   OrderFilters,
   CreateOrderItem,
 } from "@/types/order.types";
-
-// ============================================================================
-// Type Definitions
-// ============================================================================
-
-type CreateOrderData = typeof createOrderSchema._type;
-type UpdateOrderStatusData = typeof updateOrderStatusSchema._type;
-type CancelOrderData = typeof cancelOrderSchema._type;
-type ConfirmPaymentData = typeof confirmPaymentSchema._type;
+import { CancelOrderData, ConfirmPaymentData, CreateOrderData, UpdateOrderStatusData } from "@/db/validators";
 
 // ============================================================================
 // Order Management Controller Functions

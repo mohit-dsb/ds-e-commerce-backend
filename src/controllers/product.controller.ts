@@ -33,7 +33,7 @@ export const createProduct = async (c: Context<{ Variables: AuthContext }>) => {
     price: validatedData.price,
     weight: validatedData.weight ?? null,
     weightUnit: validatedData.weightUnit ?? "kg",
-    status: validatedData.status ?? "draft",
+    isActive: validatedData.isActive ?? true,
     inventoryQuantity: validatedData.inventoryQuantity ?? 0,
     images: validatedData.images ?? [],
     tags: validatedData.tags ?? [],
@@ -118,7 +118,7 @@ export const getProducts = async (c: Context) => {
   const query = c.req.query();
 
   const filters: ProductFilters = {
-    status: query.status as ProductFilters["status"],
+    isActive: query.isActive ? query.isActive === "true" : true,
     categoryId: query.categoryId,
     minPrice: query.minPrice,
     maxPrice: query.maxPrice,
@@ -130,13 +130,6 @@ export const getProducts = async (c: Context) => {
     page: query.page ? parseInt(query.page, 10) : 1,
     limit: query.limit ? parseInt(query.limit, 10) : 20,
   };
-
-  // Remove undefined values
-  Object.keys(filters).forEach((key) => {
-    if (filters[key as keyof ProductFilters] === undefined) {
-      delete filters[key as keyof ProductFilters];
-    }
-  });
 
   const result = await productService.getProducts(filters);
 
@@ -154,7 +147,7 @@ export const getProductsByCategory = async (c: Context) => {
   const query = c.req.query();
 
   const filters: Omit<ProductFilters, "categoryId"> = {
-    status: query.status as ProductFilters["status"],
+    isActive: query.isActive ? query.isActive === "true" : true,
     minPrice: query.minPrice,
     maxPrice: query.maxPrice,
     inStock: query.inStock ? query.inStock === "true" : undefined,
@@ -193,7 +186,7 @@ export const searchProducts = async (c: Context) => {
   }
 
   const filters: Omit<ProductFilters, "search"> = {
-    status: query.status as ProductFilters["status"],
+    isActive: query.isActive ? query.isActive === "true" : true,
     categoryId: query.categoryId,
     minPrice: query.minPrice,
     maxPrice: query.maxPrice,
@@ -242,12 +235,12 @@ export const getLowStockProducts = async (c: Context) => {
  * @returns Bulk update confirmation response
  */
 export const bulkUpdateProductStatus = async (c: Context) => {
-  const { productIds, status } = getValidatedData<{
+  const { productIds, isActive } = getValidatedData<{
     productIds: string[];
-    status: "draft" | "active" | "inactive" | "discontinued";
+    isActive: boolean;
   }>(c, "json");
 
-  await productService.bulkUpdateProductStatus(productIds, status);
+  await productService.bulkUpdateProductStatus(productIds, isActive);
 
   return c.json(createSuccessResponse("Product statuses updated successfully", { updatedCount: productIds.length }));
 };

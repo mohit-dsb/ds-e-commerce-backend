@@ -9,13 +9,12 @@ export const productPaths = {
       operationId: "getProducts",
       parameters: [
         {
-          name: "status",
+          name:"isActive",
           in: "query",
-          description: "Filter by product status",
+          description: "Filter by active status",
           required: false,
           schema: {
-            type: "string",
-            enum: ["draft", "active", "inactive", "discontinued"],
+            type: "boolean",
           },
         },
         {
@@ -396,13 +395,12 @@ export const productPaths = {
           },
         },
         {
-          name: "status",
+          name:"isActive",
           in: "query",
-          description: "Filter by product status",
+          description: "Filter by active status",
           required: false,
           schema: {
-            type: "string",
-            enum: ["draft", "active", "inactive", "discontinued"],
+            type: "boolean",
           },
         },
         {
@@ -585,13 +583,12 @@ export const productPaths = {
           },
         },
         {
-          name: "status",
+          name:"isActive",
           in: "query",
-          description: "Filter by product status",
+          description: "Filter by active status",
           required: false,
           schema: {
-            type: "string",
-            enum: ["draft", "active", "inactive", "discontinued"],
+            type: "boolean",
           },
         },
         {

@@ -5,7 +5,7 @@
       "name": "ds-e-commerce-backend",
       "dependencies": {
         "@hono/swagger-ui": "^0.5.2",
-        "@hono/zod-validator": "^0.2.2",
+        "@hono/zod-validator": "^0.7.3",
         "@neondatabase/serverless": "^0.9.4",
         "cloudinary": "^2.7.0",
         "drizzle-orm": "^0.44.5",
@@ -169,7 +169,7 @@
 
     "@hono/swagger-ui": ["@hono/swagger-ui@0.5.2", "", { "peerDependencies": { "hono": "*" } }, "sha512-7wxLKdb8h7JTdZ+K8DJNE3KXQMIpJejkBTQjrYlUWF28Z1PGOKw6kUykARe5NTfueIN37jbyG/sBYsbzXzG53A=="],
 
-    "@hono/zod-validator": ["@hono/zod-validator@0.2.2", "", { "peerDependencies": { "hono": ">=3.9.0", "zod": "^3.19.1" } }, "sha512-dSDxaPV70Py8wuIU2QNpoVEIOSzSXZ/6/B/h4xA7eOMz7+AarKTSGV8E6QwrdcCbBLkpqfJ4Q2TmBO0eP1tCBQ=="],
+    "@hono/zod-validator": ["@hono/zod-validator@0.7.3", "", { "peerDependencies": { "hono": ">=3.9.0", "zod": "^3.25.0 || ^4.0.0" } }, "sha512-uYGdgVib3RlGD698WR5dVM0zB3UuPY5vHKXffGUbUh7r4xY+mFIhF3/v4AcQVLrU5CQdBso8BJr4wuVoCrjTuQ=="],
 
     "@humanwhocodes/config-array": ["@humanwhocodes/config-array@0.13.0", "", { "dependencies": { "@humanwhocodes/object-schema": "^2.0.3", "debug": "^4.3.1", "minimatch": "^3.0.5" } }, "sha512-DZLEEqFWQFiyK6h5YIeynKx7JlvCYWL0cImfSRXZ9l4Sg2efkFGTuFf6vzXjK1cq6IYkU+Eg/JizXw+TD2vRNw=="],
 

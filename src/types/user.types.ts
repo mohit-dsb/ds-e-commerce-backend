@@ -26,7 +26,7 @@ export const loginSchema = selectUserSchema.pick({ email: true, password: true }
 export const resetPasswordSchema = z.object({
   token: z.string().trim(),
   password: z.string().min(8),
-})
+});
 
 export type ICreateUser = z.infer<typeof createUserSchema>;
 export type IUser = z.infer<typeof selectUserSchema>;
@@ -66,7 +66,7 @@ export interface CartItemWithProduct {
     slug: string;
     price: string;
     images: string[];
-    status: string;
+    isActive: boolean;
     inventoryQuantity: number;
     weight?: string | null;
     weightUnit?: string;

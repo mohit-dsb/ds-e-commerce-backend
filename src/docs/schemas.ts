@@ -575,11 +575,10 @@ export const schemas = {
             description: "Product images",
             example: ["headphones1.jpg", "headphones2.jpg"],
           },
-          status: {
-            type: "string",
-            enum: ["draft", "active", "inactive", "discontinued"],
-            description: "Product status",
-            example: "active",
+          isActive:{
+            type: "boolean",
+            description: "Whether the product is active",
+            example: true,
           },
           rating: {
             type: "string",

@@ -12,7 +12,7 @@ const productRoutes = new Hono();
  * @route GET /api/products
  * @desc Get all products with optional filtering and pagination
  * @access Public
- * @query {string} [status] - Filter by product status (draft/active/inactive/discontinued)
+ * @query {string} [isActive] - Filter by product active status
  * @query {string} [categoryId] - Filter by category ID
  * @query {string} [minPrice] - Minimum price filter
  * @query {string} [maxPrice] - Maximum price filter
@@ -117,7 +117,7 @@ productRoutes.patch(
     "json",
     z.object({
       productIds: z.array(z.string().uuid()).min(1, "At least one product ID is required"),
-      status: z.enum(["draft", "active", "inactive", "discontinued"]),
+      isActive: z.boolean(),
     })
   ),
   productController.bulkUpdateProductStatus

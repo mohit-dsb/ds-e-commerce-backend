@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 import { createSelectSchema } from "drizzle-zod";
 import { categories, products, orders, orderItems, shippingAddresses } from "./schema";
 
@@ -23,7 +23,7 @@ export const insertProductSchema = z.object({
     .regex(/^\d+(\.\d{1,3})?$/, "Weight must be a valid decimal with up to 3 decimal places")
     .optional(),
   weightUnit: z.enum(["kg", "g", "lb", "oz"]).optional(),
-  status: z.enum(["draft", "active", "inactive", "discontinued"]).optional(),
+  isActive: z.boolean().optional(),
   inventoryQuantity: z.number().int().min(0).optional(),
   images: z.array(z.string().url()).max(10, "Maximum 10 images allowed").optional(),
   tags: z.array(z.string().trim().min(1)).max(20, "Maximum 20 tags allowed").optional(),
@@ -46,7 +46,7 @@ export const productCategoryAssociationSchema = z.object({
 
 // Product search and filter schemas
 export const productFiltersSchema = z.object({
-  status: z.enum(["draft", "active", "inactive", "discontinued"]).optional(),
+  isActive: z.boolean().optional(),
   categoryId: z.string().uuid().optional(),
   minPrice: z
     .string()
@@ -78,8 +78,12 @@ export const insertShippingAddressSchema = z.object({
   phoneNumber: z.string().max(20).trim().optional(),
   isDefault: z.boolean().optional(),
 });
+export type CreateShippingAddressData = z.infer<typeof insertShippingAddressSchema>;
 
 export const updateShippingAddressSchema = insertShippingAddressSchema.partial();
+
+export type UpdateShippingAddressData = z.infer<typeof updateShippingAddressSchema>;
+
 
 // Order validation schemas
 export const createOrderItemSchema = z.object({
@@ -101,14 +105,18 @@ export const createOrderSchema = z.object({
   shippingMethod: z.enum(["standard", "express", "free_shipping"]).optional(),
   customerNotes: z.string().max(1000).trim().optional(),
   paymentConfirmed: z.boolean().default(false),
-  metadata: z.unknown().optional(),
+  metadata: z.object({}).catchall(z.unknown()).optional(),
 });
+
+export type CreateOrderData = z.infer<typeof createOrderSchema>;
 
 export const updateOrderStatusSchema = z.object({
   status: z.enum(["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "refunded", "returned"]),
   comment: z.string().max(1000).trim().optional(),
   isCustomerVisible: z.boolean().optional(),
 });
+
+export type UpdateOrderStatusData = z.infer<typeof updateOrderStatusSchema>;
 
 export const orderFiltersSchema = z.object({
   status: z.enum(["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "refunded", "returned"]).optional(),
@@ -134,10 +142,14 @@ export const cancelOrderSchema = z.object({
   reason: z.string().trim().min(1, "Cancellation reason is required").max(500, "Reason must be less than 500 characters"),
 });
 
+export type CancelOrderData = z.infer<typeof cancelOrderSchema>;
+
 export const confirmPaymentSchema = z.object({
   comment: z.string().max(1000).trim().optional(),
   isCustomerVisible: z.boolean().optional(),
 });
+
+export type ConfirmPaymentData = z.infer<typeof confirmPaymentSchema>;
 
 // Type exports
 export type Category = typeof categories.$inferSelect;

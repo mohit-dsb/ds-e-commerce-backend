@@ -47,11 +47,10 @@ export const productSchemas = {
         description: "Weight unit",
         example: "kg",
       },
-      status: {
-        type: "string",
-        enum: ["draft", "active", "inactive", "discontinued"],
-        description: "Product status",
-        example: "active",
+      isActive: {
+        type: "boolean",
+        description: "Whether the product is active",
+        example: true,
       },
       inventoryQuantity: {
         type: "integer",
@@ -140,11 +139,10 @@ export const productSchemas = {
         description: "Weight unit",
         example: "kg",
       },
-      status: {
-        type: "string",
-        enum: ["draft", "active", "inactive", "discontinued"],
-        default: "draft",
-        description: "Product status",
+      isActive:{
+        type: "boolean",
+        default: true,
+        description: "Whether the product is active",
       },
       inventoryQuantity: {
         type: "integer",
@@ -209,9 +207,10 @@ export const productSchemas = {
         enum: ["kg", "g", "lb", "oz"],
         example: "kg",
       },
-      status: {
-        type: "string",
-        enum: ["draft", "active", "inactive", "discontinued"],
+      isActive:{
+        type: "boolean",
+        description: "Whether the product is active",
+        example: true,
       },
       inventoryQuantity: {
         type: "integer",
@@ -253,12 +252,11 @@ export const productSchemas = {
         description: "Array of product IDs to update",
         example: ["123e4567-e89b-12d3-a456-426614174000", "123e4567-e89b-12d3-a456-426614174001"],
       },
-      status: {
-        type: "string",
-        enum: ["draft", "active", "inactive", "discontinued"],
-        description: "New status for all specified products",
-        example: "active",
-      },
+      isActive:{
+        type: "boolean",
+        description: "Whether the products are active",
+        example: true,
+      }
     },
     required: ["productIds", "status"],
   },

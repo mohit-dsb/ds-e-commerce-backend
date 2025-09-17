@@ -143,7 +143,7 @@ export const updateProduct = async (
 };
 
 /**
- * Delete a product (soft delete by setting status to discontinued)
+ * Delete a product (soft delete by setting isActive to false)
  * @param id - Product ID to delete
  */
 export const deleteProduct = async (id: string): Promise<void> => {
@@ -153,7 +153,7 @@ export const deleteProduct = async (id: string): Promise<void> => {
     await db
       .update(products)
       .set({
-        status: "discontinued",
+        isActive: false,
         updatedAt: new Date(),
       })
       .where(eq(products.id, id));
@@ -174,7 +174,7 @@ export const getProductById = async (id: string, includeInactive = false): Promi
   return dbErrorHandlers.read(async () => {
     const conditions = [eq(products.id, id)];
     if (!includeInactive) {
-      conditions.push(eq(products.status, "active"));
+      conditions.push(eq(products.isActive, true));
     }
 
     const [product] = await db
@@ -186,7 +186,7 @@ export const getProductById = async (id: string, includeInactive = false): Promi
         price: products.price,
         weight: products.weight,
         weightUnit: products.weightUnit,
-        status: products.status,
+        isActive: products.isActive,
         inventoryQuantity: products.inventoryQuantity,
         images: products.images,
         tags: products.tags,
@@ -227,7 +227,7 @@ export const getProductBySlug = async (slug: string, includeInactive = false): P
   return dbErrorHandlers.read(async () => {
     const conditions = [eq(products.slug, slug)];
     if (!includeInactive) {
-      conditions.push(eq(products.status, "active"));
+      conditions.push(eq(products.isActive, true));
     }
 
     const [product] = await db
@@ -239,7 +239,7 @@ export const getProductBySlug = async (slug: string, includeInactive = false): P
         price: products.price,
         weight: products.weight,
         weightUnit: products.weightUnit,
-        status: products.status,
+        isActive: products.isActive,
         inventoryQuantity: products.inventoryQuantity,
         images: products.images,
         tags: products.tags,
@@ -313,7 +313,7 @@ export const getProducts = async (
 }> => {
   return dbErrorHandlers.read(async () => {
     const {
-      status = "active",
+      isActive = true,
       categoryId,
       minPrice,
       maxPrice,
@@ -329,8 +329,8 @@ export const getProducts = async (
     const conditions: SQL[] = [];
 
     // Status filter
-    if (status) {
-      conditions.push(eq(products.status, status));
+    if (isActive) {
+      conditions.push(eq(products.isActive, isActive));
     }
 
     // Category filter
@@ -439,7 +439,7 @@ export const searchProducts = async (searchTerm: string, filters: Omit<ProductFi
  */
 export const getLowStockProducts = async (threshold?: number): Promise<ProductWithRelations[]> => {
   return dbErrorHandlers.read(async () => {
-    const conditions = [sql`${products.inventoryQuantity} <= ${threshold ?? 5}`, eq(products.status, "active")];
+    const conditions = [sql`${products.inventoryQuantity} <= ${threshold ?? 5}`, eq(products.isActive, true)];
 
     const lowStockProducts = await db
       .select()
@@ -461,15 +461,12 @@ export const getLowStockProducts = async (threshold?: number): Promise<ProductWi
  * @param productIds - Array of product IDs to update
  * @param status - New status for products
  */
-export const bulkUpdateProductStatus = async (
-  productIds: string[],
-  status: "draft" | "active" | "inactive" | "discontinued"
-): Promise<void> => {
+export const bulkUpdateProductStatus = async (productIds: string[], isActive: boolean): Promise<void> => {
   return dbErrorHandlers.update(async () => {
     await db
       .update(products)
       .set({
-        status,
+        isActive,
         updatedAt: new Date(),
       })
       .where(inArray(products.id, productIds));
@@ -490,7 +487,7 @@ export const createProductReview = async (userId: string, reviewData: CreateRevi
   return dbErrorHandlers.create(async () => {
     // Check if product exists and is active
     const product = await db
-      .select({ id: products.id, status: products.status, name: products.name })
+      .select({ id: products.id, isActive: products.isActive, name: products.name })
       .from(products)
       .where(eq(products.id, reviewData.productId))
       .limit(1);
@@ -499,7 +496,7 @@ export const createProductReview = async (userId: string, reviewData: CreateRevi
       throw createNotFoundError("Product");
     }
 
-    if (product[0].status !== "active") {
+    if (!product[0].isActive) {
       throw createValidationError([
         {
           field: "productId",

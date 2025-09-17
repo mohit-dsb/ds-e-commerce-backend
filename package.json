@@ -52,7 +52,7 @@
   "license": "MIT",
   "dependencies": {
     "@hono/swagger-ui": "^0.5.2",
-    "@hono/zod-validator": "^0.2.2",
+    "@hono/zod-validator": "^0.7.3",
     "@neondatabase/serverless": "^0.9.4",
     "cloudinary": "^2.7.0",
     "drizzle-orm": "^0.44.5",

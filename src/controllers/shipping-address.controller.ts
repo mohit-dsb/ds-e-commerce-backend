@@ -5,14 +5,7 @@ import type { AuthContext } from "@/middleware/auth.middleware";
 import { getValidatedData } from "@/middleware/validation.middleware";
 import * as shippingAddressService from "@/services/shipping-address.service";
 import { createNotFoundError, createValidationError, createAuthError } from "@/utils/errors";
-import type { insertShippingAddressSchema, updateShippingAddressSchema } from "@/db/validators";
-
-// ============================================================================
-// Type Definitions
-// ============================================================================
-
-type CreateShippingAddressData = typeof insertShippingAddressSchema._type;
-type UpdateShippingAddressData = typeof updateShippingAddressSchema._type;
+import type { CreateShippingAddressData, UpdateShippingAddressData } from "@/db/validators";
 
 // ============================================================================
 // Shipping Address Controller Functions

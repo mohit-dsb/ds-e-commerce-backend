@@ -599,11 +599,10 @@ export const orderSchemas = {
             },
             description: "Product images",
           },
-          status: {
-            type: "string",
-            enum: ["draft", "active", "inactive", "discontinued"],
-            description: "Product status",
-            example: "active",
+          isActive: {
+            type: "boolean",
+            description: "Whether the product is active",
+            example: true,
           },
           inventoryQuantity: {
             type: "integer",
