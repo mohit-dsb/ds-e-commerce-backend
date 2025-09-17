@@ -1,9 +1,4 @@
 /**
- * Data sanitization utilities following industry best practices
- * These utilities provide additional data cleaning beyond validation
- */
-
-/**
  * Sanitizes string input by trimming whitespace and normalizing it
  * @param value - The string value to sanitize
  * @param options - Sanitization options

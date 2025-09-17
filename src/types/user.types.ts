@@ -1,8 +1,4 @@
-// ============================================================================
-// User Service Types
-// ============================================================================
-
-import type { z } from "zod";
+import { z } from "zod";
 import type {
   addToCartSchema,
   updateCartItemSchema,
@@ -11,6 +7,32 @@ import type {
   updateUserProfileSchema,
   changePasswordSchema,
 } from "@/db/validators";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { users } from "@/db/schema";
+
+// ============================================================================
+// User Service Types
+// ============================================================================
+
+export const createUserSchema = createInsertSchema(users, {
+  email: (s) => s.trim().toLowerCase(),
+  password: (s) => s.trim(),
+  firstName: (s) => s.trim(),
+  lastName: (s) => s.trim(),
+});
+export const selectUserSchema = createSelectSchema(users);
+export const publicUserSchema = selectUserSchema.omit({ password: true });
+export const loginSchema = selectUserSchema.pick({ email: true, password: true });
+export const resetPasswordSchema = z.object({
+  token: z.string().trim(),
+  password: z.string().min(8),
+})
+
+export type ICreateUser = z.infer<typeof createUserSchema>;
+export type IUser = z.infer<typeof selectUserSchema>;
+export type IPublicUser = z.infer<typeof publicUserSchema>;
+export type ILogin = z.infer<typeof loginSchema>;
+export type IResetPassword = z.infer<typeof resetPasswordSchema>;
 
 // ============================================================================
 // Cart Types
@@ -84,18 +106,6 @@ export interface CartSummary {
 export type UpdateUserProfileRequest = z.infer<typeof updateUserProfileSchema>;
 export type ChangePasswordRequest = z.infer<typeof changePasswordSchema>;
 
-// User profile response
-export interface UserProfile {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phoneNumber?: string | null; // Phone numbers are stored in shipping addresses
-  role: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 // ============================================================================
 // Service Response Types
 // ============================================================================
@@ -111,12 +121,6 @@ export interface ServiceResponse<T = unknown> {
 // Cart operation results
 export interface CartOperationResult {
   cart: ShoppingCartWithItems;
-  message: string;
-}
-
-// User operation results
-export interface UserOperationResult {
-  user: UserProfile;
   message: string;
 }
 

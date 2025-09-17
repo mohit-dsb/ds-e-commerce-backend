@@ -4,16 +4,17 @@ import { users, shoppingCarts, shoppingCartItems, products, wishlists } from "@/
 import { hashPassword, verifyPassword } from "@/utils/password";
 import { createNotFoundError, createValidationError, createConflictError, createInternalServerError } from "@/utils/errors";
 import type {
-  UserProfile,
   UpdateUserProfileRequest,
   ChangePasswordRequest,
-  UserOperationResult,
   AddToCartRequest,
   UpdateCartItemRequest,
   CartItemWithProduct,
   ShoppingCartWithItems,
   CartSummary,
   CartOperationResult,
+  IPublicUser,
+  ICreateUser,
+  IUser,
 } from "@/types/user.types";
 
 // ============================================================================
@@ -25,12 +26,7 @@ import type {
  * @param data - User registration data
  * @returns Promise resolving to created user
  */
-export const createUser = async (data: {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}): Promise<UserProfile> => {
+export const createUser = async (data: ICreateUser): Promise<IUser> => {
   const hashedPassword = await hashPassword(data.password);
 
   const [user] = await db
@@ -47,16 +43,7 @@ export const createUser = async (data: {
     throw createInternalServerError("Failed to create user account");
   }
 
-  return {
-    id: user.id,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    role: user.role,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-    phoneNumber: null, // Phone numbers are stored in shipping addresses
-  };
+  return user;
 };
 
 /**
@@ -64,7 +51,7 @@ export const createUser = async (data: {
  * @param email - Email address to search for
  * @returns Promise resolving to user or null if not found
  */
-export const getUserByEmail = async (email: string): Promise<UserProfile | null> => {
+export const getUserByEmail = async (email: string): Promise<IPublicUser | null> => {
   const [user] = await db
     .select({
       id: users.id,
@@ -82,10 +69,7 @@ export const getUserByEmail = async (email: string): Promise<UserProfile | null>
     return null;
   }
 
-  return {
-    ...user,
-    phoneNumber: null, // Phone numbers are stored in shipping addresses
-  };
+  return user;
 };
 
 /**
@@ -93,7 +77,7 @@ export const getUserByEmail = async (email: string): Promise<UserProfile | null>
  * @param id - User ID to search for
  * @returns Promise resolving to user or null if not found
  */
-export const getUserById = async (id: string): Promise<UserProfile | null> => {
+export const getUserById = async (id: string): Promise<IPublicUser | null> => {
   const [user] = await db
     .select({
       id: users.id,
@@ -111,10 +95,7 @@ export const getUserById = async (id: string): Promise<UserProfile | null> => {
     return null;
   }
 
-  return {
-    ...user,
-    phoneNumber: null, // Phone numbers are stored in shipping addresses
-  };
+  return user;
 };
 
 // ============================================================================
@@ -124,7 +105,7 @@ export const getUserById = async (id: string): Promise<UserProfile | null> => {
 /**
  * Get user profile by ID
  */
-export const getUserProfile = async (userId: string): Promise<UserProfile> => {
+export const getUserProfile = async (userId: string): Promise<IPublicUser> => {
   const user = await getUserById(userId);
   if (!user) {
     throw createNotFoundError("User");
@@ -136,7 +117,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
 /**
  * Update user profile
  */
-export const updateUserProfile = async (userId: string, updateData: UpdateUserProfileRequest): Promise<UserOperationResult> => {
+export const updateUserProfile = async (userId: string, updateData: UpdateUserProfileRequest): Promise<IPublicUser> => {
   // Check if user exists
   const existingUser = await getUserById(userId);
   if (!existingUser) {
@@ -167,7 +148,7 @@ export const updateUserProfile = async (userId: string, updateData: UpdateUserPr
   const validUpdateData = Object.fromEntries(Object.entries(updateFields).filter(([, value]) => value !== undefined));
 
   // Update user
-  const updatedUser = await db
+  const [user] = await db
     .update(users)
     .set({
       ...validUpdateData,
@@ -184,23 +165,17 @@ export const updateUserProfile = async (userId: string, updateData: UpdateUserPr
       updatedAt: users.updatedAt,
     });
 
-  if (!updatedUser[0]) {
+  if (!user) {
     throw createInternalServerError("Failed to update user profile");
   }
 
-  return {
-    user: {
-      ...updatedUser[0],
-      phoneNumber: null, // Phone numbers are stored in shipping addresses
-    },
-    message: "Profile updated successfully",
-  };
+  return user;
 };
 
 /**
  * Change user password
  */
-export const changePassword = async (userId: string, passwordData: ChangePasswordRequest): Promise<UserOperationResult> => {
+export const changePassword = async (userId: string, passwordData: ChangePasswordRequest): Promise<IPublicUser> => {
   // Get current user with password
   const currentUser = await db
     .select({
@@ -237,7 +212,7 @@ export const changePassword = async (userId: string, passwordData: ChangePasswor
   const hashedNewPassword = await hashPassword(passwordData.newPassword);
 
   // Update password
-  const updatedUser = await db
+  const [user] = await db
     .update(users)
     .set({
       password: hashedNewPassword,
@@ -254,17 +229,11 @@ export const changePassword = async (userId: string, passwordData: ChangePasswor
       updatedAt: users.updatedAt,
     });
 
-  if (!updatedUser[0]) {
+  if (!user) {
     throw createInternalServerError("Failed to update password");
   }
 
-  return {
-    user: {
-      ...updatedUser[0],
-      phoneNumber: null, // Phone numbers are stored in shipping addresses
-    },
-    message: "Password changed successfully",
-  };
+  return user;
 };
 
 /**

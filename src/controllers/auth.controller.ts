@@ -8,17 +8,8 @@ import { getValidatedData } from "@/middleware/validation.middleware";
 import { sanitizeUserData, sanitizeEmail } from "@/utils/sanitization";
 import { createSuccessResponse } from "@/utils/response";
 import { setAuthCookies, clearAuthCookies, extractRefreshToken } from "@/utils/cookies";
-import type { registerSchema, loginSchema, resetPasswordSchema } from "@/db/validators";
 import { createConflictError, createAuthError, BusinessRuleError } from "@/utils/errors";
-
-// ============================================================================
-// Type Definitions
-// ============================================================================
-
-type RegisterData = typeof registerSchema._type;
-type LoginData = typeof loginSchema._type;
-type ResetPasswordData = typeof resetPasswordSchema._type;
-type ForgotPasswordData = Pick<LoginData, "email">;
+import type { ICreateUser, ILogin, IResetPassword } from "@/types/user.types";
 
 // ============================================================================
 // Authentication Controller Functions
@@ -30,7 +21,7 @@ type ForgotPasswordData = Pick<LoginData, "email">;
  * @access Public
  */
 export const register = async (c: Context<{ Variables: AuthContext }>) => {
-  const validatedData = getValidatedData<RegisterData>(c, "json");
+  const validatedData = getValidatedData<ICreateUser>(c, "json");
 
   // Additional sanitization for extra safety
   const sanitizedData = sanitizeUserData(validatedData);
@@ -105,7 +96,7 @@ export const register = async (c: Context<{ Variables: AuthContext }>) => {
  * @access Public
  */
 export const login = async (c: Context<{ Variables: AuthContext }>) => {
-  const validatedData = getValidatedData<LoginData>(c, "json");
+  const validatedData = getValidatedData<ILogin>(c, "json");
 
   // Additional sanitization for email
   const email = sanitizeEmail(validatedData.email) ?? validatedData.email;
@@ -183,7 +174,7 @@ export const refreshToken = async (c: Context<{ Variables: AuthContext }>) => {
  * @access Public
  */
 export const forgotPassword = async (c: Context<{ Variables: AuthContext }>) => {
-  const validatedData = getValidatedData<ForgotPasswordData>(c, "json");
+  const validatedData = getValidatedData<{ email: string }>(c, "json");
 
   // Additional sanitization for email
   const email = sanitizeEmail(validatedData.email) ?? validatedData.email;
@@ -227,7 +218,7 @@ export const forgotPassword = async (c: Context<{ Variables: AuthContext }>) => 
  * @access Public
  */
 export const resetPassword = async (c: Context<{ Variables: AuthContext }>) => {
-  const { token, password } = getValidatedData<ResetPasswordData>(c, "json");
+  const { token, password } = getValidatedData<IResetPassword>(c, "json");
 
   // Validate reset token
   const userId = await authService.validatePasswordResetToken(token);

@@ -37,7 +37,7 @@ export const updateProfile = async (c: Context<{ Variables: AuthContext }>) => {
 
   const result = await userService.updateUserProfile(user.id, updateData);
 
-  return c.json(createSuccessResponse(result.message, { user: result.user }), 200);
+  return c.json(createSuccessResponse("User profile updated successfully", { user: result }), 200);
 };
 
 /**
@@ -50,7 +50,7 @@ export const changePassword = async (c: Context<{ Variables: AuthContext }>) => 
 
   const result = await userService.changePassword(user.id, passwordData);
 
-  return c.json(createSuccessResponse(result.message, { user: result.user }), 200);
+  return c.json(createSuccessResponse("User password changed successfully", { user: result }), 200);
 };
 
 // ============================================================================

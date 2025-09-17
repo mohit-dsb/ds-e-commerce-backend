@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import * as authController from "@/controllers/auth.controller";
 import { compatibleZValidator } from "@/middleware/validation.middleware";
 import { type AuthContext, authMiddleware } from "@/middleware/auth.middleware";
-import { loginSchema, registerSchema, resetPasswordSchema } from "@/db/validators";
+import { createUserSchema, loginSchema, resetPasswordSchema } from "@/types/user.types";
 
 const authRoutes = new Hono<{ Variables: AuthContext }>();
 
@@ -15,7 +15,7 @@ const authRoutes = new Hono<{ Variables: AuthContext }>();
  * @desc    Register a new user
  * @access  Public
  */
-authRoutes.post("/register", compatibleZValidator("json", registerSchema), authController.register);
+authRoutes.post("/register", compatibleZValidator("json", createUserSchema), authController.register);
 
 /**
  * @route   POST /login

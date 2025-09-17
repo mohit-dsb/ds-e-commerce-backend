@@ -6,9 +6,8 @@ import { verifyPassword, hashPassword } from "@/utils/password";
 import { createNotFoundError } from "@/utils/errors";
 import { dbErrorHandlers } from "@/utils/database-errors";
 import { users, refreshTokens, passwordResets } from "@/db/schema";
-import { eq, and, gt, lt, type InferSelectModel } from "drizzle-orm";
-
-export type User = InferSelectModel<typeof users>;
+import { eq, and, gt, lt } from "drizzle-orm";
+import type { IUser } from "@/types/user.types";
 
 // ============================================================================
 // JWT Token Management Functions
@@ -43,7 +42,7 @@ export const verifyToken = async (token: string): Promise<{ userId: string } | n
  * @param password - User password
  * @returns Promise resolving to user or null if authentication fails
  */
-export const authenticateUser = async (email: string, password: string): Promise<User | null> => {
+export const authenticateUser = async (email: string, password: string): Promise<IUser | null> => {
   return dbErrorHandlers.read(async () => {
     const [user] = await db.select().from(users).where(eq(users.email, email));
 

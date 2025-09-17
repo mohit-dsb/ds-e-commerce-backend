@@ -1,39 +1,12 @@
 import z from "zod";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { users, categories, products, passwordResets, orders, orderItems, shippingAddresses } from "./schema";
-
-// Zod schemas for validation
-export const insertUserSchema = createInsertSchema(users, {
-  email: (schema) => schema.email().trim().toLowerCase(),
-  password: (schema) => schema.min(8),
-  firstName: (schema) => schema.min(1).trim(),
-  lastName: (schema) => schema.min(1).trim(),
-});
-
-export const selectUserSchema = createSelectSchema(users);
+import { createSelectSchema } from "drizzle-zod";
+import { categories, products, orders, orderItems, shippingAddresses } from "./schema";
 
 export const insertCategorySchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name must be less than 100 characters").trim(),
   description: z.string().trim().optional(),
   isActive: z.boolean().optional(),
   parentId: z.string().uuid().optional().nullable(),
-});
-
-export const loginSchema = z.object({
-  email: z.string().email().trim().toLowerCase(),
-  password: z.string().min(1),
-});
-
-export const registerSchema = z.object({
-  email: z.string().email().trim().toLowerCase(),
-  password: z.string().min(8),
-  firstName: z.string().min(1).trim(),
-  lastName: z.string().min(1).trim(),
-});
-
-export const resetPasswordSchema = z.object({
-  token: z.string().trim(),
-  password: z.string().min(8),
 });
 
 export const updateCategorySchema = insertCategorySchema.partial();
@@ -128,7 +101,7 @@ export const createOrderSchema = z.object({
   shippingMethod: z.enum(["standard", "express", "free_shipping"]).optional(),
   customerNotes: z.string().max(1000).trim().optional(),
   paymentConfirmed: z.boolean().default(false),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.unknown().optional(),
 });
 
 export const updateOrderStatusSchema = z.object({
@@ -167,12 +140,8 @@ export const confirmPaymentSchema = z.object({
 });
 
 // Type exports
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
 export type Category = typeof categories.$inferSelect;
 export type NewCategory = typeof categories.$inferInsert;
-export type PasswordReset = typeof passwordResets.$inferSelect;
-export type NewPasswordReset = typeof passwordResets.$inferInsert;
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
 export type ShippingAddress = typeof shippingAddresses.$inferSelect;
@@ -312,11 +281,9 @@ export const reviewQuerySchema = z.object({
   page: z
     .string()
     .transform((val) => parseInt(val, 10))
-    .pipe(z.number().int().min(1))
-    .default("1"),
+    .pipe(z.number().int().min(1)),
   limit: z
     .string()
     .transform((val) => parseInt(val, 10))
-    .pipe(z.number().int().min(1).max(100))
-    .default("20"),
+    .pipe(z.number().int().min(1).max(100)),
 });
