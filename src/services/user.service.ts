@@ -501,7 +501,7 @@ export const addToCart = async (userId: string, cartData: AddToCartRequest): Pro
 
   if (existingItem[0]) {
     // Update existing item quantity
-    const newQuantity = existingItem[0].quantity + cartData.quantity;
+    const newQuantity = cartData.quantity;
 
     // Re-validate with new total quantity
     await validateProductAvailability(cartData.productId, newQuantity);

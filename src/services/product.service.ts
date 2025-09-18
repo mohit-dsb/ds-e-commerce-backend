@@ -277,18 +277,21 @@ export const getProductBySlug = async (slug: string, includeInactive = false): P
 export const updateProductRating = async (productId: string): Promise<void> => {
   return dbErrorHandlers.update(async () => {
     // Calculate average rating from all reviews for this product
-    const [ratingResult] = await db
+    const ratingResults = await db
       .select({
         averageRating: sql<number>`COALESCE(AVG(${productReviews.rating}), 0)`,
       })
       .from(productReviews)
       .where(eq(productReviews.productId, productId));
 
+    // Handle case where there are no reviews
+    const averageRating = ratingResults.length > 0 ? ratingResults[0].averageRating : 0;
+
     // Update the product's rating
     await db
       .update(products)
       .set({
-        rating: ratingResult.averageRating.toFixed(2),
+        rating: Number(averageRating || 0).toFixed(2),
         updatedAt: new Date(),
       })
       .where(eq(products.id, productId));
@@ -809,14 +812,9 @@ export const getProductReviews = async (
   };
 };
 
-/**
- * Get reviews summary for a product
- * @param productId - Product ID to get summary for
- * @returns Promise resolving to review summary
- */
 export const getProductReviewSummary = async (productId: string): Promise<ReviewSummary> => {
   // Get basic statistics
-  const [stats] = await db
+  const statsResults = await db
     .select({
       totalReviews: count(),
       averageRating: sql<string>`avg(${productReviews.rating})`,
@@ -824,6 +822,16 @@ export const getProductReviewSummary = async (productId: string): Promise<Review
     })
     .from(productReviews)
     .where(eq(productReviews.productId, productId));
+
+  // Handle case where there are no reviews
+  const stats =
+    statsResults.length > 0
+      ? statsResults[0]
+      : {
+          totalReviews: 0,
+          averageRating: null,
+          verifiedPurchaseCount: 0,
+        };
 
   // Get rating distribution
   const ratingDistribution = await db
