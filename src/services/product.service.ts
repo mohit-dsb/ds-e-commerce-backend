@@ -331,10 +331,8 @@ export const getProducts = async (
 
     const conditions: SQL[] = [];
 
-    // Status filter
-    if (isActive) {
-      conditions.push(eq(products.isActive, isActive));
-    }
+    // isActive filter
+    conditions.push(eq(products.isActive, isActive));
 
     // Category filter
     if (categoryId) {
@@ -452,27 +450,6 @@ export const getLowStockProducts = async (threshold?: number): Promise<ProductWi
 
     // Get relations for each product
     return await Promise.all(lowStockProducts.map((product) => getProductById(product.id, true)));
-  });
-};
-
-// ============================================================================
-// Product Management Operations
-// ============================================================================
-
-/**
- * Bulk update product status
- * @param productIds - Array of product IDs to update
- * @param status - New status for products
- */
-export const bulkUpdateProductStatus = async (productIds: string[], isActive: boolean): Promise<void> => {
-  return dbErrorHandlers.update(async () => {
-    await db
-      .update(products)
-      .set({
-        isActive,
-        updatedAt: new Date(),
-      })
-      .where(inArray(products.id, productIds));
   });
 };
 

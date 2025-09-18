@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { z } from "zod";
 import productImageRoutes from "./product-image.routes";
 import * as productController from "@/controllers/product.controller";
 import { compatibleZValidator } from "@/middleware/validation.middleware";
@@ -31,7 +30,7 @@ productRoutes.get("/", productController.getProducts);
  * @desc Search products by term
  * @access Public
  * @query {string} q or search - Search term (required)
- * @query {string} [status] - Filter by product status
+ * @query {string} [isActive] - Filter by product status
  * @query {string} [categoryId] - Filter by category ID
  * @query {string} [minPrice] - Minimum price filter
  * @query {string} [maxPrice] - Maximum price filter
@@ -103,25 +102,6 @@ productRoutes.patch("/:id", adminMiddleware, compatibleZValidator("json", update
  * @param {string} id - Product Id
  */
 productRoutes.delete("/:id", adminMiddleware, productController.deleteProduct);
-
-/**
- * @route PATCH /api/products/bulk-status
- * @desc Bulk update product status
- * @access Private (Admin)
- * @body {object} { productIds: string[], status: string }
- */
-productRoutes.patch(
-  "/bulk-status",
-  adminMiddleware,
-  compatibleZValidator(
-    "json",
-    z.object({
-      productIds: z.array(z.string().uuid()).min(1, "At least one product ID is required"),
-      isActive: z.boolean(),
-    })
-  ),
-  productController.bulkUpdateProductStatus
-);
 
 // Mount image upload routes
 productRoutes.route("/", productImageRoutes);

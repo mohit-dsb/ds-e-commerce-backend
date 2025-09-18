@@ -45,7 +45,6 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
   - Product categories (primary and additional)
   - Product options (size, color, etc.)
   - inventory tracking
-  - Product status management (draft, active, inactive, discontinued)
   - Advanced search and filtering
   - Low stock alerts and bulk operations
   - SEO-friendly slugs and meta tags
@@ -54,7 +53,6 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
   - Multiple tracking modes: none, quantity, variants
   - Low stock threshold alerts
   - Backorder support
-  - Bulk status updates
 
 - � **Enterprise-Grade Error Handling**
   - Structured logging with request tracing
@@ -158,7 +156,6 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
 - `PATCH /api/products/:id` - Update product
 - `DELETE /api/products/:id` - Delete product
 - `GET /api/products/low-stock` - Get low stock products
-- `PATCH /api/products/bulk-status` - Bulk update product status
 
 #### Image Upload Endpoints (Admin Only)
 - `POST /api/products/upload-image` - Upload a single product image
@@ -169,7 +166,7 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
 #### Product Query Parameters
 
 **GET /api/products** supports the following query parameters:
-- `status` - Filter by status: `draft`, `active`, `inactive`, `discontinued`
+- `isActive` - Filter by isActive: `true`/`false`
 - `categoryId` - Filter by category UUID
 - `minPrice` - Minimum price filter (decimal string)
 - `maxPrice` - Maximum price filter (decimal string)
@@ -184,7 +181,7 @@ A modern e-commerce backend built with Hono, Bun, and Drizzle ORM with Neon Post
 **Examples:**
 ```bash
 # Get active products under $100
-GET /api/products?status=active&maxPrice=100&sortBy=price&sortOrder=asc
+GET /api/products?isActive=true&maxPrice=100&sortBy=price&sortOrder=asc
 
 # Search for "laptop" in electronics category
 GET /api/products?search=laptop&categoryId=uuid-here&page=1&limit=10
@@ -234,7 +231,7 @@ curl -X GET \
             "price": "99.99",
             "images": ["https://cdn.example.com/image.jpg"],
             "inventoryQuantity": 50,
-            "status": "active"
+            "isActive": "true"
           }
         }
       ]

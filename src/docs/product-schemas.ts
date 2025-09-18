@@ -239,28 +239,6 @@ export const productSchemas = {
     },
   },
 
-  BulkUpdateProductStatusRequest: {
-    type: "object",
-    properties: {
-      productIds: {
-        type: "array",
-        items: {
-          type: "string",
-          format: "uuid",
-        },
-        minItems: 1,
-        description: "Array of product IDs to update",
-        example: ["123e4567-e89b-12d3-a456-426614174000", "123e4567-e89b-12d3-a456-426614174001"],
-      },
-      isActive:{
-        type: "boolean",
-        description: "Whether the products are active",
-        example: true,
-      }
-    },
-    required: ["productIds", "status"],
-  },
-
   // Shipping Address Schemas
   ShippingAddress: {
     type: "object",

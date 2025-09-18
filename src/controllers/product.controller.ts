@@ -228,22 +228,6 @@ export const getLowStockProducts = async (c: Context) => {
   return c.json(createSuccessResponse("Low stock products retrieved successfully", { products }));
 };
 
-/**
- * Bulk update product status
- * PATCH /api/products/bulk-status
- * @param c - Hono context object
- * @returns Bulk update confirmation response
- */
-export const bulkUpdateProductStatus = async (c: Context) => {
-  const { productIds, isActive } = getValidatedData<{
-    productIds: string[];
-    isActive: boolean;
-  }>(c, "json");
-
-  await productService.bulkUpdateProductStatus(productIds, isActive);
-
-  return c.json(createSuccessResponse("Product statuses updated successfully", { updatedCount: productIds.length }));
-};
 
 // ============================================================================
 // Product Review Controller Functions
