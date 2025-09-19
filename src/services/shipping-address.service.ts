@@ -1,9 +1,9 @@
 import { db } from "@/db";
 import { logger } from "@/utils/logger";
 import { dbErrorHandlers } from "@/utils/database-errors";
-import { createNotFoundError, createConflictError } from "@/utils/errors";
+import { createNotFoundError } from "@/utils/errors";
 import { eq, and } from "drizzle-orm";
-import { shippingAddresses, orders } from "@/db/schema";
+import { shippingAddresses } from "@/db/schema";
 import type { NewShippingAddress, ShippingAddress } from "@/db/validators";
 
 // ============================================================================
@@ -72,10 +72,11 @@ export const getShippingAddressById = async (addressId: string): Promise<Shippin
  */
 export const getUserShippingAddresses = async (userId: string): Promise<ShippingAddress[]> => {
   try {
+    // only returns active addresses  
     const addresses = await db
       .select()
       .from(shippingAddresses)
-      .where(eq(shippingAddresses.userId, userId))
+      .where(and(eq(shippingAddresses.userId, userId), eq(shippingAddresses.isActive, true)))
       .orderBy(shippingAddresses.isDefault);
 
     return addresses;
@@ -141,18 +142,7 @@ export const deleteShippingAddress = async (addressId: string): Promise<void> =>
       throw createNotFoundError("Shipping address");
     }
 
-    // Check if this address is being used in orders
-    const ordersUsingAddress = await db
-      .select({ id: orders.id })
-      .from(orders)
-      .where(eq(orders.shippingAddressId, addressId))
-      .limit(1);
-
-    if (ordersUsingAddress.length > 0) {
-      throw createConflictError("Cannot delete address that is being used in existing orders");
-    }
-
-    await db.delete(shippingAddresses).where(eq(shippingAddresses.id, addressId));
+    await db.update(shippingAddresses).set({ isActive: false, updatedAt: new Date() }).where(eq(shippingAddresses.id, addressId));
 
     // If this was the default address, set another address as default
     if (existingAddress.isDefault) {
@@ -223,25 +213,5 @@ export const getDefaultAddress = async (userId: string): Promise<ShippingAddress
   } catch (error) {
     logger.error("Failed to get default shipping address", error as Error);
     throw new Error("Failed to retrieve default shipping address");
-  }
-};
-
-/**
- * Check if a shipping address is being used in any orders
- * @param addressId - Address ID to check
- * @returns Promise resolving to boolean indicating if address is in use
- */
-export const isAddressInUse = async (addressId: string): Promise<boolean> => {
-  try {
-    const ordersUsingAddress = await db
-      .select({ id: orders.id })
-      .from(orders)
-      .where(eq(orders.shippingAddressId, addressId))
-      .limit(1);
-
-    return ordersUsingAddress.length > 0;
-  } catch (error) {
-    logger.error("Failed to check if address is in use", error as Error);
-    throw new Error("Failed to check address usage");
   }
 };

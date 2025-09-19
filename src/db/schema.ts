@@ -116,6 +116,7 @@ export const shippingAddresses = pgTable("shipping_addresses", {
   postalCode: varchar("postal_code", { length: 20 }).notNull(),
   country: varchar("country", { length: 100 }).notNull(),
   phoneNumber: varchar("phone_number", { length: 20 }),
+  isActive: boolean("is_active").default(true).notNull(),
   isDefault: boolean("is_default").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

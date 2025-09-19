@@ -1,0 +1,1 @@
+ALTER TABLE "shipping_addresses" ADD COLUMN "is_active" boolean DEFAULT true NOT NULL;

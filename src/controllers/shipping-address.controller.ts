@@ -135,17 +135,6 @@ export const deleteShippingAddress = async (c: Context<{ Variables: AuthContext 
     throw createAuthError("You don't have permission to delete this address");
   }
 
-  // Check if address is being used in any orders
-  const isInUse = await shippingAddressService.isAddressInUse(addressId);
-  if (isInUse) {
-    throw createValidationError([
-      {
-        field: "address",
-        message: "Cannot delete address that is being used in existing orders",
-      },
-    ]);
-  }
-
   try {
     await shippingAddressService.deleteShippingAddress(addressId);
 
