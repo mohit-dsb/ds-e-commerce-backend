@@ -139,7 +139,7 @@ export const productSchemas = {
         description: "Weight unit",
         example: "kg",
       },
-      isActive:{
+      isActive: {
         type: "boolean",
         default: true,
         description: "Whether the product is active",
@@ -207,7 +207,7 @@ export const productSchemas = {
         enum: ["kg", "g", "lb", "oz"],
         example: "kg",
       },
-      isActive:{
+      isActive: {
         type: "boolean",
         description: "Whether the product is active",
         example: true,

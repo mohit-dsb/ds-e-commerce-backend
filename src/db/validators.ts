@@ -84,7 +84,6 @@ export const updateShippingAddressSchema = insertShippingAddressSchema.partial()
 
 export type UpdateShippingAddressData = z.infer<typeof updateShippingAddressSchema>;
 
-
 // Order validation schemas
 export const createOrderItemSchema = z.object({
   productId: z.string().uuid("Invalid product ID"),

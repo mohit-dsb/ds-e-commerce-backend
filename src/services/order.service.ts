@@ -377,6 +377,7 @@ export const createOrder = async (orderData: CreateOrderRequest): Promise<OrderW
           weight: products.weight,
           weightUnit: products.weightUnit,
           inventoryQuantity: products.inventoryQuantity,
+          images: products.images,
         })
         .from(products)
         .where(inArray(products.id, productIds));
@@ -483,6 +484,7 @@ export const getOrderById = async (orderId: string): Promise<OrderWithRelations 
                 price: true,
                 isActive: true,
                 inventoryQuantity: true,
+                images: true,
               },
             },
           },
@@ -539,6 +541,7 @@ export const getOrderByNumber = async (orderNumber: string): Promise<OrderWithRe
                 price: true,
                 isActive: true,
                 inventoryQuantity: true,
+                images: true,
               },
             },
           },
@@ -673,6 +676,7 @@ export const getOrders = async (filters: OrderFilters = {}) => {
                 slug: true,
                 price: true,
                 isActive: true,
+                images: true,
               },
             },
           },

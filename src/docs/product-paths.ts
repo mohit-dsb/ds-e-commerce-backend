@@ -9,7 +9,7 @@ export const productPaths = {
       operationId: "getProducts",
       parameters: [
         {
-          name:"isActive",
+          name: "isActive",
           in: "query",
           description: "Filter by active status",
           required: false,
@@ -395,7 +395,7 @@ export const productPaths = {
           },
         },
         {
-          name:"isActive",
+          name: "isActive",
           in: "query",
           description: "Filter by active status",
           required: false,
@@ -583,7 +583,7 @@ export const productPaths = {
           },
         },
         {
-          name:"isActive",
+          name: "isActive",
           in: "query",
           description: "Filter by active status",
           required: false,

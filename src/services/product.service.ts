@@ -4,7 +4,7 @@ import { products, categories, productReviews, orders, orderItems, users } from 
 import { dbErrorHandlers } from "@/utils/database-errors";
 import { generateSlug, generateUniqueSlug } from "@/utils/slug";
 import { createNotFoundError, createConflictError, createValidationError } from "@/utils/errors";
-import { eq, and, or, ilike, gte, lte, inArray, desc, asc, sql, count, type SQL } from "drizzle-orm";
+import { eq, and, or, ilike, gte, lte, desc, asc, sql, count, type SQL } from "drizzle-orm";
 import type {
   CreateReviewRequest,
   ProductFilters,

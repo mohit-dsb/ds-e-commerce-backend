@@ -72,7 +72,7 @@ export const getShippingAddressById = async (addressId: string): Promise<Shippin
  */
 export const getUserShippingAddresses = async (userId: string): Promise<ShippingAddress[]> => {
   try {
-    // only returns active addresses  
+    // only returns active addresses
     const addresses = await db
       .select()
       .from(shippingAddresses)

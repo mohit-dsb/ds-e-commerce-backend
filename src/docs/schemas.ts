@@ -575,7 +575,7 @@ export const schemas = {
             description: "Product images",
             example: ["headphones1.jpg", "headphones2.jpg"],
           },
-          isActive:{
+          isActive: {
             type: "boolean",
             description: "Whether the product is active",
             example: true,

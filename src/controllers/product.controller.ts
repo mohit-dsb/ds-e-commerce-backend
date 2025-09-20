@@ -228,7 +228,6 @@ export const getLowStockProducts = async (c: Context) => {
   return c.json(createSuccessResponse("Low stock products retrieved successfully", { products }));
 };
 
-
 // ============================================================================
 // Product Review Controller Functions
 // ============================================================================
