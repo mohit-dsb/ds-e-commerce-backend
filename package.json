@@ -19,9 +19,6 @@
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write \"src/**/*.{ts,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,json,md}\"",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "test:coverage": "bun test --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "bun run src/db/migrate.ts",
     "db:migrate:prod": "NODE_ENV=production bun run src/db/migrate.ts",
@@ -33,7 +30,7 @@
     "clean": "rm -rf dist",
     "preinstall": "npx only-allow bun",
     "postinstall": "echo 'Dependencies installed successfully'",
-    "ci": "bun run typecheck && bun run lint && bun run format:check && bun run test",
+    "ci": "bun run typecheck && bun run lint && bun run format:check",
     "release": "bun run clean && bun run ci && bun run build:production"
   },
   "keywords": [

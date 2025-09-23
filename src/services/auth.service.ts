@@ -14,12 +14,13 @@ import type { IUser } from "@/types/user.types";
 // ============================================================================
 
 /**
- * Generate a JWT token for a user
+ * Generate a JWT access token for a user (15 minutes expiration)
  * @param userId - User ID to generate token for
  * @returns Promise resolving to JWT token string
  */
 export const generateToken = async (userId: string): Promise<string> => {
-  return await HonoJWTService.generateToken(userId, {});
+  // Access tokens expire in 15 minutes to match the cookie expiration
+  return await HonoJWTService.generateToken(userId, { expiresIn: 15 * 60 });
 };
 
 /**
