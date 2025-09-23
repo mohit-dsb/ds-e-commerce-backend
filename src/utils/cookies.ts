@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import { setCookie, getCookie, deleteCookie } from "hono/cookie";
 import { logger } from "@/utils/logger";
+import { isProduction } from "@/config/env";
 
 // ============================================================================
 // Cookie Configuration Constants
@@ -11,18 +12,18 @@ const COOKIE_CONFIG = {
   accessToken: {
     name: "ds-e-commerce-access-token",
     maxAge: 15 * 60, // 15 minutes
-    httpOnly: false,
-    secure: false,
-    sameSite: "none" as const,
+    httpOnly: true,
+    secure: isProduction, // HTTPS only in production
+    sameSite: isProduction ? "strict" : "lax", // Strict in production, lax in development
     path: "/",
   },
   // Refresh token: Longer-lived, httpOnly for security
   refreshToken: {
     name: "ds-e-commerce-refresh-token",
     maxAge: 30 * 24 * 60 * 60, // 30 days
-    httpOnly: false,
-    secure: false,
-    sameSite: "none" as const,
+    httpOnly: true,
+    secure: isProduction, // HTTPS only in production
+    sameSite: isProduction ? "strict" : "lax", // Strict in production, lax in development
     path: "/api/auth/refresh",
   },
 } as const;
