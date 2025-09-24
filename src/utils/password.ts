@@ -1,5 +1,3 @@
-import { logger } from "@/utils/logger";
-
 /**
  * Hash a password using Bun's built-in password hashing
  * @param password - Plain text password to hash
@@ -8,8 +6,7 @@ import { logger } from "@/utils/logger";
 export const hashPassword = async (password: string): Promise<string> => {
   try {
     return await Bun.password.hash(password);
-  } catch (error) {
-    logger.error("Password hashing failed", error as Error, {});
+  } catch {
     throw new Error("Failed to process password");
   }
 };
@@ -23,8 +20,24 @@ export const hashPassword = async (password: string): Promise<string> => {
 export const verifyPassword = async (password: string, hashedPassword: string): Promise<boolean> => {
   try {
     return await Bun.password.verify(password, hashedPassword);
-  } catch (error) {
-    logger.error("Password verification failed", error as Error, {});
+  } catch {
     return false;
+  }
+};
+
+/**
+ * Create a fast hash for refresh tokens using SHA-256
+ * @param token - Token to hash
+ * @returns Promise resolving to hashed token
+ */
+export const hashRefreshToken = async (token: string): Promise<string> => {
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(token);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch {
+    throw new Error("Failed to hash refresh token");
   }
 };

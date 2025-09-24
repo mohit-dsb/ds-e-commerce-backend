@@ -1,8 +1,7 @@
 import { db } from "@/db";
 import { nanoid } from "nanoid";
-import { logger } from "@/utils/logger";
 import { HonoJWTService } from "@/utils/hono-jwt";
-import { verifyPassword, hashPassword } from "@/utils/password";
+import { verifyPassword, hashRefreshToken } from "@/utils/password";
 import { createNotFoundError } from "@/utils/errors";
 import { dbErrorHandlers } from "@/utils/database-errors";
 import { users, refreshTokens, passwordResets } from "@/db/schema";
@@ -48,13 +47,11 @@ export const authenticateUser = async (email: string, password: string): Promise
     const [user] = await db.select().from(users).where(eq(users.email, email));
 
     if (!user) {
-      logger.warn("Authentication failed - user not found", { metadata: { email } });
       return null;
     }
 
     const isPasswordValid = await verifyPassword(password, user.password);
     if (!isPasswordValid) {
-      logger.warn("Authentication failed - invalid password", { metadata: { email } });
       return null;
     }
 
@@ -75,7 +72,7 @@ export const createRefreshToken = async (userId: string): Promise<string> => {
   return dbErrorHandlers.create(async () => {
     // Generate a secure random token
     const token = nanoid(64); // Longer tokens for refresh tokens
-    const tokenHash = await hashPassword(token); // Hash the token for storage
+    const tokenHash = await hashRefreshToken(token); // Fast SHA-256 hash for storage
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
     await db.insert(refreshTokens).values({
@@ -95,33 +92,30 @@ export const createRefreshToken = async (userId: string): Promise<string> => {
  */
 export const validateRefreshToken = async (token: string): Promise<string | null> => {
   return dbErrorHandlers.read(async () => {
-    // Get all non-revoked, non-expired refresh tokens for hash comparison
-    const tokens = await db
+    // Hash the provided token to compare with stored hash
+    const tokenHash = await hashRefreshToken(token);
+
+    // Find the matching token directly in the database
+    const [storedToken] = await db
       .select()
       .from(refreshTokens)
-      .where(and(gt(refreshTokens.expiresAt, new Date())));
+      .where(and(eq(refreshTokens.tokenHash, tokenHash), gt(refreshTokens.expiresAt, new Date())))
+      .limit(1);
 
-    // Find matching token by comparing hashes
-    for (const storedToken of tokens) {
-      const isValid = await verifyPassword(token, storedToken.tokenHash);
-      if (isValid) {
-        // Update last used timestamp
-        await db
-          .update(refreshTokens)
-          .set({
-            lastUsedAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .where(eq(refreshTokens.id, storedToken.id));
-
-        return storedToken.userId;
-      }
+    if (!storedToken) {
+      return null;
     }
 
-    logger.warn("Invalid or expired refresh token", {
-      metadata: { hasToken: !!token },
-    });
-    return null;
+    // Update last used timestamp
+    await db
+      .update(refreshTokens)
+      .set({
+        lastUsedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(refreshTokens.id, storedToken.id));
+
+    return storedToken.userId;
   });
 };
 
@@ -183,9 +177,6 @@ export const validatePasswordResetToken = async (token: string): Promise<string 
       .where(and(eq(passwordResets.token, token), eq(passwordResets.used, false), gt(passwordResets.expiresAt, new Date())));
 
     if (!reset) {
-      logger.warn("Invalid or expired password reset token", {
-        metadata: { hasToken: !!token },
-      });
       return null;
     }
 
